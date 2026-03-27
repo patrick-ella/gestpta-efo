@@ -7,10 +7,10 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Plane,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { EfoLogo } from "@/components/ui/EfoLogo";
 import {
   Sidebar,
   SidebarContent,
@@ -44,13 +44,14 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/70 flex items-center gap-2 px-3 py-4">
-            {!collapsed && (
-              <>
-                <Plane className="h-5 w-5" />
-                <span className="font-bold text-sm">GestPTA-EFO</span>
-              </>
+            {collapsed ? (
+              <EfoLogo size="sm" variant="white" />
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                <EfoLogo size="sm" variant="white" showText />
+                <span className="text-[11px] text-sidebar-foreground/50 pl-0.5">EFO / CCAA</span>
+              </div>
             )}
-            {collapsed && <Plane className="h-5 w-5" />}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
