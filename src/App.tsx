@@ -44,6 +44,7 @@ const ProtectedRoutes = () => {
         <Route path="/livrables" element={<Livrables />} />
         <Route path="/rapports" element={<Rapports />} />
         <Route path="/administration" element={<Administration />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
