@@ -73,7 +73,7 @@ const Rapports = () => {
       action: async () => {
         const data = await fetchReportData(selectedExercice?.id);
         const { exportMensuelPdf } = await import("@/lib/reports/exportMensuelPdf");
-        exportMensuelPdf(data, parseInt(annee), parseInt(mois));
+        await exportMensuelPdf(data, parseInt(annee), parseInt(mois));
       },
     },
     {
