@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Copy, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, ChevronRight, Copy, Loader2, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import type { PtaActivite, PtaTache } from "@/hooks/usePtaData";
 import type { Database } from "@/integrations/supabase/types";
@@ -25,10 +27,32 @@ function formatBudget(val: number | null): string {
 }
 
 const PtaTreeView = ({ activites, isAdmin, onSelectSousTache, onRefresh }: PtaTreeViewProps) => {
+  const { user } = useAuth();
   const [expandedActs, setExpandedActs] = useState<Set<string>>(new Set());
   const [expandedTaches, setExpandedTaches] = useState<Set<string>>(new Set());
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Fetch livrable counts per sous_tache
+  const { data: livrableCounts = {} } = useQuery({
+    queryKey: ["livrables-counts-by-st"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("livrables")
+        .select("sous_tache_id, statut")
+        .not("sous_tache_id", "is", null);
+      if (error) throw error;
+      const counts: Record<string, { total: number; done: number }> = {};
+      for (const row of data ?? []) {
+        const stId = row.sous_tache_id as string;
+        if (!counts[stId]) counts[stId] = { total: 0, done: 0 };
+        counts[stId].total++;
+        if (row.statut === "produit" || row.statut === "valide") counts[stId].done++;
+      }
+      return counts;
+    },
+    enabled: !!user,
+  });
 
   const toggleAct = (id: string) => {
     setExpandedActs((prev) => {
@@ -221,6 +245,18 @@ const PtaTreeView = ({ activites, isAdmin, onSelectSousTache, onRefresh }: PtaTr
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="text-xs text-muted-foreground font-mono shrink-0">{st.code}</span>
                         <span className="text-sm text-foreground truncate">{st.libelle}</span>
+                        {livrableCounts[st.id] && (
+                          <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                            livrableCounts[st.id].done === livrableCounts[st.id].total
+                              ? "bg-green-100 text-green-800"
+                              : livrableCounts[st.id].done > 0
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-muted text-muted-foreground"
+                          }`}>
+                            <Package className="h-3 w-3" />
+                            {livrableCounts[st.id].done}/{livrableCounts[st.id].total}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 shrink-0">
                         <div className="flex gap-1">

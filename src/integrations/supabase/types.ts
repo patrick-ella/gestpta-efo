@@ -273,36 +273,70 @@ export type Database = {
       }
       livrables: {
         Row: {
+          commentaire: string | null
           created_at: string
+          date_echeance: string | null
           date_production: string | null
+          fichier_nom: string | null
+          fichier_taille: number | null
           fichier_url: string | null
           id: string
           libelle: string
           observations: string | null
           produit: boolean | null
+          produit_par: string | null
+          sous_tache_id: string | null
+          statut: string | null
           tache_id: string
+          type_livrable: string | null
+          updated_at: string | null
         }
         Insert: {
+          commentaire?: string | null
           created_at?: string
+          date_echeance?: string | null
           date_production?: string | null
+          fichier_nom?: string | null
+          fichier_taille?: number | null
           fichier_url?: string | null
           id?: string
           libelle: string
           observations?: string | null
           produit?: boolean | null
+          produit_par?: string | null
+          sous_tache_id?: string | null
+          statut?: string | null
           tache_id: string
+          type_livrable?: string | null
+          updated_at?: string | null
         }
         Update: {
+          commentaire?: string | null
           created_at?: string
+          date_echeance?: string | null
           date_production?: string | null
+          fichier_nom?: string | null
+          fichier_taille?: number | null
           fichier_url?: string | null
           id?: string
           libelle?: string
           observations?: string | null
           produit?: boolean | null
+          produit_par?: string | null
+          sous_tache_id?: string | null
+          statut?: string | null
           tache_id?: string
+          type_livrable?: string | null
+          updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "livrables_sous_tache_id_fkey"
+            columns: ["sous_tache_id"]
+            isOneToOne: false
+            referencedRelation: "sous_taches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "livrables_tache_id_fkey"
             columns: ["tache_id"]

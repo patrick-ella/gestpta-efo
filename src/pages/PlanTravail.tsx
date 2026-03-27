@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { usePtaData } from "@/hooks/usePtaData";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { Loader2 } from "lucide-react";
@@ -13,6 +13,19 @@ const PlanTravail = () => {
   const { data, isLoading, refetch } = usePtaData(2026);
   const isAdmin = useIsAdmin();
   const [selectedSt, setSelectedSt] = useState<SousTache | null>(null);
+
+  // Find tache livrables text for selected sous-tache
+  const tacheLivrables = useMemo(() => {
+    if (!selectedSt || !data?.activites) return null;
+    for (const act of data.activites) {
+      for (const t of act.taches) {
+        if (t.sous_taches.some((st) => st.id === selectedSt.id)) {
+          return t.livrables;
+        }
+      }
+    }
+    return null;
+  }, [selectedSt, data?.activites]);
 
   if (isLoading) {
     return (
@@ -91,6 +104,7 @@ const PlanTravail = () => {
         onClose={() => setSelectedSt(null)}
         isAdmin={isAdmin}
         onUpdate={() => { refetch(); }}
+        tacheLivrables={tacheLivrables}
       />
     </div>
   );
