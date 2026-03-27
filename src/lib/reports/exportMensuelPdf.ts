@@ -2,24 +2,20 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { ReportData } from "@/lib/reportUtils";
 import { fmtFCFA, fmtPct, getExecForST } from "@/lib/reportUtils";
+import { addReportHeader, addPageFooters } from "./pdfHeader";
 
-export const exportMensuelPdf = (data: ReportData, annee: number, mois: number) => {
+export const exportMensuelPdf = async (data: ReportData, annee: number, mois: number) => {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const moisNoms = [
     "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
   ];
 
-  // Header
-  doc.setFontSize(16);
-  doc.setTextColor(31, 78, 121);
-  doc.text("ÉCOLE DE FORMATION EN AÉRONAUTIQUE (EFO)", 148, 15, { align: "center" });
-  doc.setFontSize(13);
-  doc.text(`RAPPORT MENSUEL D'EXÉCUTION DU PTA — ${moisNoms[mois - 1]} ${annee}`, 148, 24, { align: "center" });
-  doc.setDrawColor(31, 78, 121);
-  doc.line(20, 28, 277, 28);
-
-  let yPos = 35;
+  let yPos = await addReportHeader(
+    doc,
+    "RAPPORT MENSUEL D'EXÉCUTION DU PTA",
+    `Exercice ${annee} — Période : ${moisNoms[mois - 1]} ${annee}`
+  );
 
   data.activites.forEach((act) => {
     if (yPos > 170) { doc.addPage(); yPos = 20; }
@@ -106,5 +102,6 @@ export const exportMensuelPdf = (data: ReportData, annee: number, mois: number) 
   doc.text("Date: _______________", 20, yPos + 8);
   doc.text("Date: _______________", 160, yPos + 8);
 
+  addPageFooters(doc);
   doc.save(`Rapport_Mensuel_${moisNoms[mois - 1]}_${annee}.pdf`);
 };
