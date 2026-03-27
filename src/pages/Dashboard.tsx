@@ -1,70 +1,336 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayoutDashboard, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { Loader2, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import DashboardKpiCards from "@/components/dashboard/DashboardKpiCards";
+import ActivityMatrix from "@/components/dashboard/ActivityMatrix";
+import DashboardCharts from "@/components/dashboard/DashboardCharts";
+import AlertPanel, { type Alert } from "@/components/dashboard/AlertPanel";
+import type { Database } from "@/integrations/supabase/types";
+
+type Execution = Database["public"]["Tables"]["executions"]["Row"];
+type SousTache = Database["public"]["Tables"]["sous_taches"]["Row"];
 
 const Dashboard = () => {
+  const [selectedYear, setSelectedYear] = useState(2026);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const { data: roles = [] } = useUserRoles();
+  const queryClient = useQueryClient();
+
+  const isDirection =
+    roles.includes("super_admin") ||
+    roles.includes("admin_pta") ||
+    roles.includes("consultant");
+
+  // Fetch exercice
+  const { data: exercice } = useQuery({
+    queryKey: ["dashboard-exercice", selectedYear],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("exercices")
+        .select("*")
+        .eq("annee", selectedYear)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const exerciceId = exercice?.id;
+
+  // Fetch activites
+  const { data: activites = [] } = useQuery({
+    queryKey: ["dashboard-activites", exerciceId],
+    queryFn: async () => {
+      if (!exerciceId) return [];
+      const { data } = await supabase
+        .from("activites")
+        .select("*")
+        .eq("exercice_id", exerciceId)
+        .order("ordre");
+      return data ?? [];
+    },
+    enabled: !!exerciceId,
+  });
+
+  // Fetch taches
+  const { data: taches = [] } = useQuery({
+    queryKey: ["dashboard-taches", exerciceId],
+    queryFn: async () => {
+      if (!exerciceId) return [];
+      const actIds = activites.map((a) => a.id);
+      if (actIds.length === 0) return [];
+      const { data } = await supabase
+        .from("taches")
+        .select("*")
+        .in("activite_id", actIds);
+      return data ?? [];
+    },
+    enabled: activites.length > 0,
+  });
+
+  // Fetch sous_taches
+  const { data: sousTaches = [] } = useQuery({
+    queryKey: ["dashboard-sous-taches", exerciceId],
+    queryFn: async () => {
+      const tacheIds = taches.map((t) => t.id);
+      if (tacheIds.length === 0) return [];
+      const { data } = await supabase
+        .from("sous_taches")
+        .select("*")
+        .in("tache_id", tacheIds);
+      return data ?? [];
+    },
+    enabled: taches.length > 0,
+  });
+
+  // Fetch executions
+  const { data: executions = [], isLoading } = useQuery({
+    queryKey: ["dashboard-executions", exerciceId],
+    queryFn: async () => {
+      if (!exerciceId) return [];
+      const { data } = await supabase
+        .from("executions")
+        .select("*")
+        .eq("exercice_id", exerciceId);
+      return data ?? [];
+    },
+    enabled: !!exerciceId,
+  });
+
+  // Fetch KPI indicateurs
+  const { data: kpis = [] } = useQuery({
+    queryKey: ["dashboard-kpis"],
+    queryFn: async () => {
+      const { data } = await supabase.from("indicateurs_kpi").select("*");
+      return data ?? [];
+    },
+  });
+
+  // Build execution map
+  const exMap = useMemo(() => {
+    const m: Record<string, Execution> = {};
+    executions.forEach((e) => (m[e.sous_tache_id] = e));
+    return m;
+  }, [executions]);
+
+  // Build tache→activite map
+  const tacheActMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    taches.forEach((t) => (m[t.id] = t.activite_id));
+    return m;
+  }, [taches]);
+
+  // Compute KPIs
+  const totalBudgetPrevu = sousTaches.reduce((s, st) => s + (st.budget_prevu ?? 0), 0);
+  const totalRealized = executions.reduce((s, e) => s + (e.montant_realise ?? 0), 0);
+  const budgetExecPct = totalBudgetPrevu > 0 ? Math.round((totalRealized / totalBudgetPrevu) * 100) : 0;
+
+  const allPcts = sousTaches.map((st) => exMap[st.id]?.avancement_pct ?? 0);
+  const physicalProgress = allPcts.length > 0 ? Math.round(allPcts.reduce((s, v) => s + v, 0) / allPcts.length) : 0;
+
+  const os1Kpi = kpis.find((k) => k.code === "OS1-IND1");
+  const isoKpi = kpis.find((k) => k.code === "OS2-IND2");
+
+  const apprenants = {
+    realized: os1Kpi?.valeur_realisee ? parseInt(os1Kpi.valeur_realisee.replace(/\s/g, "")) || 0 : 0,
+    target: 1200,
+  };
+  const isoConformity = isoKpi?.valeur_realisee ? parseFloat(isoKpi.valeur_realisee.replace(",", ".").replace("%", "")) || 0 : 0;
+
+  // Activity matrix data
+  const activityRows = useMemo(() => {
+    return activites.map((act) => {
+      const actTaches = taches.filter((t) => t.activite_id === act.id);
+      const actSts = sousTaches.filter((st) => actTaches.some((t) => t.id === st.tache_id));
+      const budgetPrevu = actSts.reduce((s, st) => s + (st.budget_prevu ?? 0), 0);
+      const budgetConsomme = actSts.reduce((s, st) => s + (exMap[st.id]?.montant_realise ?? 0), 0);
+      const pcts = actSts.map((st) => exMap[st.id]?.avancement_pct ?? 0);
+      const avgPct = pcts.length > 0 ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) : 0;
+      const tauxBudg = budgetPrevu > 0 ? Math.round((budgetConsomme / budgetPrevu) * 100) : 0;
+
+      return {
+        id: act.id,
+        code: act.code,
+        libelle: act.libelle,
+        budgetPrevu: act.budget_total ?? 0,
+        budgetConsomme,
+        tauxBudgetaire: tauxBudg,
+        avancementPhysique: avgPct,
+      };
+    });
+  }, [activites, taches, sousTaches, exMap]);
+
+  // Chart data
+  const budgetChartData = activityRows.map((a) => ({
+    name: a.code,
+    prevu: a.budgetPrevu,
+    consomme: a.budgetConsomme,
+  }));
+
+  const statutCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      "Non démarré": 0,
+      "En cours": 0,
+      "Terminé": 0,
+      "Suspendu": 0,
+      "Annulé": 0,
+    };
+    const statusMap: Record<string, string> = {
+      non_demarre: "Non démarré",
+      en_cours: "En cours",
+      termine: "Terminé",
+      suspendu: "Suspendu",
+      annule: "Annulé",
+    };
+    sousTaches.forEach((st) => {
+      const ex = exMap[st.id];
+      const statut = ex?.statut ?? "non_demarre";
+      const label = statusMap[statut] ?? "Non démarré";
+      counts[label] = (counts[label] ?? 0) + 1;
+    });
+    return counts;
+  }, [sousTaches, exMap]);
+
+  const statutChartData = [
+    { name: "Non démarré", value: statutCounts["Non démarré"], color: "hsl(210, 15%, 75%)" },
+    { name: "En cours", value: statutCounts["En cours"], color: "hsl(211, 55%, 45%)" },
+    { name: "Terminé", value: statutCounts["Terminé"], color: "hsl(120, 26%, 55%)" },
+    { name: "Suspendu", value: statutCounts["Suspendu"], color: "hsl(35, 90%, 55%)" },
+    { name: "Annulé", value: statutCounts["Annulé"], color: "hsl(0, 70%, 55%)" },
+  ].filter((d) => d.value > 0);
+
+  // Alerts
+  const alerts = useMemo(() => {
+    const result: Alert[] = [];
+    const currentMonth = new Date().getMonth(); // 0-11
+    const currentTrimestre = Math.floor(currentMonth / 3) + 1; // 1-4
+
+    sousTaches.forEach((st) => {
+      const ex = exMap[st.id];
+      const pct = ex?.avancement_pct ?? 0;
+      const budgetSt = st.budget_prevu ?? 0;
+      const realized = ex?.montant_realise ?? 0;
+
+      // Find parent activity code
+      const tacheParent = taches.find((t) => t.id === st.tache_id);
+      const actParent = tacheParent ? activites.find((a) => a.id === tacheParent.activite_id) : null;
+      const actCode = actParent?.code ?? "—";
+
+      // Alert: 0% with past trimester programmed
+      const pastTrim = [
+        currentTrimestre >= 2 && st.trimestre_t1,
+        currentTrimestre >= 3 && st.trimestre_t2,
+        currentTrimestre >= 4 && st.trimestre_t3,
+      ];
+      if (pct === 0 && pastTrim.some(Boolean)) {
+        result.push({
+          type: "critical",
+          actCode,
+          stCode: st.code,
+          description: "Avancement à 0% alors que le trimestre programmé est dépassé",
+        });
+      }
+
+      // Alert: budget > 90% but physical < 70%
+      if (budgetSt > 0) {
+        const budgetPct = (realized / budgetSt) * 100;
+        if (budgetPct > 90 && pct < 70) {
+          result.push({
+            type: "warning",
+            actCode,
+            stCode: st.code,
+            description: `Budget consommé à ${Math.round(budgetPct)}% mais avancement physique à ${pct}%`,
+          });
+        }
+      }
+    });
+
+    return result;
+  }, [sousTaches, exMap, taches, activites]);
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["dashboard-exercice"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-activites"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-taches"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-sous-taches"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-executions"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-kpis"] });
+    setLastRefresh(new Date());
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Chargement du tableau de bord…</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Tableau de bord</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Activités
-            </CardTitle>
-            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">0</div>
-            <p className="text-xs text-muted-foreground">activités planifiées</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Taux d'exécution
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">0%</div>
-            <p className="text-xs text-muted-foreground">avancement global</p>
-          </CardContent>
-        </Card>
-        <Card className="border-success bg-success/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-success-foreground">
-              KPI atteints
-            </CardTitle>
-            <CheckCircle className="h-4 w-4 text-success-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success-foreground">0</div>
-            <p className="text-xs text-success-foreground">indicateurs validés</p>
-          </CardContent>
-        </Card>
-        <Card className="border-warning bg-warning/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-warning-foreground">
-              Risques
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-warning-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning-foreground">0</div>
-            <p className="text-xs text-warning-foreground">alertes en cours</p>
-          </CardContent>
-        </Card>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-foreground">Résumé de l'exercice</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Aucun exercice actif. Créez un exercice depuis l'onglet Administration pour commencer.
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Tableau de bord</h1>
+          <p className="text-xs text-muted-foreground">
+            {isDirection ? "Vue Direction" : "Vue Opérationnelle"} · Dernière actualisation :{" "}
+            {lastRefresh.toLocaleTimeString("fr-FR")}
           </p>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex items-center gap-3">
+          <Select
+            value={String(selectedYear)}
+            onValueChange={(v) => setSelectedYear(Number(v))}
+          >
+            <SelectTrigger className="w-[130px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="2025">Exercice 2025</SelectItem>
+              <SelectItem value="2026">Exercice 2026</SelectItem>
+              <SelectItem value="2027">Exercice 2027</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={handleRefresh} className="gap-2">
+            <RefreshCw className="h-3.5 w-3.5" />
+            Actualiser
+          </Button>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <DashboardKpiCards
+        apprenants={apprenants}
+        budgetExec={budgetExecPct}
+        physicalProgress={physicalProgress}
+        isoConformity={isoConformity}
+      />
+
+      {/* Activity matrix + Alert panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">
+            Matrice de suivi des activités
+          </h3>
+          <ActivityMatrix activities={activityRows} />
+        </div>
+        <div>
+          <AlertPanel alerts={alerts} />
+        </div>
+      </div>
+
+      {/* Charts */}
+      <DashboardCharts budgetData={budgetChartData} statutData={statutChartData} />
     </div>
   );
 };
