@@ -13,6 +13,7 @@ import Execution from "@/pages/Execution";
 import Livrables from "@/pages/Livrables";
 import Rapports from "@/pages/Rapports";
 import Administration from "@/pages/Administration";
+import Notifications from "@/pages/Notifications";
 import NotFound from "@/pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -43,6 +44,7 @@ const ProtectedRoutes = () => {
         <Route path="/livrables" element={<Livrables />} />
         <Route path="/rapports" element={<Rapports />} />
         <Route path="/administration" element={<Administration />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
