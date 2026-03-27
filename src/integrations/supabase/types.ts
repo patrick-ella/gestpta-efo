@@ -136,6 +136,57 @@ export type Database = {
         }
         Relationships: []
       }
+      indicateurs_kpi: {
+        Row: {
+          baseline_annee: number | null
+          baseline_valeur: string | null
+          categorie: string | null
+          cible_2025: string | null
+          cible_2026: string | null
+          cible_2027: string | null
+          code: string
+          created_at: string
+          id: string
+          libelle: string
+          mode_calcul: string | null
+          objectif_specifique: string | null
+          updated_at: string | null
+          valeur_realisee: string | null
+        }
+        Insert: {
+          baseline_annee?: number | null
+          baseline_valeur?: string | null
+          categorie?: string | null
+          cible_2025?: string | null
+          cible_2026?: string | null
+          cible_2027?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          libelle: string
+          mode_calcul?: string | null
+          objectif_specifique?: string | null
+          updated_at?: string | null
+          valeur_realisee?: string | null
+        }
+        Update: {
+          baseline_annee?: number | null
+          baseline_valeur?: string | null
+          categorie?: string | null
+          cible_2025?: string | null
+          cible_2026?: string | null
+          cible_2027?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          libelle?: string
+          mode_calcul?: string | null
+          objectif_specifique?: string | null
+          updated_at?: string | null
+          valeur_realisee?: string | null
+        }
+        Relationships: []
+      }
       journal_audit: {
         Row: {
           action: string | null
