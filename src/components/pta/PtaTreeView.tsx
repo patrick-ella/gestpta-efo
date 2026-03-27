@@ -245,6 +245,18 @@ const PtaTreeView = ({ activites, isAdmin, onSelectSousTache, onRefresh }: PtaTr
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="text-xs text-muted-foreground font-mono shrink-0">{st.code}</span>
                         <span className="text-sm text-foreground truncate">{st.libelle}</span>
+                        {livrableCounts[st.id] && (
+                          <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                            livrableCounts[st.id].done === livrableCounts[st.id].total
+                              ? "bg-green-100 text-green-800"
+                              : livrableCounts[st.id].done > 0
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-muted text-muted-foreground"
+                          }`}>
+                            <Package className="h-3 w-3" />
+                            {livrableCounts[st.id].done}/{livrableCounts[st.id].total}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 shrink-0">
                         <div className="flex gap-1">
