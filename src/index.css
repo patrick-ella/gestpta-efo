@@ -57,6 +57,56 @@
     --sidebar-border: 211 55% 38%;
     --sidebar-ring: 0 0% 100%;
   }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 47% 14%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 47% 14%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 211 55% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 211 55% 40%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 223 47% 18%;
+    --muted-foreground: 215 20% 60%;
+
+    --accent: 213 40% 22%;
+    --accent-foreground: 211 55% 70%;
+
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 28% 22%;
+    --input: 215 28% 22%;
+    --ring: 211 55% 50%;
+
+    --navy: 210 59% 25%;
+    --navy-foreground: 0 0% 100%;
+    --medium-blue: 211 55% 38%;
+    --medium-blue-foreground: 0 0% 100%;
+    --light-blue: 212 40% 22%;
+    --light-blue-row: 212 40% 18%;
+    --success: 120 20% 18%;
+    --success-foreground: 120 40% 70%;
+    --warning: 45 60% 20%;
+    --warning-foreground: 45 80% 70%;
+
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 80%;
+    --sidebar-primary: 211 55% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 211 55% 25%;
+    --sidebar-accent-foreground: 210 40% 90%;
+    --sidebar-border: 215 28% 22%;
+    --sidebar-ring: 211 55% 50%;
+  }
 }
 
 @layer base {
@@ -67,5 +117,28 @@
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Source Sans 3', system-ui, sans-serif;
+  }
+}
+
+/* Print styles */
+@media print {
+  .print\\:hidden,
+  [data-sidebar],
+  header {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .rounded-lg {
+    border-radius: 0 !important;
   }
 }
