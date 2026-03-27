@@ -27,10 +27,32 @@ function formatBudget(val: number | null): string {
 }
 
 const PtaTreeView = ({ activites, isAdmin, onSelectSousTache, onRefresh }: PtaTreeViewProps) => {
+  const { user } = useAuth();
   const [expandedActs, setExpandedActs] = useState<Set<string>>(new Set());
   const [expandedTaches, setExpandedTaches] = useState<Set<string>>(new Set());
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Fetch livrable counts per sous_tache
+  const { data: livrableCounts = {} } = useQuery({
+    queryKey: ["livrables-counts-by-st"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("livrables")
+        .select("sous_tache_id, statut")
+        .not("sous_tache_id", "is", null);
+      if (error) throw error;
+      const counts: Record<string, { total: number; done: number }> = {};
+      for (const row of data ?? []) {
+        const stId = row.sous_tache_id as string;
+        if (!counts[stId]) counts[stId] = { total: 0, done: 0 };
+        counts[stId].total++;
+        if (row.statut === "produit" || row.statut === "valide") counts[stId].done++;
+      }
+      return counts;
+    },
+    enabled: !!user,
+  });
 
   const toggleAct = (id: string) => {
     setExpandedActs((prev) => {
