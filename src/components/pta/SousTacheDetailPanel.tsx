@@ -86,7 +86,7 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate }: S
                 type === "textarea" ? (
                   <Textarea
                     value={String(data[key] ?? "")}
-                    onChange={(e) => setFormData((p) => ({ ...p, [key]: type === "number" ? Number(e.target.value) : e.target.value }))}
+                    onChange={(e) => setFormData((p) => ({ ...p, [key]: e.target.value }))}
                     className="text-sm"
                   />
                 ) : (
