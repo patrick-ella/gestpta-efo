@@ -1,11 +1,222 @@
-const Rapports = () => (
-  <div className="space-y-6">
-    <h1 className="text-2xl font-bold text-foreground">Rapports</h1>
-    <div className="rounded-lg border bg-card p-8 text-center">
-      <p className="text-muted-foreground">
-        Générez des rapports d'avancement, de budget et d'exécution du PTA.
-      </p>
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, FileSpreadsheet, FileText, Calendar, Download } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { fetchReportData } from "@/lib/reportUtils";
+import { toast } from "sonner";
+
+type GeneratingState = Record<string, boolean>;
+
+const Rapports = () => {
+  const [annee, setAnnee] = useState("2026");
+  const [mois, setMois] = useState("1");
+  const [trimestre, setTrimestre] = useState("1");
+  const [generating, setGenerating] = useState<GeneratingState>({});
+  const [lastGenerated, setLastGenerated] = useState<Record<string, string>>({});
+
+  const { data: exercices = [] } = useQuery({
+    queryKey: ["exercices-rapports"],
+    queryFn: async () => {
+      const { data } = await supabase.from("exercices").select("*").order("annee");
+      return data || [];
+    },
+  });
+
+  const selectedExercice = exercices.find((e) => e.annee === parseInt(annee));
+
+  const generate = async (reportKey: string, fn: () => Promise<void>) => {
+    setGenerating((p) => ({ ...p, [reportKey]: true }));
+    try {
+      await fn();
+      setLastGenerated((p) => ({ ...p, [reportKey]: new Date().toLocaleString("fr-FR") }));
+      toast.success("Rapport généré avec succès !");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erreur lors de la génération du rapport.");
+    } finally {
+      setGenerating((p) => ({ ...p, [reportKey]: false }));
+    }
+  };
+
+  const moisOptions = [
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
+  ];
+
+  const reports = [
+    {
+      key: "pta",
+      title: "Export PTA complet",
+      desc: "Export Excel du PTA avec les 19 colonnes, formatage couleur par niveau hiérarchique.",
+      icon: FileSpreadsheet,
+      badge: "Excel",
+      badgeClass: "bg-success text-success-foreground",
+      params: null,
+      action: async () => {
+        const data = await fetchReportData(selectedExercice?.id);
+        const { exportPtaExcel } = await import("@/lib/reports/exportPtaExcel");
+        exportPtaExcel(data, parseInt(annee));
+      },
+    },
+    {
+      key: "mensuel",
+      title: "Rapport mensuel d'exécution",
+      desc: "Rapport PDF avec tableau d'avancement par activité, alertes et bloc signature.",
+      icon: FileText,
+      badge: "PDF",
+      badgeClass: "bg-destructive text-destructive-foreground",
+      params: "mois",
+      action: async () => {
+        const data = await fetchReportData(selectedExercice?.id);
+        const { exportMensuelPdf } = await import("@/lib/reports/exportMensuelPdf");
+        exportMensuelPdf(data, parseInt(annee), parseInt(mois));
+      },
+    },
+    {
+      key: "trimestriel",
+      title: "Rapport trimestriel",
+      desc: "Rapport PDF comparatif prévu vs réalisé, KPIs cadre logique et analyse des écarts.",
+      icon: FileText,
+      badge: "PDF",
+      badgeClass: "bg-destructive text-destructive-foreground",
+      params: "trimestre",
+      action: async () => {
+        const data = await fetchReportData(selectedExercice?.id);
+        const { exportTrimestrielPdf } = await import("@/lib/reports/exportTrimestrielPdf");
+        exportTrimestrielPdf(data, parseInt(annee), parseInt(trimestre));
+      },
+    },
+    {
+      key: "budget",
+      title: "Récapitulatif budgétaire",
+      desc: "Export Excel groupé par activité avec sous-totaux et total général.",
+      icon: FileSpreadsheet,
+      badge: "Excel",
+      badgeClass: "bg-success text-success-foreground",
+      params: null,
+      action: async () => {
+        const data = await fetchReportData(selectedExercice?.id);
+        const { exportBudgetExcel } = await import("@/lib/reports/exportBudgetExcel");
+        exportBudgetExcel(data, parseInt(annee));
+      },
+    },
+    {
+      key: "calendrier",
+      title: "Calendrier trimestriel",
+      desc: "Export Excel des sous-tâches avec programmation T1-T4.",
+      icon: Calendar,
+      badge: "Excel",
+      badgeClass: "bg-success text-success-foreground",
+      params: null,
+      action: async () => {
+        const data = await fetchReportData(selectedExercice?.id);
+        const { exportCalendrierExcel } = await import("@/lib/reports/exportCalendrierExcel");
+        exportCalendrierExcel(data, parseInt(annee));
+      },
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <h1 className="text-2xl font-bold text-foreground">Rapports</h1>
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium text-muted-foreground">Exercice :</label>
+          <Select value={annee} onValueChange={setAnnee}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {exercices.length > 0
+                ? exercices.map((e) => (
+                    <SelectItem key={e.id} value={String(e.annee)}>
+                      {e.annee}
+                    </SelectItem>
+                  ))
+                : [2025, 2026, 2027].map((y) => (
+                    <SelectItem key={y} value={String(y)}>
+                      {y}
+                    </SelectItem>
+                  ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {reports.map((r) => (
+          <Card key={r.key} className="flex flex-col">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <r.icon className="h-5 w-5 text-primary" />
+                <CardTitle className="text-base">{r.title}</CardTitle>
+                <Badge className={r.badgeClass}>{r.badge}</Badge>
+              </div>
+              <CardDescription className="text-xs">{r.desc}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col justify-end gap-3">
+              {r.params === "mois" && (
+                <Select value={mois} onValueChange={setMois}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Mois" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {moisOptions.map((m, i) => (
+                      <SelectItem key={i} value={String(i + 1)}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {r.params === "trimestre" && (
+                <Select value={trimestre} onValueChange={setTrimestre}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Trimestre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4].map((t) => (
+                      <SelectItem key={t} value={String(t)}>
+                        T{t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              <Button
+                onClick={() => generate(r.key, r.action)}
+                disabled={generating[r.key]}
+                className="w-full"
+              >
+                {generating[r.key] ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Génération en cours...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Générer et télécharger
+                  </>
+                )}
+              </Button>
+
+              {lastGenerated[r.key] && (
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Dernier export : {lastGenerated[r.key]}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
 export default Rapports;
