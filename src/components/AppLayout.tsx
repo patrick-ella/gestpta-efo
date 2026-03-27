@@ -1,8 +1,10 @@
+import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
+import { EfoLogo } from "@/components/ui/EfoLogo";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -13,6 +15,7 @@ interface AppLayoutProps {
 
 const AppLayout = ({ children }: AppLayoutProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
 
   useEffect(() => {
@@ -28,7 +31,11 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           <header className="h-14 flex items-center justify-between border-b bg-card px-4 print:hidden">
             <div className="flex items-center gap-2">
               <SidebarTrigger />
-              <span className="text-sm font-semibold text-foreground hidden sm:inline">
+              <button onClick={() => navigate("/")} className="flex items-center gap-1.5 hover:opacity-80 transition">
+                <EfoLogo size="xs" variant="color" />
+                <span className="text-xs font-semibold text-primary hidden sm:inline">GestPTA-EFO</span>
+              </button>
+              <span className="text-xs text-muted-foreground hidden md:inline ml-2">
                 Exercice {new Date().getFullYear()}
               </span>
             </div>
