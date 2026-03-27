@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Copy, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, ChevronRight, Copy, Loader2, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import type { PtaActivite, PtaTache } from "@/hooks/usePtaData";
 import type { Database } from "@/integrations/supabase/types";
