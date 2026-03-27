@@ -14,16 +14,379 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activites: {
+        Row: {
+          budget_total: number | null
+          code: string
+          created_at: string
+          exercice_id: string
+          id: string
+          libelle: string
+          objectif_operationnel: string | null
+          ordre: number | null
+        }
+        Insert: {
+          budget_total?: number | null
+          code: string
+          created_at?: string
+          exercice_id: string
+          id?: string
+          libelle: string
+          objectif_operationnel?: string | null
+          ordre?: number | null
+        }
+        Update: {
+          budget_total?: number | null
+          code?: string
+          created_at?: string
+          exercice_id?: string
+          id?: string
+          libelle?: string
+          objectif_operationnel?: string | null
+          ordre?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activites_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executions: {
+        Row: {
+          avancement_pct: number | null
+          date_maj: string | null
+          exercice_id: string
+          id: string
+          montant_realise: number | null
+          observations: string | null
+          sous_tache_id: string
+          statut: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          avancement_pct?: number | null
+          date_maj?: string | null
+          exercice_id: string
+          id?: string
+          montant_realise?: number | null
+          observations?: string | null
+          sous_tache_id: string
+          statut?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          avancement_pct?: number | null
+          date_maj?: string | null
+          exercice_id?: string
+          id?: string
+          montant_realise?: number | null
+          observations?: string | null
+          sous_tache_id?: string
+          statut?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executions_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executions_sous_tache_id_fkey"
+            columns: ["sous_tache_id"]
+            isOneToOne: false
+            referencedRelation: "sous_taches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercices: {
+        Row: {
+          annee: number
+          budget_total: number | null
+          created_at: string
+          date_debut: string | null
+          date_fin: string | null
+          id: string
+          statut: string | null
+        }
+        Insert: {
+          annee: number
+          budget_total?: number | null
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          id?: string
+          statut?: string | null
+        }
+        Update: {
+          annee?: number
+          budget_total?: number | null
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          id?: string
+          statut?: string | null
+        }
+        Relationships: []
+      }
+      journal_audit: {
+        Row: {
+          action: string | null
+          ancienne_valeur: Json | null
+          created_at: string
+          entite: string | null
+          id: string
+          nouvelle_valeur: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          ancienne_valeur?: Json | null
+          created_at?: string
+          entite?: string | null
+          id?: string
+          nouvelle_valeur?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          ancienne_valeur?: Json | null
+          created_at?: string
+          entite?: string | null
+          id?: string
+          nouvelle_valeur?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      livrables: {
+        Row: {
+          created_at: string
+          date_production: string | null
+          fichier_url: string | null
+          id: string
+          libelle: string
+          observations: string | null
+          produit: boolean | null
+          tache_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_production?: string | null
+          fichier_url?: string | null
+          id?: string
+          libelle: string
+          observations?: string | null
+          produit?: boolean | null
+          tache_id: string
+        }
+        Update: {
+          created_at?: string
+          date_production?: string | null
+          fichier_url?: string | null
+          id?: string
+          libelle?: string
+          observations?: string | null
+          produit?: boolean | null
+          tache_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "livrables_tache_id_fkey"
+            columns: ["tache_id"]
+            isOneToOne: false
+            referencedRelation: "taches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sous_taches: {
+        Row: {
+          budget_prevu: number | null
+          code: string
+          created_at: string
+          id: string
+          libelle: string
+          lignes_budgetaires: string | null
+          mesures_attenuation: string | null
+          mode_execution: string | null
+          ordre: number | null
+          responsable: string | null
+          ressources_humaines: string | null
+          risques: string | null
+          sources_financement: string | null
+          tache_id: string
+          trimestre_t1: boolean | null
+          trimestre_t2: boolean | null
+          trimestre_t3: boolean | null
+          trimestre_t4: boolean | null
+        }
+        Insert: {
+          budget_prevu?: number | null
+          code: string
+          created_at?: string
+          id?: string
+          libelle: string
+          lignes_budgetaires?: string | null
+          mesures_attenuation?: string | null
+          mode_execution?: string | null
+          ordre?: number | null
+          responsable?: string | null
+          ressources_humaines?: string | null
+          risques?: string | null
+          sources_financement?: string | null
+          tache_id: string
+          trimestre_t1?: boolean | null
+          trimestre_t2?: boolean | null
+          trimestre_t3?: boolean | null
+          trimestre_t4?: boolean | null
+        }
+        Update: {
+          budget_prevu?: number | null
+          code?: string
+          created_at?: string
+          id?: string
+          libelle?: string
+          lignes_budgetaires?: string | null
+          mesures_attenuation?: string | null
+          mode_execution?: string | null
+          ordre?: number | null
+          responsable?: string | null
+          ressources_humaines?: string | null
+          risques?: string | null
+          sources_financement?: string | null
+          tache_id?: string
+          trimestre_t1?: boolean | null
+          trimestre_t2?: boolean | null
+          trimestre_t3?: boolean | null
+          trimestre_t4?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sous_taches_tache_id_fkey"
+            columns: ["tache_id"]
+            isOneToOne: false
+            referencedRelation: "taches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      taches: {
+        Row: {
+          activite_id: string
+          budget_total: number | null
+          code: string
+          created_at: string
+          id: string
+          libelle: string
+          livrables: string | null
+          ordre: number | null
+        }
+        Insert: {
+          activite_id: string
+          budget_total?: number | null
+          code: string
+          created_at?: string
+          id?: string
+          libelle: string
+          livrables?: string | null
+          ordre?: number | null
+        }
+        Update: {
+          activite_id?: string
+          budget_total?: number | null
+          code?: string
+          created_at?: string
+          id?: string
+          libelle?: string
+          livrables?: string | null
+          ordre?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taches_activite_id_fkey"
+            columns: ["activite_id"]
+            isOneToOne: false
+            referencedRelation: "activites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      users_profiles: {
+        Row: {
+          actif: boolean | null
+          centre: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nom: string | null
+          prenom: string | null
+        }
+        Insert: {
+          actif?: boolean | null
+          centre?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          nom?: string | null
+          prenom?: string | null
+        }
+        Update: {
+          actif?: boolean | null
+          centre?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom?: string | null
+          prenom?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "super_admin"
+        | "admin_pta"
+        | "responsable_activite"
+        | "agent_saisie"
+        | "consultant"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +513,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "super_admin",
+        "admin_pta",
+        "responsable_activite",
+        "agent_saisie",
+        "consultant",
+      ],
+    },
   },
 } as const
