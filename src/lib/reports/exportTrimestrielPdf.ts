@@ -2,22 +2,20 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { ReportData } from "@/lib/reportUtils";
 import { fmtFCFA, fmtPct, getExecForST } from "@/lib/reportUtils";
+import { addReportHeader, addPageFooters } from "./pdfHeader";
 
-export const exportTrimestrielPdf = (data: ReportData, annee: number, trimestre: number) => {
+export const exportTrimestrielPdf = async (data: ReportData, annee: number, trimestre: number) => {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const trLabel = `T${trimestre}`;
   const trField = `trimestre_t${trimestre}` as const;
 
-  // Header
-  doc.setFontSize(16);
-  doc.setTextColor(31, 78, 121);
-  doc.text("ÉCOLE DE FORMATION EN AÉRONAUTIQUE (EFO)", 148, 15, { align: "center" });
-  doc.setFontSize(13);
-  doc.text(`RAPPORT TRIMESTRIEL D'EXÉCUTION — ${trLabel} ${annee}`, 148, 24, { align: "center" });
-  doc.line(20, 28, 277, 28);
+  let yPos = await addReportHeader(
+    doc,
+    "RAPPORT TRIMESTRIEL D'EXÉCUTION DU PTA",
+    `Exercice ${annee} — Période : ${trLabel} ${annee}`
+  );
 
   // Section 1: Comparative table
-  let yPos = 35;
   doc.setFontSize(11);
   doc.setTextColor(31, 78, 121);
   doc.text("1. Tableau comparatif prévu vs réalisé par activité", 20, yPos);
@@ -126,5 +124,6 @@ export const exportTrimestrielPdf = (data: ReportData, annee: number, trimestre:
     doc.text("Aucun écart significatif (>20%) détecté.", 22, yPos);
   }
 
+  addPageFooters(doc);
   doc.save(`Rapport_Trimestriel_${trLabel}_${annee}.pdf`);
 };
