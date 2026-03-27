@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      activite_assignments: {
+        Row: {
+          activite_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activite_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activite_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       activites: {
         Row: {
           budget_total: number | null
@@ -54,6 +75,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      app_settings: {
+        Row: {
+          admin_email: string | null
+          app_name: string | null
+          exercice_actif_id: string | null
+          id: number
+          logo_url: string | null
+          rapport_footer: string | null
+          session_duration_min: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          admin_email?: string | null
+          app_name?: string | null
+          exercice_actif_id?: string | null
+          id?: number
+          logo_url?: string | null
+          rapport_footer?: string | null
+          session_duration_min?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          admin_email?: string | null
+          app_name?: string | null
+          exercice_actif_id?: string | null
+          id?: number
+          logo_url?: string | null
+          rapport_footer?: string | null
+          session_duration_min?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       executions: {
         Row: {
