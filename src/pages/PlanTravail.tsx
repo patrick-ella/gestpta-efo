@@ -104,6 +104,7 @@ const PlanTravail = () => {
         onClose={() => setSelectedSt(null)}
         isAdmin={isAdmin}
         onUpdate={() => { refetch(); }}
+        tacheLivrables={tacheLivrables}
       />
     </div>
   );
