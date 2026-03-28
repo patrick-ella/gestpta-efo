@@ -55,7 +55,7 @@ const trimestreKeys = [
   { key: "trimestre_t4" as const, label: "T4" },
 ];
 
-const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tacheLivrables, activites = [] }: SousTacheDetailPanelProps) => {
+const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tacheLivrables, activites = [], exerciceId }: SousTacheDetailPanelProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
