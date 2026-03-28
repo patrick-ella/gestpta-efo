@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Save, Upload, Image } from "lucide-react";
 import { EfoLogo } from "@/components/ui/EfoLogo";
+import { BudgetCoherence } from "@/components/admin/BudgetCoherence";
 
 export const AdminSettings = () => {
   const qc = useQueryClient();
