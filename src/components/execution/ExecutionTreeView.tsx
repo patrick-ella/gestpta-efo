@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -247,13 +247,13 @@ const ExecutionTreeView = ({
                                   />
                                 </div>
                                 <div className="w-36 space-y-1">
-                                  <label className="text-[10px] text-muted-foreground">Montant réalisé</label>
-                                  <Input
-                                    type="number"
-                                    value={p.montant_realise || ""}
-                                    onChange={(e) => handleChange(st.id, { montant_realise: Number(e.target.value) })}
-                                    className="h-7 text-xs"
-                                  />
+                                  <label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                    Montant réalisé <Lock className="h-3 w-3" />
+                                  </label>
+                                  <div className="h-7 flex items-center text-xs text-muted-foreground bg-muted rounded px-2">
+                                    {(p.montant_realise || 0).toLocaleString("fr-FR")} F
+                                  </div>
+                                  <span className="text-[9px] text-muted-foreground">Auto-calculé</span>
                                 </div>
                                 <div className="w-32 space-y-1">
                                   <label className="text-[10px] text-muted-foreground">Statut</label>

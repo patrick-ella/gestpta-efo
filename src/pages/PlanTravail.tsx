@@ -106,6 +106,7 @@ const PlanTravail = () => {
         onUpdate={() => { refetch(); }}
         tacheLivrables={tacheLivrables}
         activites={activites}
+        exerciceId={data?.exercice?.id ?? null}
       />
     </div>
   );

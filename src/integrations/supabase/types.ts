@@ -352,6 +352,30 @@ export type Database = {
           },
         ]
       }
+      nomenclature_budgetaire: {
+        Row: {
+          actif: boolean | null
+          code: string
+          famille: string | null
+          id: string
+          libelle: string
+        }
+        Insert: {
+          actif?: boolean | null
+          code: string
+          famille?: string | null
+          id?: string
+          libelle: string
+        }
+        Update: {
+          actif?: boolean | null
+          code?: string
+          famille?: string | null
+          id?: string
+          libelle?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -381,6 +405,73 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      sous_tache_lignes_budgetaires: {
+        Row: {
+          code_ligne: string
+          created_at: string | null
+          exercice_id: string
+          id: string
+          libelle_ligne: string
+          montant_execute: number
+          montant_prevu: number
+          nomenclature_id: string
+          observations: string | null
+          sous_tache_id: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          code_ligne: string
+          created_at?: string | null
+          exercice_id: string
+          id?: string
+          libelle_ligne: string
+          montant_execute?: number
+          montant_prevu?: number
+          nomenclature_id: string
+          observations?: string | null
+          sous_tache_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          code_ligne?: string
+          created_at?: string | null
+          exercice_id?: string
+          id?: string
+          libelle_ligne?: string
+          montant_execute?: number
+          montant_prevu?: number
+          nomenclature_id?: string
+          observations?: string | null
+          sous_tache_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sous_tache_lignes_budgetaires_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sous_tache_lignes_budgetaires_nomenclature_id_fkey"
+            columns: ["nomenclature_id"]
+            isOneToOne: false
+            referencedRelation: "nomenclature_budgetaire"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sous_tache_lignes_budgetaires_sous_tache_id_fkey"
+            columns: ["sous_tache_id"]
+            isOneToOne: false
+            referencedRelation: "sous_taches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sous_taches: {
         Row: {

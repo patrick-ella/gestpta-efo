@@ -1,6 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
@@ -171,14 +170,15 @@ const ExecutionDetailPanel = ({
             </div>
 
             <div className="space-y-1">
-              <Label className="text-sm">Montant réalisé (FCFA)</Label>
-              <Input
-                type="number"
-                value={p.montant_realise || ""}
-                onChange={(e) => canEdit && onChangePending(sousTache.id, { montant_realise: Number(e.target.value) })}
-                disabled={!canEdit}
-                className="h-9"
-              />
+              <Label className="text-sm flex items-center gap-1.5">
+                Montant réalisé (FCFA) <span className="text-muted-foreground">🔒</span>
+              </Label>
+              <div className="h-9 flex items-center px-3 bg-muted rounded-md text-sm text-muted-foreground">
+                {(p.montant_realise || 0).toLocaleString("fr-FR")} FCFA
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Calculé automatiquement depuis les lignes budgétaires
+              </p>
               <p className="text-xs text-muted-foreground">
                 Taux d'exécution budgétaire : <span className="font-semibold">{tauxExec}%</span>
               </p>

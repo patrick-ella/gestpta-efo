@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { SousTacheLivrablesTab } from "@/components/livrables/SousTacheLivrablesTab";
 import BudgetImpactPreview from "@/components/pta/BudgetImpactPreview";
+import BudgetLinesTab from "@/components/budget/BudgetLinesTab";
 import EditHistory from "@/components/pta/EditHistory";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Lock, Pencil, Save } from "lucide-react";
@@ -28,6 +29,7 @@ interface SousTacheDetailPanelProps {
   onUpdate: () => void;
   tacheLivrables?: string | null;
   activites?: PtaActivite[];
+  exerciceId?: string | null;
 }
 
 const detailFields: { key: keyof SousTache; label: string; type: "text" | "number" | "textarea" }[] = [
@@ -53,7 +55,7 @@ const trimestreKeys = [
   { key: "trimestre_t4" as const, label: "T4" },
 ];
 
-const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tacheLivrables, activites = [] }: SousTacheDetailPanelProps) => {
+const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tacheLivrables, activites = [], exerciceId }: SousTacheDetailPanelProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
@@ -142,8 +144,9 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
         </SheetHeader>
 
         <Tabs defaultValue="details" className="mt-4">
-          <TabsList className="w-full grid grid-cols-3">
+          <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="details">📋 Détails</TabsTrigger>
+            <TabsTrigger value="budget-lines">💰 Lignes</TabsTrigger>
             <TabsTrigger value="livrables">📦 Livrables</TabsTrigger>
             <TabsTrigger value="risques">⚠️ Risques</TabsTrigger>
           </TabsList>
@@ -269,6 +272,20 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
                   </div>
                 )}
               </div>
+            )}
+          </TabsContent>
+
+          {/* Budget Lines tab */}
+          <TabsContent value="budget-lines" className="mt-4">
+            {exerciceId ? (
+              <BudgetLinesTab
+                sousTacheId={sousTache.id}
+                exerciceId={exerciceId}
+                budgetPrevu={sousTache.budget_prevu ?? 0}
+                canEdit={isAdmin}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground py-4">Aucun exercice actif</p>
             )}
           </TabsContent>
 
