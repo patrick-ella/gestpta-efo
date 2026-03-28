@@ -20,12 +20,6 @@ interface EfoLogoProps {
 export const EfoLogo = ({ size = "md", variant = "color", showText = false, className }: EfoLogoProps) => {
   const [error, setError] = useState(false);
 
-  const filterClass = variant === "white"
-    ? "brightness-0 invert"
-    : variant === "dark"
-      ? "brightness-0"
-      : "";
-
   if (error) {
     return (
       <div className={cn("flex items-center gap-2", className)}>
@@ -36,14 +30,18 @@ export const EfoLogo = ({ size = "md", variant = "color", showText = false, clas
     );
   }
 
+  const onDarkBg = variant === "white";
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <img
-        src={logoSrc}
-        alt="Logo de l'École de Formation en Aéronautique"
-        className={cn(SIZES[size], "w-auto object-contain", filterClass)}
-        onError={() => setError(true)}
-      />
+      <div className={cn(onDarkBg && "rounded-md bg-white/90 p-0.5")}>
+        <img
+          src={logoSrc}
+          alt="Logo de l'École de Formation en Aéronautique"
+          className={cn(SIZES[size], "w-auto object-contain")}
+          onError={() => setError(true)}
+        />
+      </div>
       {showText && (
         <span className={cn(
           "font-bold leading-tight",
