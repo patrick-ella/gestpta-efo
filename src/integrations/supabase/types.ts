@@ -559,6 +559,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_sous_tache_code: {
+        Args: { p_tache_id: string }
+        Returns: string
+      }
+      generate_tache_code: { Args: { p_activite_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
