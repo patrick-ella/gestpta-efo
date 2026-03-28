@@ -189,7 +189,15 @@ const PtaTreeView = ({ activites, isAdmin, onSelectSousTache, onRefresh }: PtaTr
                 <span className="text-xs opacity-80">
                   {act.taches.length} tâches · {totalSt} sous-tâches
                 </span>
-                <span className="text-xs font-semibold">{formatBudget(act.budget_total)} FCFA</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="flex items-center gap-1 text-xs font-semibold">
+                      <Lock className="h-3 w-3 opacity-60" />
+                      {formatBudget(act.budget_total)} FCFA
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>Budget calculé automatiquement (somme des tâches)</TooltipContent>
+                </Tooltip>
                 {isAdmin && (
                   <Tooltip>
                     <TooltipTrigger asChild>
