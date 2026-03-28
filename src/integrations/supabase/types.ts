@@ -45,6 +45,8 @@ export type Database = {
           libelle: string
           objectif_operationnel: string | null
           ordre: number | null
+          updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
           budget_total?: number | null
@@ -55,6 +57,8 @@ export type Database = {
           libelle: string
           objectif_operationnel?: string | null
           ordre?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
           budget_total?: number | null
@@ -65,6 +69,8 @@ export type Database = {
           libelle?: string
           objectif_operationnel?: string | null
           ordre?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -396,6 +402,8 @@ export type Database = {
           trimestre_t2: boolean | null
           trimestre_t3: boolean | null
           trimestre_t4: boolean | null
+          updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
           budget_prevu?: number | null
@@ -416,6 +424,8 @@ export type Database = {
           trimestre_t2?: boolean | null
           trimestre_t3?: boolean | null
           trimestre_t4?: boolean | null
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
           budget_prevu?: number | null
@@ -436,6 +446,8 @@ export type Database = {
           trimestre_t2?: boolean | null
           trimestre_t3?: boolean | null
           trimestre_t4?: boolean | null
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -457,6 +469,8 @@ export type Database = {
           libelle: string
           livrables: string | null
           ordre: number | null
+          updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
           activite_id: string
@@ -467,6 +481,8 @@ export type Database = {
           libelle: string
           livrables?: string | null
           ordre?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
           activite_id?: string
@@ -477,6 +493,8 @@ export type Database = {
           libelle?: string
           livrables?: string | null
           ordre?: number | null
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
