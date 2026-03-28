@@ -29,6 +29,7 @@ interface SousTacheDetailPanelProps {
   onUpdate: () => void;
   tacheLivrables?: string | null;
   activites?: PtaActivite[];
+  exerciceId?: string | null;
 }
 
 const detailFields: { key: keyof SousTache; label: string; type: "text" | "number" | "textarea" }[] = [
