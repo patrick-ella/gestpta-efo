@@ -182,6 +182,8 @@ export const AdminSettings = () => {
           </CardContent>
         </Card>
       </div>
+
+      <BudgetCoherence />
     </div>
   );
 };

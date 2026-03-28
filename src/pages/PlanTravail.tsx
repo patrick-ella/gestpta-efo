@@ -105,6 +105,7 @@ const PlanTravail = () => {
         isAdmin={isAdmin}
         onUpdate={() => { refetch(); }}
         tacheLivrables={tacheLivrables}
+        activites={activites}
       />
     </div>
   );
