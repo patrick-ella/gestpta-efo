@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { SousTacheLivrablesTab } from "@/components/livrables/SousTacheLivrablesTab";
 import BudgetImpactPreview from "@/components/pta/BudgetImpactPreview";
+import BudgetLinesTab from "@/components/budget/BudgetLinesTab";
 import EditHistory from "@/components/pta/EditHistory";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Lock, Pencil, Save } from "lucide-react";
