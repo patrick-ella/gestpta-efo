@@ -275,6 +275,20 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
             )}
           </TabsContent>
 
+          {/* Budget Lines tab */}
+          <TabsContent value="budget-lines" className="mt-4">
+            {exerciceId ? (
+              <BudgetLinesTab
+                sousTacheId={sousTache.id}
+                exerciceId={exerciceId}
+                budgetPrevu={sousTache.budget_prevu ?? 0}
+                canEdit={isAdmin}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground py-4">Aucun exercice actif</p>
+            )}
+          </TabsContent>
+
           {/* Livrables tab */}
           <TabsContent value="livrables" className="mt-4">
             <SousTacheLivrablesTab sousTacheId={sousTache.id} tacheId={sousTache.tache_id} tacheLivrables={tacheLivrables} />
