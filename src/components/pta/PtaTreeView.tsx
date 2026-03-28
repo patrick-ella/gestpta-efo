@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, Copy, Loader2, Package } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Loader2, Package, CheckCircle2, AlertTriangle, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -189,7 +189,15 @@ const PtaTreeView = ({ activites, isAdmin, onSelectSousTache, onRefresh }: PtaTr
                 <span className="text-xs opacity-80">
                   {act.taches.length} tâches · {totalSt} sous-tâches
                 </span>
-                <span className="text-xs font-semibold">{formatBudget(act.budget_total)} FCFA</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="flex items-center gap-1 text-xs font-semibold">
+                      <Lock className="h-3 w-3 opacity-60" />
+                      {formatBudget(act.budget_total)} FCFA
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>Budget calculé automatiquement (somme des tâches)</TooltipContent>
+                </Tooltip>
                 {isAdmin && (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -229,7 +237,30 @@ const PtaTreeView = ({ activites, isAdmin, onSelectSousTache, onRefresh }: PtaTr
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="text-xs opacity-80">{tache.sous_taches.length} sous-tâches</span>
-                      <span className="text-xs font-semibold">{formatBudget(tache.budget_total)} FCFA</span>
+                      {(() => {
+                        const stSum = tache.sous_taches.reduce((s, st) => s + (st.budget_prevu ?? 0), 0);
+                        const match = stSum === (tache.budget_total ?? 0);
+                        return (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="flex items-center gap-1 text-xs font-semibold">
+                                <Lock className="h-3 w-3 opacity-60" />
+                                {formatBudget(tache.budget_total)} FCFA
+                                {match ? (
+                                  <CheckCircle2 className="h-3 w-3 text-green-300" />
+                                ) : (
+                                  <AlertTriangle className="h-3 w-3 text-amber-300" />
+                                )}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {match
+                                ? "Budget = somme des sous-tâches ✅"
+                                : `Écart: tâche ${(tache.budget_total ?? 0).toLocaleString("fr-FR")} vs sous-tâches ${stSum.toLocaleString("fr-FR")} FCFA`}
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })()}
                     </div>
                   </div>
 
