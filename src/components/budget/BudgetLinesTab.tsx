@@ -3,31 +3,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, AlertTriangle, Lock } from "lucide-react";
+import { Trash2, Plus, AlertTriangle, Lock, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSousTacheBudgetLines, useNomenclature, useAddBudgetLines, useUpdateBudgetLine, useDeleteBudgetLine } from "@/hooks/useBudgetLines";
 import type { SousTacheLigneBudgetaire } from "@/hooks/useBudgetLines";
 import BudgetLineSelector from "./BudgetLineSelector";
+import BudgetControlBanner from "./BudgetControlBanner";
+import type { PtaActivite } from "@/hooks/usePtaData";
 
 interface Props {
   sousTacheId: string;
   exerciceId: string;
-  budgetPrevu: number;
+  budgetPrevu: number; // tache budget_total (plafond)
   canEdit: boolean;
+  tacheId?: string;
+  activites?: PtaActivite[];
 }
 
 function formatFCFA(val: number): string {
   return val.toLocaleString("fr-FR") + " FCFA";
 }
 
-function execColor(pct: number): string {
-  if (pct > 100) return "bg-destructive";
-  if (pct >= 81) return "bg-success";
-  if (pct >= 61) return "bg-warning";
-  return "bg-destructive";
-}
-
-const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit }: Props) => {
+const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit, tacheId, activites = [] }: Props) => {
   const { toast } = useToast();
   const { data: lines = [], isLoading } = useSousTacheBudgetLines(sousTacheId, exerciceId);
   const { data: nomenclature = [] } = useNomenclature();
@@ -41,10 +38,6 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit }: Props
 
   const totalPrevu = useMemo(() => lines.reduce((s, l) => s + l.montant_prevu, 0), [lines]);
   const totalExecute = useMemo(() => lines.reduce((s, l) => s + l.montant_execute, 0), [lines]);
-  const tauxAlloue = budgetPrevu > 0 ? Math.round((totalPrevu / budgetPrevu) * 100) : 0;
-  const tauxExecute = budgetPrevu > 0 ? Math.round((totalExecute / budgetPrevu) * 100 * 10) / 10 : 0;
-  const disponible = budgetPrevu - totalPrevu;
-  const overAllocated = totalPrevu > budgetPrevu;
 
   const handleAddLines = useCallback(async (selected: { id: string; code: string; libelle: string }[]) => {
     const payload = selected.map((n) => ({
@@ -71,10 +64,18 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit }: Props
   }, [updateMutation]);
 
   const handleDelete = useCallback(async (line: SousTacheLigneBudgetaire) => {
-    if (!confirm(`Supprimer la ligne ${line.code_ligne} ? Le montant exécuté (${formatFCFA(line.montant_execute)}) sera perdu.`)) return;
+    if (line.montant_execute > 0) {
+      toast({
+        title: "🚫 Suppression impossible",
+        description: `Cette ligne a déjà ${formatFCFA(line.montant_execute)} réalisés. Remettez le montant réalisé à 0 avant de supprimer.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!confirm(`Supprimer la ligne [${line.code_ligne}] ?\nMontant prévu : ${formatFCFA(line.montant_prevu)}\nCette action libèrera ce montant dans le solde disponible de la tâche.`)) return;
     try {
       await deleteMutation.mutateAsync(line.id);
-      toast({ title: "Ligne budgétaire supprimée" });
+      toast({ title: `🗑 Ligne [${line.code_ligne}] supprimée — Budget sous-tâche mis à jour` });
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
     }
@@ -88,34 +89,16 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit }: Props
         Répartissez le budget de la sous-tâche entre les lignes budgétaires officielles
       </div>
 
-      {/* Summary bar */}
-      <div className="rounded-lg border p-3 space-y-2 bg-muted/20">
-        <div className="flex justify-between text-sm">
-          <span className="font-medium">Budget total : {formatFCFA(budgetPrevu)}</span>
-          {overAllocated && (
-            <Badge variant="destructive" className="gap-1">
-              <AlertTriangle className="h-3 w-3" /> Dépassement
-            </Badge>
-          )}
-        </div>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-16 text-muted-foreground">Alloué</span>
-            <Progress value={Math.min(tauxAlloue, 100)} className="flex-1 h-2" />
-            <span className={`font-medium ${overAllocated ? "text-destructive" : "text-foreground"}`}>
-              {formatFCFA(totalPrevu)} ({tauxAlloue}%)
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-16 text-muted-foreground">Exécuté</span>
-            <Progress value={Math.min(tauxExecute, 100)} className="flex-1 h-2" />
-            <span className="font-medium text-foreground">{formatFCFA(totalExecute)} ({tauxExecute}%)</span>
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Disponible : <span className={`font-semibold ${disponible < 0 ? "text-destructive" : "text-foreground"}`}>{formatFCFA(disponible)}</span>
-        </p>
-      </div>
+      {/* Budget control banner */}
+      {tacheId && (
+        <BudgetControlBanner
+          tacheId={tacheId}
+          sousTacheId={sousTacheId}
+          exerciceId={exerciceId}
+          currentStTotal={totalPrevu}
+          activites={activites}
+        />
+      )}
 
       {/* Lines list */}
       {lines.length === 0 ? (
@@ -137,7 +120,9 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit }: Props
                     <p className="text-sm font-medium text-foreground leading-tight">{line.libelle_ligne}</p>
                   </div>
                   {canEdit && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDelete(line)}>
+                    <Button variant="ghost" size="icon"
+                      className={`h-7 w-7 ${line.montant_execute > 0 ? "text-muted-foreground opacity-50" : "text-destructive hover:text-destructive"}`}
+                      onClick={() => handleDelete(line)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   )}
@@ -174,7 +159,7 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit }: Props
                   <div className="space-y-1">
                     <label className="text-[10px] text-muted-foreground">Taux exec.</label>
                     <div className="flex items-center gap-1.5">
-                      <Progress value={Math.min(lineTaux, 100)} className={`flex-1 h-2 ${execColor(lineTaux)}`} />
+                      <Progress value={Math.min(lineTaux, 100)} className="flex-1 h-2" />
                       <span className="text-xs font-medium">{lineTaux}%</span>
                       {overExec && <AlertTriangle className="h-3 w-3 text-destructive" />}
                     </div>
@@ -197,7 +182,7 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit }: Props
               </div>
               <div>
                 <p className="text-[10px] text-muted-foreground">TAUX GLOBAL</p>
-                <p>{tauxExecute}%</p>
+                <p>{totalPrevu > 0 ? Math.round((totalExecute / totalPrevu) * 1000) / 10 : 0}%</p>
               </div>
             </div>
           </div>
@@ -209,13 +194,6 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit }: Props
         <Button variant="outline" className="w-full border-dashed" onClick={() => setSelectorOpen(true)}>
           <Plus className="h-4 w-4 mr-2" /> Ajouter une ligne budgétaire
         </Button>
-      )}
-
-      {overAllocated && (
-        <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 rounded-md p-2">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          La ventilation ({formatFCFA(totalPrevu)}) dépasse le budget prévu ({formatFCFA(budgetPrevu)}). Écart : {formatFCFA(totalPrevu - budgetPrevu)}
-        </div>
       )}
 
       <BudgetLineSelector
