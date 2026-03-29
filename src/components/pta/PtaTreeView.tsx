@@ -284,6 +284,7 @@ const PtaTreeView = ({ activites, isAdmin, onSelectSousTache, onRefresh }: PtaTr
 
                   {isEditingTache && (
                     <InlineEditTache id={tache.id} code={tache.code} libelle={tache.libelle} livrables={tache.livrables}
+                      budgetTotal={tache.budget_total ?? 0}
                       onSaved={() => { setEditingTacheId(null); onRefresh(); }} onCancel={() => setEditingTacheId(null)} />
                   )}
 

@@ -130,7 +130,29 @@ const Rapports = () => {
         exportCalendrierExcel(data, parseInt(annee));
       },
     },
+    {
+      key: "budget-livrables",
+      title: "Rapport budgétaire et livrables",
+      desc: "Rapport par Activité/Tâche avec lignes budgétaires consolidées et livrables.",
+      icon: FileText,
+      badge: "PDF / Excel",
+      badgeClass: "bg-primary text-primary-foreground",
+      params: "budget-livrables",
+      action: async () => {
+        if (!selectedExercice) return;
+        const filterId = activiteFilter !== "all" ? activiteFilter : undefined;
+        const { exportBudgetLivrablesPdf } = await import("@/lib/reports/exportBudgetLivrablesPdf");
+        await exportBudgetLivrablesPdf(parseInt(annee), selectedExercice.id, filterId);
+      },
+    },
   ];
+
+  const handleBudgetLivrablesExcel = async () => {
+    if (!selectedExercice) return;
+    const filterId = activiteFilter !== "all" ? activiteFilter : undefined;
+    const { exportBudgetLivrablesExcel } = await import("@/lib/reports/exportBudgetLivrablesExcel");
+    await exportBudgetLivrablesExcel(parseInt(annee), selectedExercice.id, filterId);
+  };
 
   return (
     <div className="space-y-6">
