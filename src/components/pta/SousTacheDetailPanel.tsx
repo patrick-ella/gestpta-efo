@@ -10,12 +10,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { SousTacheLivrablesTab } from "@/components/livrables/SousTacheLivrablesTab";
-import BudgetImpactPreview from "@/components/pta/BudgetImpactPreview";
 import BudgetLinesTab from "@/components/budget/BudgetLinesTab";
 import EditHistory from "@/components/pta/EditHistory";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Lock, Pencil, Save } from "lucide-react";
+import { Lock, Pencil, Save, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useSousTacheBudgetLines } from "@/hooks/useBudgetLines";
 import type { Database } from "@/integrations/supabase/types";
 import type { PtaActivite } from "@/hooks/usePtaData";
 
@@ -32,11 +32,10 @@ interface SousTacheDetailPanelProps {
   exerciceId?: string | null;
 }
 
+// Removed "budget_prevu" and "lignes_budgetaires" from editable fields
 const detailFields: { key: keyof SousTache; label: string; type: "text" | "number" | "textarea" }[] = [
   { key: "code", label: "Code", type: "text" },
   { key: "libelle", label: "Libellé", type: "text" },
-  { key: "budget_prevu", label: "Budget prévu (FCFA)", type: "number" },
-  { key: "lignes_budgetaires", label: "Lignes budgétaires", type: "text" },
   { key: "mode_execution", label: "Mode d'exécution", type: "text" },
   { key: "sources_financement", label: "Sources de financement", type: "text" },
   { key: "responsable", label: "Responsable", type: "text" },
@@ -63,8 +62,17 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
   const [libelleValue, setLibelleValue] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [formData, setFormData] = useState<Partial<SousTache>>({});
+  const [activeTab, setActiveTab] = useState("details");
 
-  const originalBudget = sousTache?.budget_prevu ?? 0;
+  const { data: budgetLines = [] } = useSousTacheBudgetLines(
+    sousTache?.id ?? null,
+    exerciceId ?? null
+  );
+
+  const computedBudget = useMemo(
+    () => budgetLines.reduce((s, l) => s + l.montant_prevu, 0),
+    [budgetLines]
+  );
 
   const startEdit = () => {
     if (sousTache) setFormData({ ...sousTache });
@@ -106,7 +114,7 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
 
   const handleSave = async () => {
     if (!sousTache) return;
-    const { id, created_at, tache_id, ...rest } = formData as SousTache;
+    const { id, created_at, tache_id, budget_prevu, lignes_budgetaires, ...rest } = formData as SousTache;
     const { error } = await supabase.from("sous_taches").update(rest).eq("id", sousTache.id);
     if (error) {
       toast({ title: "Erreur", description: "Impossible de sauvegarder.", variant: "destructive" });
@@ -143,10 +151,10 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
           </SheetTitle>
         </SheetHeader>
 
-        <Tabs defaultValue="details" className="mt-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
           <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="details">📋 Détails</TabsTrigger>
-            <TabsTrigger value="budget-lines">💰 Lignes</TabsTrigger>
+            <TabsTrigger value="budget-lines">💰 Budget</TabsTrigger>
             <TabsTrigger value="livrables">📦 Livrables</TabsTrigger>
             <TabsTrigger value="risques">⚠️ Risques</TabsTrigger>
           </TabsList>
@@ -178,12 +186,6 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
                     }} />
                   {libelleError && <p className="text-xs text-destructive">{libelleError}</p>}
                 </div>
-                <div className="text-xs text-muted-foreground space-y-1 bg-muted/30 rounded p-2">
-                  <div className="flex items-center gap-1"><Lock className="h-3 w-3" /> Champs non modifiables ici</div>
-                  <p>Code : {sousTache.code} 🔒</p>
-                  <p>Budget prévu : {(sousTache.budget_prevu ?? 0).toLocaleString("fr-FR")} FCFA 🔒</p>
-                  <p className="italic">Ces champs sont gérés dans l'onglet Exécution</p>
-                </div>
                 <EditHistory entite="sous_tache" code={sousTache.code} />
                 <div className="flex justify-end gap-2 pt-2 border-t">
                   <Button variant="outline" size="sm" onClick={cancelEditLibelle}>✕ Annuler</Button>
@@ -193,6 +195,37 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
                 </div>
               </div>
             ) : null}
+
+            {/* Read-only budget field */}
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm text-muted-foreground flex items-center gap-1.5">
+                  💰 Budget prévu
+                </Label>
+                <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <p className="text-lg font-bold" style={{ color: "hsl(var(--primary))" }}>
+                {computedBudget.toLocaleString("fr-FR")} FCFA
+              </p>
+              {budgetLines.length === 0 ? (
+                <div className="text-xs text-muted-foreground space-y-0.5">
+                  <p className="flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                    Aucune ligne budgétaire définie.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab("budget-lines")}
+                    className="text-primary underline hover:no-underline text-xs"
+                  >
+                    → Allez dans l'onglet 💰 Budget pour saisir les lignes et le budget.
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic">
+                  Calculé depuis {budgetLines.length} ligne(s) budgétaire(s)
+                </p>
+              )}
+            </div>
 
             {detailFields.map(({ key, label, type }) => (
               <div key={key} className="space-y-1">
@@ -205,22 +238,15 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
                     className="text-sm"
                   />
                 ) : (
-                  <p className="text-sm font-medium text-foreground">
-                    {key === "budget_prevu" && data[key] ? `${Number(data[key]).toLocaleString("fr-FR")} FCFA` : String(data[key] ?? "—")}
-                  </p>
+                  <p className="text-sm font-medium text-foreground">{String(data[key] ?? "—")}</p>
                 )}
               </div>
             ))}
 
-            {editing && (
-              <BudgetImpactPreview sousTacheId={sousTache.id} tacheId={sousTache.tache_id}
-                originalBudget={originalBudget} newBudget={Number(formData.budget_prevu ?? 0)} activites={activites} />
-            )}
-
             {parentInfo && (
               <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                  <Lock className="h-3 w-3" /> Budgets calculés automatiquement
+                  <Lock className="h-3 w-3" /> Budgets hiérarchiques
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <Tooltip><TooltipTrigger asChild>
@@ -229,14 +255,14 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
                       <span className="text-muted-foreground">Tâche {parentInfo.tacheCode} :</span>
                       <span className="font-semibold text-foreground ml-auto">{parentInfo.tacheBudget.toLocaleString("fr-FR")} F</span>
                     </div>
-                  </TooltipTrigger><TooltipContent>Ce budget est la somme des budgets de ses sous-tâches</TooltipContent></Tooltip>
+                  </TooltipTrigger><TooltipContent>Plafond budgétaire de la tâche (modifiable par les admins)</TooltipContent></Tooltip>
                   <Tooltip><TooltipTrigger asChild>
                     <div className="flex items-center gap-1 bg-muted rounded px-2 py-1.5">
                       <Lock className="h-3 w-3 text-muted-foreground" />
                       <span className="text-muted-foreground">Activité {parentInfo.actCode} :</span>
                       <span className="font-semibold text-foreground ml-auto">{parentInfo.actBudget.toLocaleString("fr-FR")} F</span>
                     </div>
-                  </TooltipTrigger><TooltipContent>Ce budget est la somme des budgets de ses tâches</TooltipContent></Tooltip>
+                  </TooltipTrigger><TooltipContent>Budget auto-calculé (somme des tâches)</TooltipContent></Tooltip>
                 </div>
               </div>
             )}
@@ -281,8 +307,10 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
               <BudgetLinesTab
                 sousTacheId={sousTache.id}
                 exerciceId={exerciceId}
-                budgetPrevu={sousTache.budget_prevu ?? 0}
+                budgetPrevu={parentInfo?.tacheBudget ?? 0}
                 canEdit={isAdmin}
+                tacheId={sousTache.tache_id}
+                activites={activites}
               />
             ) : (
               <p className="text-sm text-muted-foreground py-4">Aucun exercice actif</p>

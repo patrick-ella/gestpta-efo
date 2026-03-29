@@ -15,24 +15,46 @@ interface Props {
   code: string;
   libelle: string;
   livrables: string | null;
+  budgetTotal: number;
   onSaved: () => void;
   onCancel: () => void;
 }
 
-const InlineEditTache = ({ id, code, libelle, livrables, onSaved, onCancel }: Props) => {
+const InlineEditTache = ({ id, code, libelle, livrables, budgetTotal, onSaved, onCancel }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [lib, setLib] = useState(libelle);
   const [livr, setLivr] = useState(livrables ?? "");
+  const [budget, setBudget] = useState(budgetTotal);
   const [saving, setSaving] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [minBudget, setMinBudget] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
-  const hasChanges = lib !== libelle || livr !== (livrables ?? "");
+  // Fetch minimum allowed budget (sum of all ST lines for this tache)
+  useEffect(() => {
+    const fetchMin = async () => {
+      const { data: sts } = await supabase.from("sous_taches").select("id").eq("tache_id", id);
+      if (!sts || sts.length === 0) { setMinBudget(0); return; }
+      const stIds = sts.map(s => s.id);
+      const { data: lines } = await supabase
+        .from("sous_tache_lignes_budgetaires")
+        .select("montant_prevu")
+        .in("sous_tache_id", stIds);
+      const total = (lines ?? []).reduce((s, l) => s + (l.montant_prevu ?? 0), 0);
+      setMinBudget(total);
+    };
+    fetchMin();
+  }, [id]);
+
+  const hasChanges = lib !== libelle || livr !== (livrables ?? "") || budget !== budgetTotal;
   const libError = lib.trim().length < 5 ? "Minimum 5 caractères requis" : lib.length > 300 ? "Maximum 300 caractères" : null;
-  const canSave = !libError && hasChanges;
+  const budgetError = budget < minBudget
+    ? `⛔ Le plafond saisi (${budget.toLocaleString("fr-FR")} FCFA) est inférieur au total déjà ventilé sur les sous-tâches (${minBudget.toLocaleString("fr-FR")} FCFA).`
+    : null;
+  const canSave = !libError && !budgetError && hasChanges && budget >= 0;
 
   const handleCancel = () => {
     if (hasChanges) { setShowConfirm(true); } else { onCancel(); }
@@ -42,18 +64,18 @@ const InlineEditTache = ({ id, code, libelle, livrables, onSaved, onCancel }: Pr
     if (!canSave) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from("taches").update({ libelle: lib.trim(), livrables: livr.trim() || null }).eq("id", id);
+      const { error } = await supabase.from("taches").update({
+        libelle: lib.trim(),
+        livrables: livr.trim() || null,
+        budget_total: budget,
+      }).eq("id", id);
       if (error) throw error;
       await supabase.from("journal_audit").insert({
         user_id: user!.id, action: "UPDATE", entite: "tache",
-        ancienne_valeur: { reference: code, libelle, livrables },
-        nouvelle_valeur: { reference: code, libelle: lib.trim(), livrables: livr.trim() || null },
+        ancienne_valeur: { reference: code, libelle, livrables, budget_total: budgetTotal },
+        nouvelle_valeur: { reference: code, libelle: lib.trim(), livrables: livr.trim() || null, budget_total: budget },
       });
-      if (livr !== (livrables ?? "")) {
-        toast({ title: `✅ Tâche ${code} mise à jour avec succès`, description: "ℹ️ Les livrables déjà enregistrés en base ne sont pas affectés par cette modification." });
-      } else {
-        toast({ title: `✅ Tâche ${code} mise à jour avec succès` });
-      }
+      toast({ title: `✅ Tâche ${code} mise à jour — Budget : ${budget.toLocaleString("fr-FR")} FCFA` });
       onSaved();
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
@@ -93,8 +115,29 @@ const InlineEditTache = ({ id, code, libelle, livrables, onSaved, onCancel }: Pr
           className="border-secondary" rows={4} maxLength={1001}
           placeholder="Un livrable attendu par ligne&#10;ex: Rapport mensuel validé" />
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Info className="h-3 w-3" /> Saisissez un livrable par ligne. Ces livrables seront proposés à l'import dans les sous-tâches.
+          <Info className="h-3 w-3" /> Saisissez un livrable par ligne.
         </p>
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-sm text-muted-foreground">💰 Budget prévu — plafond de la tâche (FCFA)</Label>
+        <Input
+          type="number"
+          value={budget}
+          min={0}
+          onChange={(e) => setBudget(Number(e.target.value))}
+          onKeyDown={handleKeyDown}
+          className={budgetError ? "border-destructive" : "border-secondary"}
+        />
+        {budgetError && <p className="text-xs text-destructive">{budgetError}</p>}
+        <p className="text-xs text-muted-foreground italic">
+          ℹ️ Ce montant est le plafond budgétaire. La somme des lignes prévues de ses sous-tâches ne doit pas le dépasser.
+        </p>
+        {minBudget > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Ventilé sur sous-tâches : {minBudget.toLocaleString("fr-FR")} FCFA — Valeur minimale autorisée
+          </p>
+        )}
       </div>
 
       <EditHistory entite="tache" code={code} />

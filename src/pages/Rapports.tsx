@@ -47,6 +47,18 @@ const Rapports = () => {
     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
   ];
 
+  const [activiteFilter, setActiviteFilter] = useState<string>("all");
+
+  const { data: activitesList = [] } = useQuery({
+    queryKey: ["activites-rapports", selectedExercice?.id],
+    queryFn: async () => {
+      if (!selectedExercice) return [];
+      const { data } = await supabase.from("activites").select("id, code, libelle").eq("exercice_id", selectedExercice.id).order("ordre");
+      return data || [];
+    },
+    enabled: !!selectedExercice,
+  });
+
   const reports = [
     {
       key: "pta",
@@ -118,7 +130,29 @@ const Rapports = () => {
         exportCalendrierExcel(data, parseInt(annee));
       },
     },
+    {
+      key: "budget-livrables",
+      title: "Rapport budgétaire et livrables",
+      desc: "Rapport par Activité/Tâche avec lignes budgétaires consolidées et livrables.",
+      icon: FileText,
+      badge: "PDF / Excel",
+      badgeClass: "bg-primary text-primary-foreground",
+      params: "budget-livrables",
+      action: async () => {
+        if (!selectedExercice) return;
+        const filterId = activiteFilter !== "all" ? activiteFilter : undefined;
+        const { exportBudgetLivrablesPdf } = await import("@/lib/reports/exportBudgetLivrablesPdf");
+        await exportBudgetLivrablesPdf(parseInt(annee), selectedExercice.id, filterId);
+      },
+    },
   ];
+
+  const handleBudgetLivrablesExcel = async () => {
+    if (!selectedExercice) return;
+    const filterId = activiteFilter !== "all" ? activiteFilter : undefined;
+    const { exportBudgetLivrablesExcel } = await import("@/lib/reports/exportBudgetLivrablesExcel");
+    await exportBudgetLivrablesExcel(parseInt(annee), selectedExercice.id, filterId);
+  };
 
   return (
     <div className="space-y-6">
@@ -186,6 +220,36 @@ const Rapports = () => {
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+              {r.params === "budget-livrables" && (
+                <div className="space-y-2">
+                  <Select value={activiteFilter} onValueChange={setActiviteFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Activité" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les activités</SelectItem>
+                      {activitesList.map((a: any) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.code} — {a.libelle}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    onClick={() => generate("budget-livrables-excel", handleBudgetLivrablesExcel)}
+                    disabled={generating["budget-livrables-excel"]}
+                    className="w-full text-xs"
+                    size="sm"
+                  >
+                    {generating["budget-livrables-excel"] ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Excel en cours...</>
+                    ) : (
+                      <><FileSpreadsheet className="h-3 w-3 mr-1" /> Télécharger en Excel</>
+                    )}
+                  </Button>
+                </div>
               )}
 
               <Button
