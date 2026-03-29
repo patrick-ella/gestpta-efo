@@ -16,11 +16,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const STATUT_CONFIG: Record<string, { label: string; bg: string; border: string; badgeClass: string }> = {
-  non_produit: { label: "Non produit", bg: "bg-background", border: "border-l-4 border-l-muted", badgeClass: "bg-muted text-muted-foreground" },
-  en_cours: { label: "En cours", bg: "bg-amber-50", border: "border-l-4 border-l-amber-500", badgeClass: "bg-amber-100 text-amber-800" },
-  produit: { label: "Produit", bg: "bg-green-50", border: "border-l-4 border-l-green-500", badgeClass: "bg-green-100 text-green-800" },
-  valide: { label: "Validé", bg: "bg-blue-50", border: "border-l-4 border-l-blue-500", badgeClass: "bg-blue-100 text-blue-800" },
-  rejete: { label: "Rejeté", bg: "bg-red-50", border: "border-l-4 border-l-red-500", badgeClass: "bg-red-100 text-red-800" },
+  non_produit: { label: "Non produit", bg: "bg-background dark:bg-muted", border: "border-l-4 border-l-muted dark:border-l-muted-foreground/40", badgeClass: "bg-muted text-muted-foreground" },
+  en_cours: { label: "En cours", bg: "bg-amber-50 dark:bg-[hsl(40,40%,12%)]", border: "border-l-4 border-l-amber-500", badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300" },
+  produit: { label: "Produit", bg: "bg-green-50 dark:bg-[hsl(140,30%,10%)]", border: "border-l-4 border-l-green-500", badgeClass: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300" },
+  valide: { label: "Validé", bg: "bg-blue-50 dark:bg-[hsl(220,40%,14%)]", border: "border-l-4 border-l-blue-500", badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300" },
+  rejete: { label: "Rejeté", bg: "bg-red-50 dark:bg-[hsl(0,40%,12%)]", border: "border-l-4 border-l-red-500", badgeClass: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300" },
 };
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {

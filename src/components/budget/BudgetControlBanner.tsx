@@ -64,20 +64,20 @@ const BudgetControlBanner = ({ tacheId, sousTacheId, exerciceId, currentStTotal,
   const pct = tacheBudget > 0 ? Math.round((totalVentile / tacheBudget) * 1000) / 10 : 0;
 
   const soldeRatio = tacheBudget > 0 ? solde / tacheBudget : 1;
-  let bgColor = "bg-green-50 border-green-200";
+  let bgColor = "bg-green-50 border-green-200 dark:bg-[hsl(140,30%,12%)] dark:border-green-700";
   let StatusIcon = CheckCircle2;
-  let statusColor = "text-green-600";
+  let statusColor = "text-green-600 dark:text-green-400";
   let statusLabel = "✅";
 
   if (solde < 0) {
-    bgColor = "bg-red-50 border-red-200";
+    bgColor = "bg-red-50 border-red-200 dark:bg-[hsl(0,40%,12%)] dark:border-red-700";
     StatusIcon = XCircle;
-    statusColor = "text-destructive";
+    statusColor = "text-destructive dark:text-red-400";
     statusLabel = "⛔";
   } else if (soldeRatio <= 0.1) {
-    bgColor = "bg-amber-50 border-amber-200";
+    bgColor = "bg-amber-50 border-amber-200 dark:bg-[hsl(40,40%,12%)] dark:border-amber-700";
     StatusIcon = AlertTriangle;
-    statusColor = "text-amber-600";
+    statusColor = "text-amber-600 dark:text-amber-400";
     statusLabel = solde === 0 ? "✓" : "⚠️";
   }
 
