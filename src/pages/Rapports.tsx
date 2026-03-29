@@ -47,6 +47,18 @@ const Rapports = () => {
     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
   ];
 
+  const [activiteFilter, setActiviteFilter] = useState<string>("all");
+
+  const { data: activitesList = [] } = useQuery({
+    queryKey: ["activites-rapports", selectedExercice?.id],
+    queryFn: async () => {
+      if (!selectedExercice) return [];
+      const { data } = await supabase.from("activites").select("id, code, libelle").eq("exercice_id", selectedExercice.id).order("ordre");
+      return data || [];
+    },
+    enabled: !!selectedExercice,
+  });
+
   const reports = [
     {
       key: "pta",
