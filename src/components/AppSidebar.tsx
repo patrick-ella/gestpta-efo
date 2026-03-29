@@ -53,6 +53,7 @@ export function AppSidebar() {
               </div>
             )}
           </SidebarGroupLabel>
+          <div className="mb-6" />
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
