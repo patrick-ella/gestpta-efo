@@ -221,6 +221,36 @@ const Rapports = () => {
                   </SelectContent>
                 </Select>
               )}
+              {r.params === "budget-livrables" && (
+                <div className="space-y-2">
+                  <Select value={activiteFilter} onValueChange={setActiviteFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Activité" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les activités</SelectItem>
+                      {activitesList.map((a: any) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.code} — {a.libelle}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    onClick={() => generate("budget-livrables-excel", handleBudgetLivrablesExcel)}
+                    disabled={generating["budget-livrables-excel"]}
+                    className="w-full text-xs"
+                    size="sm"
+                  >
+                    {generating["budget-livrables-excel"] ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Excel en cours...</>
+                    ) : (
+                      <><FileSpreadsheet className="h-3 w-3 mr-1" /> Télécharger en Excel</>
+                    )}
+                  </Button>
+                </div>
+              )}
 
               <Button
                 onClick={() => generate(r.key, r.action)}
