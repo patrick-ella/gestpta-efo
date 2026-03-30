@@ -232,31 +232,34 @@ const ExecutionTreeView = ({
 
                             {/* Inline edit row */}
                             {editable && (
-                              <div className="flex flex-wrap items-end gap-3 px-10 pb-2"
+                              <div className="flex flex-wrap items-start gap-3 px-10 pb-2"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <div className="w-40 space-y-1">
-                                  <label className="text-[10px] text-muted-foreground">Avancement</label>
-                                  <Slider
-                                    value={[p.avancement_pct]}
-                                    onValueChange={([v]) => handleChange(st.id, { avancement_pct: v })}
-                                    min={0}
-                                    max={100}
-                                    step={25}
-                                    className="w-full"
-                                  />
+                                  <label className="text-[10px] text-muted-foreground block h-4 leading-4 truncate">Avancement</label>
+                                  <div className="h-7 flex items-center">
+                                    <Slider
+                                      value={[p.avancement_pct]}
+                                      onValueChange={([v]) => handleChange(st.id, { avancement_pct: v })}
+                                      min={0}
+                                      max={100}
+                                      step={25}
+                                      className="w-full"
+                                    />
+                                  </div>
+                                  <div className="h-4" />
                                 </div>
                                 <div className="w-36 space-y-1">
-                                  <label className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <label className="text-[10px] text-muted-foreground flex items-center gap-1 h-4 leading-4">
                                     Montant réalisé <Lock className="h-3 w-3" />
                                   </label>
                                   <div className="h-7 flex items-center text-xs text-muted-foreground bg-muted rounded px-2">
                                     {(p.montant_realise || 0).toLocaleString("fr-FR")} F
                                   </div>
-                                  <span className="text-[9px] text-muted-foreground">Auto-calculé</span>
+                                  <span className="text-[9px] text-muted-foreground block h-4 leading-4">Auto-calculé</span>
                                 </div>
                                 <div className="w-32 space-y-1">
-                                  <label className="text-[10px] text-muted-foreground">Statut</label>
+                                  <label className="text-[10px] text-muted-foreground block h-4 leading-4">Statut</label>
                                   <Select value={p.statut} onValueChange={(v) => handleChange(st.id, { statut: v })}>
                                     <SelectTrigger className="h-7 text-xs">
                                       <SelectValue />
@@ -267,25 +270,31 @@ const ExecutionTreeView = ({
                                       ))}
                                     </SelectContent>
                                   </Select>
+                                  <div className="h-4" />
                                 </div>
                                 <div className="flex-1 min-w-[160px] space-y-1">
-                                  <label className="text-[10px] text-muted-foreground">Observations</label>
+                                  <label className="text-[10px] text-muted-foreground block h-4 leading-4">Observations</label>
                                   <Textarea
                                     value={p.observations}
                                     onChange={(e) => handleChange(st.id, { observations: e.target.value })}
                                     rows={1}
-                                    className="text-xs min-h-[28px] resize-none"
+                                    className="text-xs min-h-[28px] h-7 resize-none"
                                   />
+                                  <div className="h-4" />
                                 </div>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs"
-                                  onClick={() => onSaveSingle(st.id)}
-                                  disabled={!hasPending}
-                                >
-                                  Sauvegarder
-                                </Button>
+                                <div className="space-y-1">
+                                  <div className="h-4" />
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs"
+                                    onClick={() => onSaveSingle(st.id)}
+                                    disabled={!hasPending}
+                                  >
+                                    Sauvegarder
+                                  </Button>
+                                  <div className="h-4" />
+                                </div>
                               </div>
                             )}
                           </div>
