@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { Loader2 } from "lucide-react";
-import StrategicHeader from "@/components/cadre-logique/StrategicHeader";
 import KpiCards from "@/components/cadre-logique/KpiCards";
 import TriennalTable from "@/components/cadre-logique/TriennalTable";
 import ActivitiesSummary from "@/components/cadre-logique/ActivitiesSummary";
@@ -34,7 +33,6 @@ const CadreLogique = () => {
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold text-foreground">Cadre Logique</h1>
-      <StrategicHeader />
       <KpiCards kpis={kpis} isAdmin={isAdmin} onUpdate={() => refetch()} />
       <TriennalTable kpis={kpis} />
       <ActivitiesSummary />

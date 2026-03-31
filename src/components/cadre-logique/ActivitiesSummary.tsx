@@ -5,21 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
-const defaultActivities = [
-  { code: "30203001", libelle: "Formation initiale des pilotes et contrôleurs", objectif: "Former les apprenants aux métiers de l'aéronautique" },
-  { code: "30203002", libelle: "Formation continue et perfectionnement", objectif: "Renforcer les compétences des professionnels en activité" },
-  { code: "30203003", libelle: "Développement des curricula et certifications", objectif: "Mettre à jour les programmes de formation" },
-  { code: "30203004", libelle: "Renforcement des infrastructures pédagogiques", objectif: "Moderniser les équipements et simulateurs" },
-  { code: "30203005", libelle: "Partenariats et accréditations internationales", objectif: "Obtenir et maintenir les reconnaissances OACI" },
-];
-
 const ActivitiesSummary = () => {
-  const { data: activites, isLoading } = useQuery({
+  const { data: activitesRaw, isLoading } = useQuery({
     queryKey: ["activites-summary"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("activites")
-        .select("id, code, libelle, objectif_operationnel, budget_total")
+        .select("id, code, libelle, objectif_operationnel, budget_total, ordre")
         .order("ordre");
       if (error) throw error;
       return data;
@@ -37,20 +29,57 @@ const ActivitiesSummary = () => {
     },
   });
 
-  const displayActivities = activites && activites.length > 0
-    ? activites.map((a) => ({
-        code: a.code,
-        libelle: a.libelle,
-        objectif: a.objectif_operationnel ?? "",
-        budget: a.budget_total ?? 0,
-      }))
-    : defaultActivities.map((a) => ({ ...a, budget: 0 }));
+  const { data: sousTachesRaw } = useQuery({
+    queryKey: ["sous-taches-for-activities"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sous_taches")
+        .select("id, tache_id");
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  const globalAvg = executions && executions.length > 0
-    ? Math.round(executions.reduce((s, e) => s + (e.avancement_pct ?? 0), 0) / executions.length)
-    : 0;
+  const { data: tachesRaw } = useQuery({
+    queryKey: ["taches-for-activities"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("taches")
+        .select("id, activite_id");
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  const totalRealized = executions?.reduce((s, e) => s + (e.montant_realise ?? 0), 0) ?? 0;
+  // Deduplicate activities by id
+  const uniqueActivites = activitesRaw
+    ? Array.from(new Map(activitesRaw.map(a => [a.id, a])).values())
+        .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0))
+    : [];
+
+  if (uniqueActivites.length !== 5 && uniqueActivites.length > 0) {
+    console.warn(`Expected 5 activities, got ${uniqueActivites.length}`);
+  }
+
+  // Build maps for per-activity stats
+  const tacheToActivite: Record<string, string> = {};
+  (tachesRaw ?? []).forEach(t => { tacheToActivite[t.id] = t.activite_id; });
+
+  const stToActivite: Record<string, string> = {};
+  (sousTachesRaw ?? []).forEach(st => {
+    const actId = tacheToActivite[st.tache_id];
+    if (actId) stToActivite[st.id] = actId;
+  });
+
+  // Compute per-activity stats
+  const activityStats: Record<string, { totalRealized: number; pcts: number[] }> = {};
+  (executions ?? []).forEach(e => {
+    const actId = stToActivite[e.sous_tache_id];
+    if (!actId) return;
+    if (!activityStats[actId]) activityStats[actId] = { totalRealized: 0, pcts: [] };
+    activityStats[actId].totalRealized += (e.montant_realise ?? 0);
+    activityStats[actId].pcts.push(e.avancement_pct ?? 0);
+  });
 
   if (isLoading) {
     return (
@@ -59,6 +88,10 @@ const ActivitiesSummary = () => {
       </div>
     );
   }
+
+  const globalAvg = executions && executions.length > 0
+    ? Math.round(executions.reduce((s, e) => s + (e.avancement_pct ?? 0), 0) / executions.length)
+    : 0;
 
   return (
     <div className="space-y-3">
@@ -71,38 +104,56 @@ const ActivitiesSummary = () => {
         </Badge>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {displayActivities.slice(0, 5).map((act, i) => (
-          <Card key={i}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-secondary text-secondary-foreground text-xs">
-                  {act.code}
-                </Badge>
-              </div>
-              <CardTitle className="text-sm font-semibold text-foreground leading-tight mt-1">
-                {act.libelle}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-xs text-muted-foreground line-clamp-2">
-                {act.objectif || "Objectif opérationnel non défini"}
-              </p>
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Avancement</span>
-                  <span>{globalAvg}%</span>
+        {uniqueActivites.map((act) => {
+          const stats = activityStats[act.id];
+          const actAvg = stats && stats.pcts.length > 0
+            ? Math.round(stats.pcts.reduce((a, b) => a + b, 0) / stats.pcts.length)
+            : 0;
+          const actRealized = stats?.totalRealized ?? 0;
+          const budgetExecPct = (act.budget_total ?? 0) > 0
+            ? Math.round((actRealized / (act.budget_total ?? 1)) * 100)
+            : 0;
+
+          return (
+            <Card key={act.id}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-secondary text-secondary-foreground text-xs">
+                    {act.code}
+                  </Badge>
                 </div>
-                <Progress value={globalAvg} className="h-1.5" />
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Budget consommé</span>
-                <span className="font-medium text-foreground">
-                  {totalRealized > 0 ? `${(totalRealized / 1000000).toFixed(1)}M` : "0"} / {act.budget > 0 ? `${(act.budget / 1000000).toFixed(1)}M` : "—"}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <CardTitle className="text-sm font-semibold text-foreground leading-tight mt-1">
+                  {act.libelle}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {act.objectif_operationnel || "Objectif opérationnel non défini"}
+                </p>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Avancement physique</span>
+                    <span>{actAvg}%</span>
+                  </div>
+                  <Progress value={actAvg} className="h-1.5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Exécution budgétaire</span>
+                    <span>{budgetExecPct}%</span>
+                  </div>
+                  <Progress value={budgetExecPct} className="h-1.5" />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Budget</span>
+                  <span className="font-medium text-foreground">
+                    {actRealized > 0 ? `${(actRealized / 1000000).toFixed(1)}M` : "0"} / {(act.budget_total ?? 0) > 0 ? `${((act.budget_total ?? 0) / 1000000).toFixed(1)}M` : "—"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

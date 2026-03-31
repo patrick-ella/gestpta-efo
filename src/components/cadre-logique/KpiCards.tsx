@@ -18,16 +18,15 @@ interface KpiCardsProps {
 }
 
 const categoryColors: Record<string, string> = {
-  "Sous-programme 3": "bg-primary text-primary-foreground",
   "Objectif Spécifique 1": "bg-secondary text-secondary-foreground",
   "Objectif Spécifique 2": "bg-accent text-accent-foreground",
 };
 
 const tooltips: Record<string, string> = {
-  "SP3-OBJ": "Mesure la conformité globale de l'EFO aux normes OACI en navigation, sûreté et SAR.",
   "OS1-IND1": "Nombre total d'apprenants ayant suivi une formation complète. Calculé automatiquement depuis les exécutions.",
-  "OS2-IND1": "Niveau d'accréditation OACI TRAINAIR PLUS et certification Centre AVSEC.",
-  "OS2-IND2": "Pourcentage de conformité aux normes ISO 9001/21001. Calculé depuis les audits.",
+  "OS2-IND1": "Niveau d'accréditation OACI TRAINAIR PLUS de l'EFO.",
+  "OS2-IND2": "Statut de certification Centre AVSEC OACI de l'EFO.",
+  "OS2-IND3": "Pourcentage de conformité aux normes ISO 9001/21001. Calculé depuis les audits.",
 };
 
 function parseNumeric(val: string | null): number | null {
@@ -37,6 +36,10 @@ function parseNumeric(val: string | null): number | null {
   return isNaN(num) ? null : num;
 }
 
+function isTextBasedKpi(code: string): boolean {
+  return code === "OS2-IND1" || code === "OS2-IND2";
+}
+
 function getProgressPct(realized: string | null, target: string | null): number | null {
   const r = parseNumeric(realized);
   const t = parseNumeric(target);
@@ -44,8 +47,13 @@ function getProgressPct(realized: string | null, target: string | null): number 
   return Math.min(Math.round((r / t) * 100), 100);
 }
 
-function getStatus(realized: string | null, target: string | null): "atteint" | "en_cours" | "non_atteint" {
-  const pct = getProgressPct(realized, target);
+function getStatus(kpi: KPI, target: string | null): "atteint" | "en_cours" | "non_atteint" {
+  if (isTextBasedKpi(kpi.code)) {
+    if (!kpi.valeur_realisee) return "non_atteint";
+    if (kpi.valeur_realisee.trim().toLowerCase() === (target ?? "").trim().toLowerCase()) return "atteint";
+    return "en_cours";
+  }
+  const pct = getProgressPct(kpi.valeur_realisee, target);
   if (pct === null) return "en_cours";
   if (pct >= 100) return "atteint";
   if (pct >= 50) return "en_cours";
@@ -95,8 +103,9 @@ const KpiCards = ({ kpis, isAdmin, onUpdate }: KpiCardsProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {kpis.map((kpi) => {
           const target = getCurrentTarget(kpi);
-          const status = getStatus(kpi.valeur_realisee, target);
-          const pct = getProgressPct(kpi.valeur_realisee, target);
+          const status = getStatus(kpi, target);
+          const isText = isTextBasedKpi(kpi.code);
+          const pct = isText ? null : getProgressPct(kpi.valeur_realisee, target);
           const cfg = statusConfig[status];
           const StatusIcon = cfg.icon;
 
@@ -153,7 +162,7 @@ const KpiCards = ({ kpis, isAdmin, onUpdate }: KpiCardsProps) => {
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                         className="h-8 text-sm"
-                        placeholder="Valeur réalisée"
+                        placeholder={isText ? "Ex: Gold Member" : "Valeur réalisée"}
                       />
                       <button onClick={() => handleSave(kpi)} className="text-xs bg-primary text-primary-foreground px-3 rounded hover:bg-primary/90">
                         OK
@@ -163,7 +172,16 @@ const KpiCards = ({ kpis, isAdmin, onUpdate }: KpiCardsProps) => {
                       </button>
                     </div>
                   ) : (
-                    <p className="font-semibold text-foreground">{kpi.valeur_realisee ?? "Non renseigné"}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-foreground">{kpi.valeur_realisee ?? "Non renseigné"}</p>
+                      {isText && kpi.valeur_realisee && target && (
+                        <span className="text-xs">
+                          {kpi.valeur_realisee.trim().toLowerCase() === target.trim().toLowerCase()
+                            ? "✅"
+                            : "⚠️"}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -172,6 +190,12 @@ const KpiCards = ({ kpis, isAdmin, onUpdate }: KpiCardsProps) => {
                     <Progress value={pct} className="h-2" />
                     <p className="text-xs text-muted-foreground text-right">{pct}%</p>
                   </div>
+                )}
+
+                {isText && target && (
+                  <p className="text-xs text-muted-foreground">
+                    Comparaison : {kpi.valeur_realisee ?? "—"} vs Cible « {target} »
+                  </p>
                 )}
 
                 <Badge variant="outline" className={cfg.className}>
