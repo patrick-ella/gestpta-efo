@@ -4,15 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 import logoSrc from "@/assets/logo-efo.png";
 
 // ── Formatting helpers ──────────────────────────────────────
-function formatFCFA(amount: number): string {
-  return new Intl.NumberFormat("fr-FR", {
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  }).format(amount) + " FCFA";
+function formatFCFA(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined) return "0 FCFA";
+  const value = Math.round(Number(amount));
+  if (value === 0) return "0 FCFA";
+  const abs = Math.abs(value);
+  const str = abs.toString();
+  const parts: string[] = [];
+  for (let i = str.length; i > 0; i -= 3) {
+    parts.unshift(str.slice(Math.max(0, i - 3), i));
+  }
+  return (value < 0 ? "-" : "") + parts.join("\u0020") + " FCFA";
 }
 
 function formatTaux(taux: number): string {
-  return taux.toFixed(1).replace(".", ",") + " %";
+  const rounded = Math.round(taux * 10) / 10;
+  const intPart = Math.floor(rounded);
+  const decPart = Math.round((rounded - intPart) * 10);
+  return intPart.toString() + "," + decPart.toString() + " %";
 }
 
 function statutLabel(s: string): string {
