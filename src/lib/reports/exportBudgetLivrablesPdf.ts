@@ -4,15 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 import logoSrc from "@/assets/logo-efo.png";
 
 // ── Formatting helpers ──────────────────────────────────────
-function formatFCFA(amount: number): string {
-  return new Intl.NumberFormat("fr-FR", {
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  }).format(amount) + " FCFA";
+function formatFCFA(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined) return "0 FCFA";
+  const value = Math.round(Number(amount));
+  if (value === 0) return "0 FCFA";
+  const abs = Math.abs(value);
+  const str = abs.toString();
+  const parts: string[] = [];
+  for (let i = str.length; i > 0; i -= 3) {
+    parts.unshift(str.slice(Math.max(0, i - 3), i));
+  }
+  return (value < 0 ? "-" : "") + parts.join("\u0020") + " FCFA";
 }
 
 function formatTaux(taux: number): string {
-  return taux.toFixed(1).replace(".", ",") + " %";
+  const rounded = Math.round(taux * 10) / 10;
+  const intPart = Math.floor(rounded);
+  const decPart = Math.round((rounded - intPart) * 10);
+  return intPart.toString() + "," + decPart.toString() + " %";
 }
 
 function statutLabel(s: string): string {
@@ -290,15 +299,28 @@ export async function exportBudgetLivrablesPdf(
           startY: currentY,
           margin: { left: MARGIN_L, right: MARGIN_R },
           tableWidth: CONTENT_W,
-          head: [["Code", "Libellé de la ligne budgétaire", "Prévu", "Engagé", "Réalisé", "Taux %"]],
+          head: [[
+            { content: "Code", styles: { halign: "center" as const } },
+            { content: "Libellé de la ligne budgétaire", styles: { halign: "left" as const } },
+            { content: "Prévu", styles: { halign: "right" as const } },
+            { content: "Engagé", styles: { halign: "right" as const } },
+            { content: "Réalisé", styles: { halign: "right" as const } },
+            { content: "Taux %", styles: { halign: "center" as const } },
+          ]],
           body: tableBody,
-          foot: [["", `TOTAL TÂCHE ${tache.code}`, formatFCFA(tachePrevu), formatFCFA(tacheExecute), formatFCFA(tacheExecute), formatTaux(tacheTaux)]],
+          foot: [[
+            { content: "", styles: { halign: "center" as const } },
+            { content: `TOTAL TÂCHE ${tache.code}`, styles: { halign: "left" as const, fontStyle: "bold" as const } },
+            { content: formatFCFA(tachePrevu), styles: { halign: "right" as const, fontStyle: "bold" as const } },
+            { content: formatFCFA(tacheExecute), styles: { halign: "right" as const, fontStyle: "bold" as const } },
+            { content: formatFCFA(tacheExecute), styles: { halign: "right" as const, fontStyle: "bold" as const } },
+            { content: formatTaux(tacheTaux), styles: { halign: "center" as const, fontStyle: "bold" as const } },
+          ]],
           headStyles: {
             fillColor: [214, 228, 240],
             textColor: [31, 78, 121],
             fontStyle: "bold",
             fontSize: 8,
-            halign: "center",
             cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
             lineWidth: 0.2,
             lineColor: [174, 214, 241],
@@ -320,14 +342,22 @@ export async function exportBudgetLivrablesPdf(
             lineWidth: 0.2,
           },
           columnStyles: {
-            0: { halign: "right", cellWidth: 18 },
-            1: { halign: "left", cellWidth: 95 },
-            2: { halign: "right", cellWidth: 45 },
-            3: { halign: "right", cellWidth: 45 },
-            4: { halign: "right", cellWidth: 45 },
-            5: { halign: "center", cellWidth: 25 },
+            0: { halign: "center", cellWidth: 15, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 1 } },
+            1: { halign: "left", cellWidth: 81, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 2 }, overflow: "ellipsize" },
+            2: { halign: "right", cellWidth: 44, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 3 } },
+            3: { halign: "right", cellWidth: 44, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 3 } },
+            4: { halign: "right", cellWidth: 44, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 3 } },
+            5: { halign: "center", cellWidth: 45, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 1 } },
           },
           didParseCell: (data) => {
+            // Truncate long libellés
+            if (data.column.index === 1 && data.section === "body") {
+              const text = String(data.cell.raw);
+              if (text.length > 45) {
+                data.cell.text = [text.substring(0, 42) + "..."];
+              }
+            }
+            // Color taux column
             if (data.column.index === 5 && data.section === "body") {
               const raw = String(data.cell.raw).replace(",", ".").replace(" %", "");
               const taux = parseFloat(raw);
@@ -337,6 +367,12 @@ export async function exportBudgetLivrablesPdf(
               else if (taux < 100) data.cell.styles.textColor = [34, 197, 94];
               else if (taux === 100) { data.cell.styles.textColor = [21, 128, 61]; data.cell.styles.fontStyle = "bold"; }
               else { data.cell.styles.textColor = [153, 27, 27]; data.cell.styles.fontStyle = "bold"; }
+            }
+          },
+          willDrawCell: (data) => {
+            // Force right-align on amount columns in all sections
+            if ([2, 3, 4].includes(data.column.index)) {
+              data.cell.styles.halign = "right";
             }
           },
           showFoot: "lastPage",
@@ -506,10 +542,15 @@ export async function exportBudgetLivrablesPdf(
     columnStyles: {
       0: { cellWidth: 40 },
       1: { cellWidth: 73 },
-      2: { halign: "right", cellWidth: 45 },
-      3: { halign: "right", cellWidth: 43 },
-      4: { halign: "right", cellWidth: 43 },
+      2: { halign: "right", cellWidth: 45, cellPadding: { top: 2, bottom: 2, left: 1, right: 3 } },
+      3: { halign: "right", cellWidth: 43, cellPadding: { top: 2, bottom: 2, left: 1, right: 3 } },
+      4: { halign: "right", cellWidth: 43, cellPadding: { top: 2, bottom: 2, left: 1, right: 3 } },
       5: { halign: "center", cellWidth: 29 },
+    },
+    willDrawCell: (data) => {
+      if ([2, 3, 4].includes(data.column.index)) {
+        data.cell.styles.halign = "right";
+      }
     },
     didParseCell: (data) => {
       if (data.row.index === summaryBody.length && data.section === "body") {
