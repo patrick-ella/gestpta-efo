@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback } from "react";
-import { ChevronDown, ChevronRight, Lock } from "lucide-react";
+import { ChevronDown, ChevronRight, Lock, Lightbulb } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -15,6 +14,14 @@ import { Button } from "@/components/ui/button";
 import type { PtaActivite, PtaTache } from "@/hooks/usePtaData";
 import type { ExecutionMap } from "@/hooks/useExecutionData";
 import type { Database } from "@/integrations/supabase/types";
+import {
+  getPalierLabel,
+  getPalierColor,
+  getAutoStatut,
+  computeSuggestion,
+  checkAvancementRules,
+  type AvancementBlockResult,
+} from "@/hooks/useAvancementRules";
 
 type SousTache = Database["public"]["Tables"]["sous_taches"]["Row"];
 
@@ -23,6 +30,7 @@ export interface PendingChange {
   montant_realise: number;
   statut: string;
   observations: string;
+  _statusAutoSet?: boolean;
 }
 
 interface Props {
@@ -33,6 +41,8 @@ interface Props {
   onSaveSingle: (stId: string) => void;
   onSelectSousTache: (st: SousTache, tache: PtaTache, act: PtaActivite) => void;
   canEditSt: (st: SousTache) => boolean;
+  livrablesMap: Record<string, { statut: string | null }[]>;
+  onAvancementBlock?: (result: AvancementBlockResult, stId: string, newPct: number) => void;
 }
 
 function formatBudget(val: number | null): string {
@@ -56,14 +66,6 @@ const statutColors: Record<string, string> = {
   annule: "bg-destructive/10 text-destructive",
 };
 
-function pctColor(pct: number): string {
-  if (pct === 0) return "bg-muted text-muted-foreground";
-  if (pct < 50) return "bg-warning text-warning-foreground";
-  if (pct < 75) return "bg-warning/60 text-warning-foreground";
-  if (pct < 100) return "bg-success/70 text-success-foreground";
-  return "bg-success text-success-foreground";
-}
-
 function computeAvg(values: number[]): number {
   if (values.length === 0) return 0;
   return Math.round(values.reduce((s, v) => s + v, 0) / values.length);
@@ -77,6 +79,8 @@ const ExecutionTreeView = ({
   onSaveSingle,
   onSelectSousTache,
   canEditSt,
+  livrablesMap,
+  onAvancementBlock,
 }: Props) => {
   const [expandedActs, setExpandedActs] = useState<Set<string>>(new Set());
   const [expandedTaches, setExpandedTaches] = useState<Set<string>>(new Set());
@@ -101,7 +105,6 @@ const ExecutionTreeView = ({
   const handleChange = useCallback(
     (stId: string, change: Partial<PendingChange>) => {
       onChangePending(stId, change);
-      // Auto-save after 3s
       if (autoSaveTimers.current[stId]) clearTimeout(autoSaveTimers.current[stId]);
       autoSaveTimers.current[stId] = setTimeout(() => {
         onSaveSingle(stId);
@@ -111,11 +114,31 @@ const ExecutionTreeView = ({
     [onChangePending, onSaveSingle]
   );
 
+  const handleSliderChange = useCallback(
+    (st: SousTache, newPct: number, currentPct: number) => {
+      const livrables = livrablesMap[st.id] ?? [];
+      const result = checkAvancementRules(newPct, currentPct, st, executionMap, livrables);
+
+      if (result.blocked || result.warnings.length > 0) {
+        onAvancementBlock?.(result, st.id, newPct);
+        if (result.blocked) return; // Don't apply
+      }
+
+      // Auto-sync status
+      const autoStatut = getAutoStatut(newPct);
+      handleChange(st.id, {
+        avancement_pct: newPct,
+        statut: autoStatut,
+        _statusAutoSet: true,
+      });
+    },
+    [executionMap, livrablesMap, onAvancementBlock, handleChange]
+  );
+
   return (
     <div className="space-y-2">
       {activites.map((act) => {
         const actExpanded = expandedActs.has(act.id);
-        // Compute activity-level progress
         const stPcts: number[] = [];
         let budgetConsumed = 0;
         act.taches.forEach((t) =>
@@ -131,7 +154,6 @@ const ExecutionTreeView = ({
 
         return (
           <div key={act.id} className="rounded-lg border overflow-hidden">
-            {/* Activity header */}
             <div
               className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground cursor-pointer select-none"
               onClick={() => toggleAct(act.id)}
@@ -146,7 +168,7 @@ const ExecutionTreeView = ({
               <div className="flex items-center gap-4 shrink-0 text-xs">
                 <span>Budget : {formatBudget(act.budget_total)}</span>
                 <span>Consommé : {formatBudget(budgetConsumed)}</span>
-                <Badge className={pctColor(actPct)}>{actPct}%</Badge>
+                <Badge className={getPalierColor(actPct)}>{actPct}%</Badge>
                 <Badge className={statutColors[actStatut]}>{statutLabels[actStatut]}</Badge>
               </div>
             </div>
@@ -169,7 +191,6 @@ const ExecutionTreeView = ({
 
                 return (
                   <div key={tache.id}>
-                    {/* Task header */}
                     <div
                       className="flex items-center justify-between px-6 py-2.5 bg-secondary text-secondary-foreground cursor-pointer select-none border-t border-secondary/50"
                       onClick={() => toggleTache(tache.id)}
@@ -184,11 +205,10 @@ const ExecutionTreeView = ({
                       <div className="flex items-center gap-3 shrink-0 text-xs">
                         <span>Budget : {formatBudget(tache.budget_total)}</span>
                         <span>Consommé : {formatBudget(tacheBudgetConsumed)}</span>
-                        <Badge className={pctColor(tachePct)}>{tachePct}%</Badge>
+                        <Badge className={getPalierColor(tachePct)}>{tachePct}%</Badge>
                       </div>
                     </div>
 
-                    {/* Sub-task rows */}
                     {tacheExpanded &&
                       tache.sous_taches.map((st, idx) => {
                         const ex = executionMap[st.id];
@@ -200,6 +220,11 @@ const ExecutionTreeView = ({
                         };
                         const editable = canEditSt(st);
                         const hasPending = !!pendingChanges[st.id];
+                        const currentPct = ex?.avancement_pct ?? 0;
+
+                        // Compute suggestion
+                        const livrables = livrablesMap[st.id] ?? [];
+                        const suggestion = computeSuggestion(st, executionMap, livrables);
 
                         return (
                           <div
@@ -208,7 +233,6 @@ const ExecutionTreeView = ({
                               idx % 2 === 0 ? "bg-light-blue" : "bg-light-blue-row"
                             } ${hasPending ? "ring-1 ring-inset ring-secondary/30" : ""}`}
                           >
-                            {/* Main row — clickable for detail */}
                             <div
                               className="flex items-center gap-3 px-10 py-2 cursor-pointer hover:bg-accent/30"
                               onClick={() => onSelectSousTache(st, tache, act)}
@@ -219,8 +243,8 @@ const ExecutionTreeView = ({
                               <span className="text-sm text-foreground flex-1 truncate">
                                 {st.libelle}
                               </span>
-                              <Badge className={pctColor(p.avancement_pct)} variant="outline">
-                                {p.avancement_pct}%
+                              <Badge className={getPalierColor(p.avancement_pct)} variant="outline">
+                                {p.avancement_pct}% — {getPalierLabel(p.avancement_pct)}
                               </Badge>
                               <Badge className={statutColors[p.statut] ?? statutColors.non_demarre} variant="outline">
                                 {statutLabels[p.statut] ?? p.statut}
@@ -230,24 +254,38 @@ const ExecutionTreeView = ({
                               )}
                             </div>
 
-                            {/* Inline edit row */}
                             {editable && (
                               <div className="flex flex-wrap items-start gap-3 px-10 pb-2"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <div className="w-40 space-y-1">
+                                <div className="w-44 space-y-1">
                                   <label className="text-[10px] text-muted-foreground block h-4 leading-4 truncate">Avancement</label>
                                   <div className="h-7 flex items-center">
                                     <Slider
                                       value={[p.avancement_pct]}
-                                      onValueChange={([v]) => handleChange(st.id, { avancement_pct: v })}
+                                      onValueChange={([v]) => handleSliderChange(st, v, currentPct)}
                                       min={0}
                                       max={100}
                                       step={25}
                                       className="w-full"
                                     />
                                   </div>
-                                  <div className="h-4" />
+                                  {/* Suggestion hint */}
+                                  {suggestion.suggested !== p.avancement_pct && (suggestion.nbLivrablesTotal > 0 || suggestion.tauxFinancier > 0) && (
+                                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground italic">
+                                      <Lightbulb className="h-3 w-3 shrink-0" />
+                                      <span>Suggéré : {suggestion.suggested}%</span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-4 px-1 text-[9px] text-secondary underline"
+                                        onClick={() => handleSliderChange(st, suggestion.suggested, currentPct)}
+                                      >
+                                        Appliquer
+                                      </Button>
+                                    </div>
+                                  )}
+                                  {suggestion.suggested === p.avancement_pct && <div className="h-4" />}
                                 </div>
                                 <div className="w-36 space-y-1">
                                   <label className="text-[10px] text-muted-foreground flex items-center gap-1 h-4 leading-4">
@@ -258,9 +296,14 @@ const ExecutionTreeView = ({
                                   </div>
                                   <span className="text-[9px] text-muted-foreground block h-4 leading-4">Auto-calculé</span>
                                 </div>
-                                <div className="w-32 space-y-1">
-                                  <label className="text-[10px] text-muted-foreground block h-4 leading-4">Statut</label>
-                                  <Select value={p.statut} onValueChange={(v) => handleChange(st.id, { statut: v })}>
+                                <div className="w-36 space-y-1">
+                                  <label className="text-[10px] text-muted-foreground block h-4 leading-4">
+                                    Statut
+                                    {(pendingChanges[st.id] as any)?._statusAutoSet && (
+                                      <span className="text-[8px] italic text-muted-foreground ml-1">(auto)</span>
+                                    )}
+                                  </label>
+                                  <Select value={p.statut} onValueChange={(v) => handleChange(st.id, { statut: v, _statusAutoSet: false })}>
                                     <SelectTrigger className="h-7 text-xs">
                                       <SelectValue />
                                     </SelectTrigger>

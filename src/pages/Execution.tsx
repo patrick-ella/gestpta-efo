@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import ExecutionFilterBar, { defaultFilters, type ExecutionFilters } from "@/components/execution/ExecutionFilterBar";
 import ExecutionTreeView, { type PendingChange } from "@/components/execution/ExecutionTreeView";
 import ExecutionDetailPanel from "@/components/execution/ExecutionDetailPanel";
+import { AvancementBlockDialog, AvancementWarningDialog } from "@/components/execution/AvancementWarningDialog";
+import { useAllLivrables, type AvancementBlockResult } from "@/hooks/useAvancementRules";
 import type { PtaActivite, PtaTache } from "@/hooks/usePtaData";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -33,7 +35,27 @@ const Execution = () => {
   const [selectedAct, setSelectedAct] = useState<PtaActivite | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Warning/block dialog state
+  const [blockDialog, setBlockDialog] = useState<{ open: boolean; message: string }>({ open: false, message: "" });
+  const [warningDialog, setWarningDialog] = useState<{
+    open: boolean;
+    warnings: AvancementBlockResult["warnings"];
+    stId: string;
+    newPct: number;
+  }>({ open: false, warnings: [], stId: "", newPct: 0 });
+
   const executionMap = useMemo(() => buildExecutionMap(executions), [executions]);
+
+  // Collect all sous-tâche IDs for bulk livrables fetch
+  const allStIds = useMemo(() => {
+    const ids: string[] = [];
+    (ptaData?.activites ?? []).forEach((a) =>
+      a.taches.forEach((t) => t.sous_taches.forEach((st) => ids.push(st.id)))
+    );
+    return ids;
+  }, [ptaData?.activites]);
+
+  const { data: livrablesMap = {} } = useAllLivrables(allStIds);
 
   // Filter activites
   const filteredActivites = useMemo(() => {
@@ -41,7 +63,6 @@ const Execution = () => {
     if (filters.activiteId) {
       acts = acts.filter((a) => a.id === filters.activiteId);
     }
-    // Apply sub-filters by filtering sub-tasks within
     return acts
       .map((act) => ({
         ...act,
@@ -97,19 +118,57 @@ const Execution = () => {
     [executionMap]
   );
 
+  const handleAvancementBlock = useCallback(
+    (result: AvancementBlockResult, stId: string, newPct: number) => {
+      if (result.blocked) {
+        setBlockDialog({ open: true, message: result.blockMessage ?? "" });
+        return;
+      }
+      if (result.warnings.length > 0) {
+        setWarningDialog({ open: true, warnings: result.warnings, stId, newPct });
+      }
+    },
+    []
+  );
+
+  const handleWarningConfirm = useCallback(
+    (justification?: string) => {
+      const { stId, newPct } = warningDialog;
+      const ex = executionMap[stId];
+      const currentPct = ex?.avancement_pct ?? 0;
+      const autoStatut = newPct === 0 ? "non_demarre" : newPct === 100 ? "termine" : "en_cours";
+
+      const obsAddition = justification
+        ? `\n[Justification ${currentPct}%→${newPct}%] ${justification}`
+        : "";
+
+      const existingObs = pendingChanges[stId]?.observations ?? ex?.observations ?? "";
+
+      onChangePending(stId, {
+        avancement_pct: newPct,
+        statut: autoStatut,
+        observations: existingObs + obsAddition,
+        _statusAutoSet: true,
+      });
+      setWarningDialog({ open: false, warnings: [], stId: "", newPct: 0 });
+    },
+    [warningDialog, executionMap, pendingChanges, onChangePending]
+  );
+
   const saveSingle = useCallback(
     async (stId: string) => {
       const p = pendingChanges[stId];
       if (!p || !exerciceId || !user) return;
 
       const existing = executionMap[stId];
+      const { _statusAutoSet, ...cleanP } = p;
       const payload = {
         sous_tache_id: stId,
         exercice_id: exerciceId,
-        avancement_pct: p.avancement_pct,
-        montant_realise: p.montant_realise,
-        statut: p.statut,
-        observations: p.observations,
+        avancement_pct: cleanP.avancement_pct,
+        montant_realise: cleanP.montant_realise,
+        statut: cleanP.statut,
+        observations: cleanP.observations,
         date_maj: new Date().toISOString(),
         updated_by: user.id,
       };
@@ -126,7 +185,6 @@ const Execution = () => {
           if (error) throw error;
         }
 
-        // Audit log
         await supabase.from("journal_audit").insert({
           user_id: user.id,
           entite: "execution",
@@ -136,17 +194,17 @@ const Execution = () => {
                 avancement_pct: existing.avancement_pct,
                 montant_realise: existing.montant_realise,
                 statut: existing.statut,
+                sous_tache_id: stId,
               }
             : null,
           nouvelle_valeur: {
-            avancement_pct: p.avancement_pct,
-            montant_realise: p.montant_realise,
-            statut: p.statut,
+            avancement_pct: cleanP.avancement_pct,
+            montant_realise: cleanP.montant_realise,
+            statut: cleanP.statut,
             sous_tache_id: stId,
           },
         });
 
-        // Remove from pending
         setPendingChanges((prev) => {
           const next = { ...prev };
           delete next[stId];
@@ -207,6 +265,8 @@ const Execution = () => {
           setSelectedAct(act);
         }}
         canEditSt={canEditSt}
+        livrablesMap={livrablesMap}
+        onAvancementBlock={handleAvancementBlock}
       />
 
       <ExecutionDetailPanel
@@ -226,7 +286,21 @@ const Execution = () => {
         onSaveSingle={saveSingle}
       />
 
-      {/* Floating save all button */}
+      {/* Block dialog */}
+      <AvancementBlockDialog
+        open={blockDialog.open}
+        onClose={() => setBlockDialog({ open: false, message: "" })}
+        message={blockDialog.message}
+      />
+
+      {/* Warning dialog */}
+      <AvancementWarningDialog
+        open={warningDialog.open}
+        warnings={warningDialog.warnings}
+        onCancel={() => setWarningDialog({ open: false, warnings: [], stId: "", newPct: 0 })}
+        onConfirm={handleWarningConfirm}
+      />
+
       {pendingCount > 0 && (
         <div className="fixed bottom-6 right-6 z-50">
           <Button
