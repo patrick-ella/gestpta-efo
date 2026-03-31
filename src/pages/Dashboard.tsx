@@ -220,12 +220,10 @@ const Dashboard = () => {
       const budgetSt = st.budget_prevu ?? 0;
       const realized = ex?.montant_realise ?? 0;
 
-      // Find parent activity code
       const tacheParent = taches.find((t) => t.id === st.tache_id);
       const actParent = tacheParent ? activites.find((a) => a.id === tacheParent.activite_id) : null;
       const actCode = actParent?.code ?? "—";
 
-      // Alert: 0% with past trimester programmed
       const pastTrim = [
         currentTrimestre >= 2 && st.trimestre_t1,
         currentTrimestre >= 3 && st.trimestre_t2,
@@ -240,7 +238,6 @@ const Dashboard = () => {
         });
       }
 
-      // Alert: budget > 90% but physical < 70%
       if (budgetSt > 0) {
         const budgetPct = (realized / budgetSt) * 100;
         if (budgetPct > 90 && pct < 70) {
@@ -253,6 +250,16 @@ const Dashboard = () => {
         }
       }
     });
+
+    // Global coherence alert: gap > 20 points between physical and budget
+    if (Math.abs(physicalProgress - budgetExecPct) > 20) {
+      result.unshift({
+        type: "warning",
+        actCode: "GLOBAL",
+        stCode: "—",
+        description: `Écart significatif entre l'avancement physique (${physicalProgress}%) et l'exécution budgétaire (${budgetExecPct}%). Vérifiez la cohérence des données.`,
+      });
+    }
 
     return result;
   }, [sousTaches, exMap, taches, activites]);

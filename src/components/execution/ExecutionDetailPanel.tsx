@@ -11,8 +11,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
 import type { PtaActivite, PtaTache } from "@/hooks/usePtaData";
+import { getPalierLabel, getPalierColor, useAvancementHistory } from "@/hooks/useAvancementRules";
 
 type SousTache = Database["public"]["Tables"]["sous_taches"]["Row"];
 
@@ -43,14 +46,6 @@ const statutLabels: Record<string, string> = {
   annule: "Annulé",
 };
 
-function pctColor(pct: number): string {
-  if (pct === 0) return "bg-muted text-muted-foreground";
-  if (pct < 50) return "bg-warning text-warning-foreground";
-  if (pct < 75) return "bg-warning/60 text-warning-foreground";
-  if (pct < 100) return "bg-success/70 text-success-foreground";
-  return "bg-success text-success-foreground";
-}
-
 const ExecutionDetailPanel = ({
   sousTache,
   parentTache,
@@ -62,6 +57,8 @@ const ExecutionDetailPanel = ({
   onChangePending,
   onSaveSingle,
 }: ExecutionDetailPanelProps) => {
+  const { data: history = [] } = useAvancementHistory(sousTache?.id ?? null);
+
   if (!sousTache) return null;
 
   const p = pending ?? {
@@ -116,19 +113,16 @@ const ExecutionDetailPanel = ({
               </div>
             ))}
 
-            {/* Risques */}
             <div className="rounded p-3 bg-warning/30">
               <p className="text-xs text-warning-foreground font-semibold">Risques</p>
               <p className="text-sm text-warning-foreground">{sousTache.risques ?? "Aucun risque identifié"}</p>
             </div>
 
-            {/* Mesures */}
             <div className="rounded p-3 bg-success/30">
               <p className="text-xs text-success-foreground font-semibold">Mesures d'atténuation</p>
               <p className="text-sm text-success-foreground">{sousTache.mesures_attenuation ?? "—"}</p>
             </div>
 
-            {/* Trimestres */}
             <div>
               <p className="text-xs text-muted-foreground mb-1">Trimestres programmés</p>
               <div className="flex gap-2">
@@ -163,8 +157,8 @@ const ExecutionDetailPanel = ({
                   disabled={!canEdit}
                   className="flex-1"
                 />
-                <Badge className={pctColor(p.avancement_pct)}>
-                  {p.avancement_pct}%
+                <Badge className={getPalierColor(p.avancement_pct)}>
+                  {p.avancement_pct}% — {getPalierLabel(p.avancement_pct)}
                 </Badge>
               </div>
             </div>
@@ -218,6 +212,33 @@ const ExecutionDetailPanel = ({
               </Button>
             )}
           </div>
+
+          {/* Avancement history */}
+          {history.length > 0 && (
+            <div className="space-y-2 border-t pt-4">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                📈 Historique de l'avancement
+              </h4>
+              <div className="space-y-1.5">
+                {history.map((entry) => {
+                  const av = entry.ancienne_valeur as any;
+                  const nv = entry.nouvelle_valeur as any;
+                  const oldPct = av?.avancement_pct;
+                  const newPct = nv?.avancement_pct;
+                  if (oldPct === undefined && newPct === undefined) return null;
+                  const dateStr = format(new Date(entry.created_at), "dd/MM/yyyy", { locale: fr });
+                  return (
+                    <div key={entry.id} className="text-xs text-muted-foreground flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px] px-1.5">
+                        {oldPct ?? 0}% → {newPct ?? 0}%
+                      </Badge>
+                      <span>{dateStr}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
