@@ -147,12 +147,6 @@ const Rapports = () => {
     },
   ];
 
-  const handleBudgetLivrablesExcel = async () => {
-    if (!selectedExercice) return;
-    const filterId = activiteFilter !== "all" ? activiteFilter : undefined;
-    const { exportBudgetLivrablesExcel } = await import("@/lib/reports/exportBudgetLivrablesExcel");
-    await exportBudgetLivrablesExcel(parseInt(annee), selectedExercice.id, filterId);
-  };
 
   return (
     <div className="space-y-6">
