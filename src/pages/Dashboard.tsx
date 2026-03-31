@@ -18,7 +18,6 @@ import AlertPanel, { type Alert } from "@/components/dashboard/AlertPanel";
 import type { Database } from "@/integrations/supabase/types";
 
 type Execution = Database["public"]["Tables"]["executions"]["Row"];
-type SousTache = Database["public"]["Tables"]["sous_taches"]["Row"];
 
 const Dashboard = () => {
   const [selectedYear, setSelectedYear] = useState(2026);
@@ -31,7 +30,6 @@ const Dashboard = () => {
     roles.includes("admin_pta") ||
     roles.includes("consultant");
 
-  // Fetch exercice
   const { data: exercice } = useQuery({
     queryKey: ["dashboard-exercice", selectedYear],
     queryFn: async () => {
@@ -46,7 +44,6 @@ const Dashboard = () => {
 
   const exerciceId = exercice?.id;
 
-  // Fetch activites
   const { data: activites = [] } = useQuery({
     queryKey: ["dashboard-activites", exerciceId],
     queryFn: async () => {
@@ -61,7 +58,6 @@ const Dashboard = () => {
     enabled: !!exerciceId,
   });
 
-  // Fetch taches
   const { data: taches = [] } = useQuery({
     queryKey: ["dashboard-taches", exerciceId],
     queryFn: async () => {
@@ -77,7 +73,6 @@ const Dashboard = () => {
     enabled: activites.length > 0,
   });
 
-  // Fetch sous_taches
   const { data: sousTaches = [] } = useQuery({
     queryKey: ["dashboard-sous-taches", exerciceId],
     queryFn: async () => {
@@ -92,7 +87,6 @@ const Dashboard = () => {
     enabled: taches.length > 0,
   });
 
-  // Fetch executions
   const { data: executions = [], isLoading } = useQuery({
     queryKey: ["dashboard-executions", exerciceId],
     queryFn: async () => {
@@ -106,7 +100,6 @@ const Dashboard = () => {
     enabled: !!exerciceId,
   });
 
-  // Fetch KPI indicateurs
   const { data: kpis = [] } = useQuery({
     queryKey: ["dashboard-kpis"],
     queryFn: async () => {
@@ -115,21 +108,18 @@ const Dashboard = () => {
     },
   });
 
-  // Build execution map
   const exMap = useMemo(() => {
     const m: Record<string, Execution> = {};
     executions.forEach((e) => (m[e.sous_tache_id] = e));
     return m;
   }, [executions]);
 
-  // Build tache→activite map
   const tacheActMap = useMemo(() => {
     const m: Record<string, string> = {};
     taches.forEach((t) => (m[t.id] = t.activite_id));
     return m;
   }, [taches]);
 
-  // Compute KPIs
   const totalBudgetPrevu = sousTaches.reduce((s, st) => s + (st.budget_prevu ?? 0), 0);
   const totalRealized = executions.reduce((s, e) => s + (e.montant_realise ?? 0), 0);
   const budgetExecPct = totalBudgetPrevu > 0 ? Math.round((totalRealized / totalBudgetPrevu) * 100) : 0;
@@ -138,7 +128,9 @@ const Dashboard = () => {
   const physicalProgress = allPcts.length > 0 ? Math.round(allPcts.reduce((s, v) => s + v, 0) / allPcts.length) : 0;
 
   const os1Kpi = kpis.find((k) => k.code === "OS1-IND1");
-  const isoKpi = kpis.find((k) => k.code === "OS2-IND2");
+  const isoKpi = kpis.find((k) => k.code === "OS2-IND3");
+  const trainairKpi = kpis.find((k) => k.code === "OS2-IND1");
+  const avsecKpi = kpis.find((k) => k.code === "OS2-IND2");
 
   const apprenants = {
     realized: os1Kpi?.valeur_realisee ? parseInt(os1Kpi.valeur_realisee.replace(/\s/g, "")) || 0 : 0,
@@ -146,7 +138,6 @@ const Dashboard = () => {
   };
   const isoConformity = isoKpi?.valeur_realisee ? parseFloat(isoKpi.valeur_realisee.replace(",", ".").replace("%", "")) || 0 : 0;
 
-  // Activity matrix data
   const activityRows = useMemo(() => {
     return activites.map((act) => {
       const actTaches = taches.filter((t) => t.activite_id === act.id);
@@ -169,7 +160,6 @@ const Dashboard = () => {
     });
   }, [activites, taches, sousTaches, exMap]);
 
-  // Chart data
   const budgetChartData = activityRows.map((a) => ({
     name: a.code,
     prevu: a.budgetPrevu,
@@ -208,11 +198,10 @@ const Dashboard = () => {
     { name: "Annulé", value: statutCounts["Annulé"], color: "hsl(0, 70%, 55%)" },
   ].filter((d) => d.value > 0);
 
-  // Alerts
   const alerts = useMemo(() => {
     const result: Alert[] = [];
-    const currentMonth = new Date().getMonth(); // 0-11
-    const currentTrimestre = Math.floor(currentMonth / 3) + 1; // 1-4
+    const currentMonth = new Date().getMonth();
+    const currentTrimestre = Math.floor(currentMonth / 3) + 1;
 
     sousTaches.forEach((st) => {
       const ex = exMap[st.id];
@@ -251,7 +240,6 @@ const Dashboard = () => {
       }
     });
 
-    // Global coherence alert: gap > 20 points between physical and budget
     if (Math.abs(physicalProgress - budgetExecPct) > 20) {
       result.unshift({
         type: "warning",
@@ -262,7 +250,7 @@ const Dashboard = () => {
     }
 
     return result;
-  }, [sousTaches, exMap, taches, activites]);
+  }, [sousTaches, exMap, taches, activites, physicalProgress, budgetExecPct]);
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["dashboard-exercice"] });
@@ -285,7 +273,6 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tableau de bord</h1>
@@ -315,15 +302,21 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <DashboardKpiCards
         apprenants={apprenants}
         budgetExec={budgetExecPct}
         physicalProgress={physicalProgress}
         isoConformity={isoConformity}
+        trainairPlus={{
+          realized: trainairKpi?.valeur_realisee ?? null,
+          target: trainairKpi?.cible_2027 ?? "Gold Member",
+        }}
+        centreAvsec={{
+          realized: avsecKpi?.valeur_realisee ?? null,
+          target: avsecKpi?.cible_2027 ?? "Centre AVSEC",
+        }}
       />
 
-      {/* Activity matrix + Alert panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-3">
           <h3 className="text-sm font-semibold text-foreground">
@@ -336,7 +329,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Charts */}
       <DashboardCharts budgetData={budgetChartData} statutData={statutChartData} />
     </div>
   );

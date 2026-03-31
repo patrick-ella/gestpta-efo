@@ -21,7 +21,17 @@ function parseNumeric(val: string | null): number | null {
   return isNaN(num) ? null : num;
 }
 
-function getCellClass(realized: string | null, target: string | null): string {
+function isTextBasedKpi(code: string): boolean {
+  return code === "OS2-IND1" || code === "OS2-IND2";
+}
+
+function getCellClass(kpi: KPI, realized: string | null, target: string | null): string {
+  if (isTextBasedKpi(kpi.code)) {
+    if (!realized) return "";
+    if (realized.trim().toLowerCase() === (target ?? "").trim().toLowerCase())
+      return "bg-success text-success-foreground font-medium";
+    return "bg-warning/30 text-warning-foreground";
+  }
   const r = parseNumeric(realized);
   const t = parseNumeric(target);
   if (r === null || t === null || t === 0) return "";
@@ -41,7 +51,7 @@ const TriennalTable = ({ kpis }: TriennalTableProps) => (
         <TableHeader>
           <TableRow className="bg-primary hover:bg-primary">
             <TableHead className="text-primary-foreground font-semibold">Indicateur</TableHead>
-            <TableHead className="text-primary-foreground font-semibold text-center">Baseline 2024</TableHead>
+            <TableHead className="text-primary-foreground font-semibold text-center">Baseline</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center">Cible 2025</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center">Cible 2026</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center">Cible 2027</TableHead>
@@ -68,7 +78,7 @@ const TriennalTable = ({ kpis }: TriennalTableProps) => (
                 <TableCell className="text-center text-sm">{kpi.cible_2025 ?? "—"}</TableCell>
                 <TableCell className="text-center text-sm">{kpi.cible_2026 ?? "—"}</TableCell>
                 <TableCell className="text-center text-sm">{kpi.cible_2027 ?? "—"}</TableCell>
-                <TableCell className={`text-center text-sm ${getCellClass(kpi.valeur_realisee, currentTarget)}`}>
+                <TableCell className={`text-center text-sm ${getCellClass(kpi, kpi.valeur_realisee, currentTarget)}`}>
                   {kpi.valeur_realisee ?? "—"}
                 </TableCell>
               </TableRow>
