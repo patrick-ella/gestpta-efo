@@ -542,10 +542,15 @@ export async function exportBudgetLivrablesPdf(
     columnStyles: {
       0: { cellWidth: 40 },
       1: { cellWidth: 73 },
-      2: { halign: "right", cellWidth: 45 },
-      3: { halign: "right", cellWidth: 43 },
-      4: { halign: "right", cellWidth: 43 },
+      2: { halign: "right", cellWidth: 45, cellPadding: { top: 2, bottom: 2, left: 1, right: 3 } },
+      3: { halign: "right", cellWidth: 43, cellPadding: { top: 2, bottom: 2, left: 1, right: 3 } },
+      4: { halign: "right", cellWidth: 43, cellPadding: { top: 2, bottom: 2, left: 1, right: 3 } },
       5: { halign: "center", cellWidth: 29 },
+    },
+    willDrawCell: (data) => {
+      if ([2, 3, 4].includes(data.column.index)) {
+        data.cell.styles.halign = "right";
+      }
     },
     didParseCell: (data) => {
       if (data.row.index === summaryBody.length && data.section === "body") {
