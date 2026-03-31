@@ -133,10 +133,10 @@ const Rapports = () => {
     {
       key: "budget-livrables",
       title: "Rapport budgétaire et livrables",
-      desc: "Rapport par Activité/Tâche avec lignes budgétaires consolidées et livrables.",
+      desc: "Rapport PDF par Activité/Tâche avec lignes budgétaires consolidées et livrables.",
       icon: FileText,
-      badge: "PDF / Excel",
-      badgeClass: "bg-primary text-primary-foreground",
+      badge: "PDF",
+      badgeClass: "bg-destructive text-destructive-foreground",
       params: "budget-livrables",
       action: async () => {
         if (!selectedExercice) return;
@@ -147,12 +147,6 @@ const Rapports = () => {
     },
   ];
 
-  const handleBudgetLivrablesExcel = async () => {
-    if (!selectedExercice) return;
-    const filterId = activiteFilter !== "all" ? activiteFilter : undefined;
-    const { exportBudgetLivrablesExcel } = await import("@/lib/reports/exportBudgetLivrablesExcel");
-    await exportBudgetLivrablesExcel(parseInt(annee), selectedExercice.id, filterId);
-  };
 
   return (
     <div className="space-y-6">
@@ -222,34 +216,19 @@ const Rapports = () => {
                 </Select>
               )}
               {r.params === "budget-livrables" && (
-                <div className="space-y-2">
-                  <Select value={activiteFilter} onValueChange={setActiviteFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Activité" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Toutes les activités</SelectItem>
-                      {activitesList.map((a: any) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.code} — {a.libelle}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="outline"
-                    onClick={() => generate("budget-livrables-excel", handleBudgetLivrablesExcel)}
-                    disabled={generating["budget-livrables-excel"]}
-                    className="w-full text-xs"
-                    size="sm"
-                  >
-                    {generating["budget-livrables-excel"] ? (
-                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Excel en cours...</>
-                    ) : (
-                      <><FileSpreadsheet className="h-3 w-3 mr-1" /> Télécharger en Excel</>
-                    )}
-                  </Button>
-                </div>
+                <Select value={activiteFilter} onValueChange={setActiviteFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Activité" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les activités</SelectItem>
+                    {activitesList.map((a: any) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.code} — {a.libelle}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
 
               <Button
