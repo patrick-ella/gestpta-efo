@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
+
+const OFFICIAL_CODES = ['30201', '30202', '30203', '30204', '30205'];
 
 const ActivitiesSummary = () => {
   const { data: activitesRaw, isLoading } = useQuery({
@@ -12,6 +14,7 @@ const ActivitiesSummary = () => {
       const { data, error } = await supabase
         .from("activites")
         .select("id, code, libelle, objectif_operationnel, budget_total, ordre")
+        .in("code", OFFICIAL_CODES)
         .order("ordre");
       if (error) throw error;
       return data;
@@ -51,14 +54,19 @@ const ActivitiesSummary = () => {
     },
   });
 
-  // Deduplicate activities by id
+  // Filter to official codes and deduplicate by id
   const uniqueActivites = activitesRaw
-    ? Array.from(new Map(activitesRaw.map(a => [a.id, a])).values())
-        .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0))
+    ? Array.from(new Map(
+        activitesRaw
+          .filter(a => OFFICIAL_CODES.includes(a.code))
+          .map(a => [a.id, a])
+      ).values())
+        .sort((a, b) => a.code.localeCompare(b.code))
     : [];
 
+  const missingCodes = OFFICIAL_CODES.filter(c => !uniqueActivites.some(a => a.code === c));
   if (uniqueActivites.length !== 5 && uniqueActivites.length > 0) {
-    console.warn(`Expected 5 activities, got ${uniqueActivites.length}`);
+    console.warn(`[CadreLogique] Expected 5 activities, got ${uniqueActivites.length}. Codes found: ${uniqueActivites.map(a => a.code).join(', ')}`);
   }
 
   // Build maps for per-activity stats
@@ -97,12 +105,20 @@ const ActivitiesSummary = () => {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">
-          Activités rattachées au Cadre Logique
+          Activités rattachées au Cadre Logique ({uniqueActivites.length})
         </h3>
         <Badge variant="outline" className="text-sm">
           Avancement moyen : {globalAvg}%
         </Badge>
       </div>
+      {missingCodes.length > 0 && uniqueActivites.length > 0 && (
+        <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>
+            {uniqueActivites.length} activité(s) sur 5 chargées. Codes manquants : {missingCodes.join(', ')}. Vérifiez la base de données.
+          </span>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {uniqueActivites.map((act) => {
           const stats = activityStats[act.id];
