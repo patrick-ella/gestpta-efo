@@ -105,12 +105,20 @@ const ActivitiesSummary = () => {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">
-          Activités rattachées au Cadre Logique
+          Activités rattachées au Cadre Logique ({uniqueActivites.length})
         </h3>
         <Badge variant="outline" className="text-sm">
           Avancement moyen : {globalAvg}%
         </Badge>
       </div>
+      {missingCodes.length > 0 && uniqueActivites.length > 0 && (
+        <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>
+            {uniqueActivites.length} activité(s) sur 5 chargées. Codes manquants : {missingCodes.join(', ')}. Vérifiez la base de données.
+          </span>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {uniqueActivites.map((act) => {
           const stats = activityStats[act.id];
