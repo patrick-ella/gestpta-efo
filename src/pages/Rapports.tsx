@@ -133,10 +133,10 @@ const Rapports = () => {
     {
       key: "budget-livrables",
       title: "Rapport budgétaire et livrables",
-      desc: "Rapport par Activité/Tâche avec lignes budgétaires consolidées et livrables.",
+      desc: "Rapport PDF par Activité/Tâche avec lignes budgétaires consolidées et livrables.",
       icon: FileText,
-      badge: "PDF / Excel",
-      badgeClass: "bg-primary text-primary-foreground",
+      badge: "PDF",
+      badgeClass: "bg-destructive text-destructive-foreground",
       params: "budget-livrables",
       action: async () => {
         if (!selectedExercice) return;
