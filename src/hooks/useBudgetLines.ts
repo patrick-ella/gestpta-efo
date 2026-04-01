@@ -46,8 +46,9 @@ export const useSousTacheBudgetLines = (sousTacheId: string | null, exerciceId: 
 
   useEffect(() => {
     if (!sousTacheId) return;
+    const channelName = `stlb-${sousTacheId}-${Date.now()}`;
     const channel = supabase
-      .channel(`stlb-${sousTacheId}`)
+      .channel(channelName)
       .on("postgres_changes", {
         event: "*",
         schema: "public",

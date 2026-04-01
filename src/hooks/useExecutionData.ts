@@ -12,7 +12,7 @@ export const useExecutionData = (exerciceId: string | null) => {
   useEffect(() => {
     if (!exerciceId) return;
     const channel = supabase
-      .channel("executions-realtime")
+      .channel(`executions-${exerciceId}-${Date.now()}`)
       .on("postgres_changes", {
         event: "*",
         schema: "public",
