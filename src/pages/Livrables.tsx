@@ -21,8 +21,22 @@ const Livrables = () => {
   const canUpload =
     canMarkProduit || roles.includes("agent_saisie");
 
+  // Deduplicate activities to official 5 codes only
+  const OFFICIAL_CODES = ["30201", "30202", "30203", "30204", "30205"];
+  const deduplicatedData = useMemo(() => {
+    const seen = new Set<string>();
+    return rawData
+      .filter((a) => {
+        if (!OFFICIAL_CODES.includes(a.code)) return false;
+        if (seen.has(a.id)) return false;
+        seen.add(a.id);
+        return true;
+      })
+      .sort((a, b) => a.code.localeCompare(b.code));
+  }, [rawData]);
+
   const filteredData = useMemo(() => {
-    let result = rawData;
+    let result = deduplicatedData;
 
     if (filters.activite !== "all") {
       result = result.filter((a) => a.id === filters.activite);
@@ -52,7 +66,7 @@ const Livrables = () => {
     }
 
     return result;
-  }, [rawData, filters]);
+  }, [deduplicatedData, filters]);
 
   if (isLoading) {
     return (
