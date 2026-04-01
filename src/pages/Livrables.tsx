@@ -112,7 +112,7 @@ const Livrables = () => {
         </TabsContent>
 
         <TabsContent value="archive" className="mt-4">
-          <DocumentArchive data={rawData} isAdmin={isAdmin} />
+          <DocumentArchive data={deduplicatedData} isAdmin={isAdmin} />
         </TabsContent>
       </Tabs>
     </div>
