@@ -38,7 +38,7 @@ export const useLivrablesData = () => {
     queryFn: async () => {
       const [{ data: activites }, { data: taches }, { data: livrables }] =
         await Promise.all([
-          supabase.from("activites").select("*").order("ordre"),
+          supabase.from("activites").select("*").in("code", ["30201","30202","30203","30204","30205"]).order("ordre"),
           supabase.from("taches").select("*").order("ordre"),
           supabase.from("livrables").select("*").order("created_at"),
         ]);
