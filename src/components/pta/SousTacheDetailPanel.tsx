@@ -322,7 +322,9 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
 
           {/* Livrables tab */}
           <TabsContent value="livrables" className="mt-4">
-            <SousTacheLivrablesTab sousTacheId={sousTache.id} tacheId={sousTache.tache_id} tacheLivrables={tacheLivrables} />
+            <ErrorBoundary tabName="Livrables" onReset={() => {}}>
+              <SousTacheLivrablesTab sousTacheId={sousTache.id} tacheId={sousTache.tache_id} tacheLivrables={tacheLivrables} />
+            </ErrorBoundary>
           </TabsContent>
 
           {/* Risques tab */}
