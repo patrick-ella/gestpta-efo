@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { SousTacheLivrablesTab } from "@/components/livrables/SousTacheLivrablesTab";
 import BudgetLinesTab from "@/components/budget/BudgetLinesTab";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import EditHistory from "@/components/pta/EditHistory";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Lock, Pencil, Save, AlertTriangle } from "lucide-react";
@@ -303,23 +304,27 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
 
           {/* Budget Lines tab */}
           <TabsContent value="budget-lines" className="mt-4">
-            {exerciceId ? (
-              <BudgetLinesTab
-                sousTacheId={sousTache.id}
-                exerciceId={exerciceId}
-                budgetPrevu={parentInfo?.tacheBudget ?? 0}
-                canEdit={isAdmin}
-                tacheId={sousTache.tache_id}
-                activites={activites}
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground py-4">Aucun exercice actif</p>
-            )}
+            <ErrorBoundary tabName="Budget" onReset={() => {}}>
+              {exerciceId ? (
+                <BudgetLinesTab
+                  sousTacheId={sousTache.id}
+                  exerciceId={exerciceId}
+                  budgetPrevu={parentInfo?.tacheBudget ?? 0}
+                  canEdit={isAdmin}
+                  tacheId={sousTache.tache_id}
+                  activites={activites}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground py-4">Aucun exercice actif</p>
+              )}
+            </ErrorBoundary>
           </TabsContent>
 
           {/* Livrables tab */}
           <TabsContent value="livrables" className="mt-4">
-            <SousTacheLivrablesTab sousTacheId={sousTache.id} tacheId={sousTache.tache_id} tacheLivrables={tacheLivrables} />
+            <ErrorBoundary tabName="Livrables" onReset={() => {}}>
+              <SousTacheLivrablesTab sousTacheId={sousTache.id} tacheId={sousTache.tache_id} tacheLivrables={tacheLivrables} />
+            </ErrorBoundary>
           </TabsContent>
 
           {/* Risques tab */}

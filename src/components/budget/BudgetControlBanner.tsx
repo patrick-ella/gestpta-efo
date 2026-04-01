@@ -20,8 +20,8 @@ function fmt(v: number) {
 const BudgetControlBanner = ({ tacheId, sousTacheId, exerciceId, currentStTotal, activites }: Props) => {
   // Get tache plafond
   const tacheBudget = useMemo(() => {
-    for (const act of activites) {
-      for (const t of act.taches) {
+    for (const act of (activites ?? [])) {
+      for (const t of (act.taches ?? [])) {
         if (t.id === tacheId) return t.budget_total ?? 0;
       }
     }
@@ -29,8 +29,8 @@ const BudgetControlBanner = ({ tacheId, sousTacheId, exerciceId, currentStTotal,
   }, [activites, tacheId]);
 
   const tacheCode = useMemo(() => {
-    for (const act of activites) {
-      for (const t of act.taches) {
+    for (const act of (activites ?? [])) {
+      for (const t of (act.taches ?? [])) {
         if (t.id === tacheId) return t.code;
       }
     }
