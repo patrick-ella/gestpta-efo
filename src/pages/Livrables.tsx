@@ -81,10 +81,10 @@ const Livrables = () => {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-foreground">Gestion des Livrables</h1>
 
-      <LivrablesSummaryCards data={rawData} />
+      <LivrablesSummaryCards data={deduplicatedData} />
 
       <LivrablesFilterBar
-        activites={rawData}
+        activites={deduplicatedData}
         filters={filters}
         onChange={(f) => setFilters((prev) => ({ ...prev, ...f }))}
         onReset={() => setFilters(defaultFilters)}
