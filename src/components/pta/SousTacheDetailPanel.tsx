@@ -304,18 +304,20 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
 
           {/* Budget Lines tab */}
           <TabsContent value="budget-lines" className="mt-4">
-            {exerciceId ? (
-              <BudgetLinesTab
-                sousTacheId={sousTache.id}
-                exerciceId={exerciceId}
-                budgetPrevu={parentInfo?.tacheBudget ?? 0}
-                canEdit={isAdmin}
-                tacheId={sousTache.tache_id}
-                activites={activites}
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground py-4">Aucun exercice actif</p>
-            )}
+            <ErrorBoundary tabName="Budget" onReset={() => {}}>
+              {exerciceId ? (
+                <BudgetLinesTab
+                  sousTacheId={sousTache.id}
+                  exerciceId={exerciceId}
+                  budgetPrevu={parentInfo?.tacheBudget ?? 0}
+                  canEdit={isAdmin}
+                  tacheId={sousTache.tache_id}
+                  activites={activites}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground py-4">Aucun exercice actif</p>
+              )}
+            </ErrorBoundary>
           </TabsContent>
 
           {/* Livrables tab */}
