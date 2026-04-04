@@ -108,10 +108,10 @@ function drawCoverPage(doc: jsPDF, logo: string | null, annee: number, scope: st
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
-  doc.text("RAPPORT BUDGÉTAIRE ET LIVRABLES", PAGE_W / 2, 55, { align: "center" });
+  doc.text("RAPPORT D'ACTIVITÉ DE L'EFO", PAGE_W / 2, 55, { align: "center" });
   doc.setFontSize(16);
   doc.setTextColor(46, 117, 182);
-  doc.text("PAR ACTIVITÉ / TÂCHE", PAGE_W / 2, 67, { align: "center" });
+  doc.text("Exécution budgétaire et suivi des extrants — Action 302", PAGE_W / 2, 67, { align: "center" });
 
   // Decorative line
   doc.setDrawColor(46, 117, 182);
