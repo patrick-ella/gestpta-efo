@@ -61,7 +61,7 @@ const ProtectedRoutes = () => {
           <Route path="/cadre-logique" element={<CadreLogique />} />
           <Route path="/pta" element={<PlanTravail />} />
           <Route path="/execution" element={<Execution />} />
-          <Route path="/livrables" element={<Livrables />} />
+          <Route path="/extrants" element={<Extrants />} />
           <Route path="/rapports" element={<Rapports />} />
           <Route path="/administration" element={<Administration />} />
           <Route path="/notifications" element={<Notifications />} />

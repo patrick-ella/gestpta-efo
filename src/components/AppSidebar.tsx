@@ -29,7 +29,7 @@ const menuItems = [
   { title: "Cadre Logique", url: "/cadre-logique", icon: GitBranch },
   { title: "Plan de Travail (PTA)", url: "/pta", icon: ClipboardList },
   { title: "Exécution", url: "/execution", icon: PlayCircle },
-  { title: "Livrables", url: "/livrables", icon: FileCheck },
+  { title: "Extrants", url: "/extrants", icon: FileCheck },
   { title: "Rapports", url: "/rapports", icon: BarChart3 },
   { title: "Administration", url: "/administration", icon: Settings },
 ];
