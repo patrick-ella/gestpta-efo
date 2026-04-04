@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2, Unlink, Plus, AlertTriangle, Loader2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { ExtrantCritere } from "@/hooks/useExtrantsData";
+import PreuvesTab from "./PreuvesTab";
 
 interface Props {
   extrant: { id: string; activite_id: string } | null;
