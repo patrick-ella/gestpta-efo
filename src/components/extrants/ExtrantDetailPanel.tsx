@@ -15,6 +15,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2, Unlink, Plus, AlertTriangle, Loader2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { ExtrantCritere } from "@/hooks/useExtrantsData";
+import PreuvesTab from "./PreuvesTab";
 
 interface Props {
   extrant: { id: string; activite_id: string } | null;
@@ -77,6 +78,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
   const [editLinkCondition, setEditLinkCondition] = useState("");
   const [editLinkSeuil, setEditLinkSeuil] = useState("");
   const [unlinkingId, setUnlinkingId] = useState<string | null>(null);
+  const [preuvesCount, setPreuvesCount] = useState(0);
 
   // ========== SELF-FETCHING QUERIES ==========
 
@@ -433,10 +435,13 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
           </SheetHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-            <TabsList className="w-full grid grid-cols-3">
+            <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger value="info">📋 Infos</TabsTrigger>
               <TabsTrigger value="criteres">✅ Critères</TabsTrigger>
               <TabsTrigger value="sous-taches">🔗 Liens</TabsTrigger>
+              <TabsTrigger value="preuves">
+                📎 Preuves{preuvesCount > 0 ? ` (${preuvesCount})` : ""}
+              </TabsTrigger>
             </TabsList>
 
             {/* ===================== TAB 1 — INFORMATIONS ===================== */}
@@ -712,6 +717,16 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
                   );
                 })
               )}
+            </TabsContent>
+
+            {/* ===================== TAB 4 — PREUVES ===================== */}
+            <TabsContent value="preuves" className="mt-4">
+              <PreuvesTab
+                extrantId={extrant.id}
+                extrantRef={extrant.reference}
+                activiteCode={extrant.activite_id}
+                onCountChange={setPreuvesCount}
+              />
             </TabsContent>
           </Tabs>
         </SheetContent>
