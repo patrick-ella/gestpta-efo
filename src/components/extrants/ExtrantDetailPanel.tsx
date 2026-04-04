@@ -724,7 +724,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
               <PreuvesTab
                 extrantId={extrant.id}
                 extrantRef={extrant.reference}
-                activiteCode={activiteId ? "act" : ""}
+                activiteCode={extrant.activite_id}
                 onCountChange={setPreuvesCount}
               />
             </TabsContent>
