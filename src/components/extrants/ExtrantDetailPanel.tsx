@@ -11,13 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import { Pencil, Trash2, Link2, Unlink, Plus, AlertTriangle } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Pencil, Trash2, Unlink, Plus, AlertTriangle, Loader2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import type { Extrant, ExtrantCritere, CritereSousTache } from "@/hooks/useExtrantsData";
+import type { ExtrantCritere } from "@/hooks/useExtrantsData";
 
 interface Props {
-  extrant: Extrant | null;
+  extrant: { id: string; activite_id: string } | null;
   activiteId: string | null;
   open: boolean;
   onClose: () => void;
@@ -41,8 +41,11 @@ const conditionLabels: Record<string, string> = {
   taux_budget: "Taux budget ≥ seuil",
 };
 
-const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpdate, initialTab }: Props) => {
+const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, isAdmin, onUpdate, initialTab }: Props) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const extrantId = extrantProp?.id ?? null;
+
   const [rejectMotif, setRejectMotif] = useState("");
   const [showReject, setShowReject] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab || "info");
@@ -75,37 +78,56 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
   const [editLinkSeuil, setEditLinkSeuil] = useState("");
   const [unlinkingId, setUnlinkingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (initialTab) setActiveTab(initialTab);
-  }, [initialTab]);
+  // ========== SELF-FETCHING QUERIES ==========
 
-  useEffect(() => {
-    if (!open) {
-      setEditMode(false);
-      setShowReject(false);
-      setShowDelete(false);
-      setEditingCritereId(null);
-      setAddingCritere(false);
-      setAddingLinkCritereId(null);
-    }
-  }, [open]);
+  // Fetch extrant detail
+  const { data: extrant, isLoading: loadingExtrant } = useQuery({
+    queryKey: ["extrant-detail", extrantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("extrants")
+        .select("*")
+        .eq("id", extrantId!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!extrantId && open,
+    staleTime: 0,
+  });
+
+  // Fetch criteria
+  const { data: criteres = [], isLoading: loadingCriteres } = useQuery({
+    queryKey: ["extrant-criteres", extrantId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("extrants_criteres")
+        .select("*")
+        .eq("extrant_id", extrantId!)
+        .order("ordre");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!extrantId && open,
+    staleTime: 0,
+  });
 
   // Fetch all sous-tâches for linking
   const { data: allSousTaches = [] } = useQuery({
-    queryKey: ["all-sous-taches-for-link", activiteId],
+    queryKey: ["all-sous-taches-for-link"],
     queryFn: async () => {
-      const { data: sts } = await supabase.from("sous_taches").select("id, code, libelle, tache_id").order("code");
-      return sts ?? [];
+      const { data } = await supabase.from("sous_taches").select("id, code, libelle, tache_id").order("code");
+      return data ?? [];
     },
-    enabled: !!activiteId && open,
+    enabled: open,
   });
 
-  // Fetch linked sous-tâches with full detail
-  const { data: linkedSousTaches = [], refetch: refetchLinks } = useQuery({
-    queryKey: ["extrant-linked-st", extrant?.id],
+  // Fetch linked sous-tâches
+  const { data: linkedSousTaches = [] } = useQuery({
+    queryKey: ["extrant-linked-st", extrantId, criteres.map(c => c.id).join(",")],
     queryFn: async () => {
-      if (!extrant?.criteres?.length) return [];
-      const critereIds = extrant.criteres.map((c) => c.id);
+      if (!criteres.length) return [];
+      const critereIds = criteres.map((c) => c.id);
       const { data: liens } = await supabase
         .from("criteres_sous_taches")
         .select("id, critere_id, sous_tache_id, condition_type, condition_seuil")
@@ -113,8 +135,10 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
       if (!liens?.length) return [];
 
       const stIds = [...new Set(liens.map((l: any) => l.sous_tache_id))];
-      const { data: sts } = await supabase.from("sous_taches").select("id, code, libelle").in("id", stIds);
-      const { data: execs } = await supabase.from("executions").select("sous_tache_id, avancement_pct").in("sous_tache_id", stIds);
+      const [{ data: sts }, { data: execs }] = await Promise.all([
+        supabase.from("sous_taches").select("id, code, libelle").in("id", stIds),
+        supabase.from("executions").select("sous_tache_id, avancement_pct").in("sous_tache_id", stIds),
+      ]);
 
       const execMap: Record<string, number> = {};
       (execs ?? []).forEach((e: any) => { execMap[e.sous_tache_id] = e.avancement_pct ?? 0; });
@@ -124,20 +148,64 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
         return { ...l, code: st?.code ?? "", libelle: st?.libelle ?? "", avancement: execMap[l.sous_tache_id] ?? 0 };
       });
     },
-    enabled: !!extrant?.id && open,
+    enabled: !!extrantId && criteres.length > 0 && open,
+    staleTime: 0,
   });
 
-  const recalculate = useCallback(async () => {
-    if (!extrant) return;
-    await supabase.rpc("recalculate_extrant_statut", { p_extrant_id: extrant.id });
+  // ========== INVALIDATION HELPER ==========
+  const invalidateAll = useCallback(() => {
+    if (!extrantId) return;
+    queryClient.invalidateQueries({ queryKey: ["extrant-detail", extrantId] });
+    queryClient.invalidateQueries({ queryKey: ["extrant-criteres", extrantId] });
+    queryClient.invalidateQueries({ queryKey: ["extrant-linked-st", extrantId] });
+    queryClient.invalidateQueries({ queryKey: ["extrants-data"] });
+    queryClient.invalidateQueries({ queryKey: ["extrants-stats"] });
     onUpdate();
-  }, [extrant, onUpdate]);
+  }, [extrantId, queryClient, onUpdate]);
 
-  if (!extrant) return null;
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
+
+  // Reset all modes when panel closes or extrant changes
+  useEffect(() => {
+    setEditMode(false);
+    setShowReject(false);
+    setShowDelete(false);
+    setEditingCritereId(null);
+    setAddingCritere(false);
+    setAddingLinkCritereId(null);
+    setEditingLinkId(null);
+    setUnlinkingId(null);
+    setDeletingCritereId(null);
+    setDeleteConfirmRef("");
+    setRejectMotif("");
+  }, [extrantId, open]);
+
+  const recalculate = useCallback(async () => {
+    if (!extrantId) return;
+    await supabase.rpc("recalculate_extrant_statut", { p_extrant_id: extrantId });
+    invalidateAll();
+  }, [extrantId, invalidateAll]);
+
+  if (!extrantId || !open) return null;
+
+  if (loadingExtrant || !extrant) {
+    return (
+      <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+        <SheetContent className="w-full sm:max-w-lg">
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="ml-2 text-sm text-muted-foreground">Chargement...</span>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   const st = statutConfig[extrant.statut] || statutConfig.non_produit;
-  const totalCrit = extrant.criteres?.length ?? 0;
-  const validCrit = extrant.criteres?.filter((c) => c.valide_final).length ?? 0;
+  const totalCrit = criteres.length;
+  const validCrit = criteres.filter((c) => c.valide_final).length;
 
   // === Tab 1 handlers ===
   const startEdit = () => {
@@ -175,7 +243,7 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
       });
       toast.success(`✅ Extrant ${editRef.trim()} mis à jour`);
       setEditMode(false);
-      onUpdate();
+      invalidateAll();
     } catch (err: any) {
       toast.error(`Erreur : ${err.message}`);
     } finally {
@@ -188,7 +256,7 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
     await supabase.from("extrants").update({ statut: "valide", statut_mode: "manuel", date_validation: new Date().toISOString().split("T")[0], valide_par: user?.id }).eq("id", extrant.id);
     await supabase.from("journal_audit").insert({ user_id: user?.id ?? null, action: "VALIDATE", entite: "extrant", nouvelle_valeur: { reference: extrant.reference, statut: "valide" } as any });
     toast.success(`✔️ Extrant ${extrant.reference} validé`);
-    onUpdate();
+    invalidateAll();
   };
 
   const handleReject = async () => {
@@ -196,21 +264,21 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
     await supabase.from("extrants").update({ statut: "rejete", statut_mode: "manuel", rejete_motif: rejectMotif }).eq("id", extrant.id);
     await supabase.from("journal_audit").insert({ user_id: user?.id ?? null, action: "REJECT", entite: "extrant", nouvelle_valeur: { reference: extrant.reference, statut: "rejete", motif: rejectMotif } as any });
     toast.success(`🔄 Extrant ${extrant.reference} rejeté`);
-    onUpdate();
-    onClose();
+    invalidateAll();
+    setShowReject(false);
   };
 
   const handleResetAuto = async () => {
     await supabase.from("extrants").update({ statut_mode: "auto" }).eq("id", extrant.id);
-    await recalculate();
+    await supabase.rpc("recalculate_extrant_statut", { p_extrant_id: extrant.id });
+    invalidateAll();
     toast.success("Statut remis en calcul automatique");
   };
 
   // === Delete extrant ===
   const handleDelete = async () => {
     try {
-      // Cascade: delete links, criteria, then extrant
-      const critIds = (extrant.criteres ?? []).map(c => c.id);
+      const critIds = criteres.map(c => c.id);
       if (critIds.length) {
         await supabase.from("criteres_sous_taches").delete().in("critere_id", critIds);
         await supabase.from("extrants_criteres").delete().eq("extrant_id", extrant.id);
@@ -221,7 +289,7 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
         ancienne_valeur: { reference: extrant.reference, libelle: extrant.libelle, statut: extrant.statut, nb_criteres: totalCrit } as any,
       });
       toast.success(`🗑 Extrant ${extrant.reference} supprimé`);
-      onUpdate();
+      invalidateAll();
       onClose();
     } catch (err: any) {
       toast.error(`Erreur : ${err.message}`);
@@ -241,6 +309,7 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
 
   const saveCritere = async (critereId?: string) => {
     if (!critereForm.libelle.trim()) { toast.error("Le libellé est requis"); return; }
+    setSaving(true);
     try {
       const payload: any = {
         libelle: critereForm.libelle.trim(),
@@ -261,10 +330,10 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
       await recalculate();
       setEditingCritereId(null);
       setAddingCritere(false);
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: any) { toast.error(err.message); } finally { setSaving(false); }
   };
 
-  const deleteCritere = async (critereId: string) => {
+  const handleDeleteCritere = async (critereId: string) => {
     await supabase.from("criteres_sous_taches").delete().eq("critere_id", critereId);
     await supabase.from("extrants_criteres").delete().eq("id", critereId);
     await recalculate();
@@ -288,7 +357,6 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
         condition_seuil: linkSeuil ? parseFloat(linkSeuil) : null,
       });
       await recalculate();
-      refetchLinks();
       setAddingLinkCritereId(null);
       setSelectedLinkSt(null);
       setLinkSearch("");
@@ -299,7 +367,6 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
   const updateLink = async (linkId: string) => {
     await supabase.from("criteres_sous_taches").update({ condition_type: editLinkCondition, condition_seuil: editLinkSeuil ? parseFloat(editLinkSeuil) : null }).eq("id", linkId);
     await recalculate();
-    refetchLinks();
     setEditingLinkId(null);
     toast.success("✅ Condition mise à jour");
   };
@@ -307,7 +374,6 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
   const removeLink = async (linkId: string) => {
     await supabase.from("criteres_sous_taches").delete().eq("id", linkId);
     await recalculate();
-    refetchLinks();
     setUnlinkingId(null);
     toast.success("🔗 Lien supprimé");
   };
@@ -340,7 +406,9 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
         </div>
       )}
       <div className="flex gap-2">
-        <Button size="sm" onClick={() => saveCritere(critereId)}>💾 Sauvegarder</Button>
+        <Button size="sm" onClick={() => saveCritere(critereId)} disabled={saving}>
+          {saving ? "⏳ Enregistrement..." : "💾 Sauvegarder"}
+        </Button>
         <Button size="sm" variant="outline" onClick={() => { setEditingCritereId(null); setAddingCritere(false); }}>✕ Annuler</Button>
       </div>
     </div>
@@ -391,7 +459,9 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
                     <Textarea value={editIndicateur} onChange={(e) => setEditIndicateur(e.target.value.slice(0, 500))} rows={3} />
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <Button size="sm" onClick={saveEdit} disabled={saving}>💾 Enregistrer</Button>
+                    <Button size="sm" onClick={saveEdit} disabled={saving}>
+                      {saving ? "⏳ Enregistrement..." : "💾 Enregistrer"}
+                    </Button>
                     <Button size="sm" variant="outline" onClick={cancelEdit}>✕ Annuler</Button>
                   </div>
                 </div>
@@ -423,6 +493,12 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
                       {extrant.statut_mode === "manuel" && <span className="text-xs text-muted-foreground">(manuel)</span>}
                     </div>
                   </div>
+                  {totalCrit > 0 && (
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Critères validés</Label>
+                      <p className="text-sm text-foreground">{validCrit}/{totalCrit}</p>
+                    </div>
+                  )}
                   {extrant.date_production && (
                     <div className="space-y-1">
                       <Label className="text-sm text-muted-foreground">Date de production</Label>
@@ -460,7 +536,11 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
 
             {/* ===================== TAB 2 — CRITÈRES ===================== */}
             <TabsContent value="criteres" className="space-y-3 mt-4">
-              {totalCrit === 0 && !addingCritere ? (
+              {loadingCriteres ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                </div>
+              ) : totalCrit === 0 && !addingCritere ? (
                 <div className="text-center py-6 space-y-3">
                   <p className="text-sm font-medium text-muted-foreground">✅ Aucun critère défini</p>
                   <p className="text-xs text-muted-foreground max-w-sm mx-auto">
@@ -477,7 +557,7 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
                 </div>
               ) : (
                 <>
-                  {extrant.criteres?.map((c) => {
+                  {criteres.map((c) => {
                     const typeLabel = c.type_critere === "binaire" ? "Binaire" : c.type_critere === "date" ? "Date" : "Quantitatif";
                     if (editingCritereId === c.id) return <div key={c.id}>{renderCritereForm(c.id)}</div>;
                     return (
@@ -490,7 +570,7 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
                           </div>
                           {isAdmin && (
                             <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditCritere(c)}><Pencil className="h-3 w-3" /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditCritere(c as any)}><Pencil className="h-3 w-3" /></Button>
                               <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeletingCritereId(c.id)}><Trash2 className="h-3 w-3" /></Button>
                             </div>
                           )}
@@ -500,7 +580,7 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
                         <p className="text-xs text-muted-foreground">{c.valide_auto ? "✅ Validé auto" : c.valide_manuellement ? "✅ Validé manuellement" : "⏳ En attente"}</p>
                         {!c.valide_auto && (
                           <div className="flex items-center gap-2 pt-1">
-                            <Checkbox checked={c.valide_manuellement} onCheckedChange={(checked) => handleToggleCritereManuel(c.id, !!checked)} disabled={!isAdmin} />
+                            <Checkbox checked={c.valide_manuellement ?? false} onCheckedChange={(checked) => handleToggleCritereManuel(c.id, !!checked)} disabled={!isAdmin} />
                             <span className="text-xs text-muted-foreground">Critère validé manuellement</span>
                           </div>
                         )}
@@ -519,10 +599,10 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
 
             {/* ===================== TAB 3 — SOUS-TÂCHES LIÉES ===================== */}
             <TabsContent value="sous-taches" className="mt-4 space-y-4">
-              {(extrant.criteres ?? []).length === 0 ? (
+              {criteres.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">Définissez d'abord des critères (onglet ✅) pour pouvoir lier des sous-tâches.</p>
               ) : (
-                extrant.criteres?.map((c) => {
+                criteres.map((c) => {
                   const critLinks = linkedSousTaches.filter((l: any) => l.critere_id === c.id);
                   return (
                     <div key={c.id} className="space-y-2">
@@ -560,7 +640,7 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
                                   <Badge variant="outline" className="font-mono text-xs">{link.code}</Badge>
                                   <span className="text-xs text-foreground truncate">{link.libelle}</span>
                                 </div>
-                                <Badge className={link.avancement === 100 ? "bg-success/20 text-success-foreground" : "bg-muted text-muted-foreground"} >{link.avancement}%</Badge>
+                                <Badge className={link.avancement === 100 ? "bg-success/20 text-success-foreground" : "bg-muted text-muted-foreground"}>{link.avancement}%</Badge>
                               </div>
                               <p className="text-xs text-muted-foreground">Condition : {conditionLabels[link.condition_type] || link.condition_type}{link.condition_seuil ? ` (${link.condition_seuil})` : ""}</p>
                               {isAdmin && (
@@ -679,7 +759,7 @@ const ExtrantDetailPanel = ({ extrant, activiteId, open, onClose, isAdmin, onUpd
         onOpenChange={(v) => { if (!v) setDeletingCritereId(null); }}
         title="Supprimer ce critère ?"
         description="Les liens avec les sous-tâches associées seront également supprimés."
-        onConfirm={() => deletingCritereId && deleteCritere(deletingCritereId)}
+        onConfirm={() => deletingCritereId && handleDeleteCritere(deletingCritereId)}
       />
     </>
   );
