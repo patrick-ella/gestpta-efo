@@ -318,6 +318,7 @@ const Dashboard = () => {
           realized: avsecKpi?.valeur_realisee ?? null,
           target: avsecKpi?.cible_2027 ?? "Centre AVSEC",
         }}
+        extrantStats={extrantStats ?? undefined}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
