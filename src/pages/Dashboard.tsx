@@ -15,6 +15,7 @@ import DashboardKpiCards from "@/components/dashboard/DashboardKpiCards";
 import ActivityMatrix from "@/components/dashboard/ActivityMatrix";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import AlertPanel, { type Alert } from "@/components/dashboard/AlertPanel";
+import { useExtrantStats } from "@/hooks/useExtrantsData";
 import type { Database } from "@/integrations/supabase/types";
 
 type Execution = Database["public"]["Tables"]["executions"]["Row"];
