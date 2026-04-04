@@ -718,6 +718,16 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
                 })
               )}
             </TabsContent>
+
+            {/* ===================== TAB 4 — PREUVES ===================== */}
+            <TabsContent value="preuves" className="mt-4">
+              <PreuvesTab
+                extrantId={extrant.id}
+                extrantRef={extrant.reference}
+                activiteCode={activiteId ? "act" : ""}
+                onCountChange={setPreuvesCount}
+              />
+            </TabsContent>
           </Tabs>
         </SheetContent>
       </Sheet>
