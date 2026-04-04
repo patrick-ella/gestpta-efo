@@ -78,6 +78,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
   const [editLinkCondition, setEditLinkCondition] = useState("");
   const [editLinkSeuil, setEditLinkSeuil] = useState("");
   const [unlinkingId, setUnlinkingId] = useState<string | null>(null);
+  const [preuvesCount, setPreuvesCount] = useState(0);
 
   // ========== SELF-FETCHING QUERIES ==========
 
