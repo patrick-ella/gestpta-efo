@@ -153,10 +153,9 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
         </SheetHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="w-full grid grid-cols-4">
+          <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="details">📋 Détails</TabsTrigger>
             <TabsTrigger value="budget-lines">💰 Budget</TabsTrigger>
-            <TabsTrigger value="livrables">📦 Livrables</TabsTrigger>
             <TabsTrigger value="risques">⚠️ Risques</TabsTrigger>
           </TabsList>
 
