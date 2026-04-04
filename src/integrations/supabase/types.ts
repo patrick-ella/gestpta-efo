@@ -350,6 +350,56 @@ export type Database = {
           },
         ]
       }
+      extrants_preuves: {
+        Row: {
+          created_at: string
+          depose_le: string
+          depose_par: string
+          extrant_id: string
+          fichier_nom: string
+          fichier_taille: number | null
+          fichier_type: string | null
+          fichier_url: string
+          id: string
+          libelle: string
+          observations: string | null
+        }
+        Insert: {
+          created_at?: string
+          depose_le?: string
+          depose_par: string
+          extrant_id: string
+          fichier_nom: string
+          fichier_taille?: number | null
+          fichier_type?: string | null
+          fichier_url: string
+          id?: string
+          libelle: string
+          observations?: string | null
+        }
+        Update: {
+          created_at?: string
+          depose_le?: string
+          depose_par?: string
+          extrant_id?: string
+          fichier_nom?: string
+          fichier_taille?: number | null
+          fichier_type?: string | null
+          fichier_url?: string
+          id?: string
+          libelle?: string
+          observations?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extrants_preuves_extrant_id_fkey"
+            columns: ["extrant_id"]
+            isOneToOne: false
+            referencedRelation: "extrants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       indicateurs_kpi: {
         Row: {
           baseline_annee: number | null
