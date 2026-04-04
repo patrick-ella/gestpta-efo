@@ -111,6 +111,15 @@ const Dashboard = () => {
 
   const { data: extrantStats } = useExtrantStats();
 
+  // Fetch per-activity extrant counts
+  const { data: extrantsPerActivity = [] } = useQuery({
+    queryKey: ["dashboard-extrants-per-activity"],
+    queryFn: async () => {
+      const { data } = await supabase.from("extrants").select("activite_id, statut");
+      return data ?? [];
+    },
+  });
+
   const exMap = useMemo(() => {
     const m: Record<string, Execution> = {};
     executions.forEach((e) => (m[e.sous_tache_id] = e));
