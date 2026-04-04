@@ -151,8 +151,8 @@ const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConfor
         </Card>
       </div>
 
-      {/* Row 2: Text-based accreditation KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Row 2: Text-based accreditation KPIs + Extrants */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* TRAINAIR PLUS */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -195,6 +195,23 @@ const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConfor
             </div>
             <p className="text-xs text-muted-foreground">
               Cible 2027 : {centreAvsec?.target ?? "Centre AVSEC"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Extrants KPI */}
+        <Card className="border-success/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              📦 Production des extrants
+            </CardTitle>
+            <Award className="h-4 w-4 text-success-foreground" />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold text-foreground">{extTaux}%</div>
+            <Progress value={extTaux} className="h-2" />
+            <p className="text-xs text-muted-foreground">
+              {extrantStats?.produits ?? 0}/{extrantStats?.total ?? 0} extrants produits ou validés
             </p>
           </CardContent>
         </Card>
