@@ -132,8 +132,8 @@ const Rapports = () => {
     },
     {
       key: "budget-livrables",
-      title: "Rapport budgétaire et livrables",
-      desc: "Rapport PDF par Activité/Tâche avec lignes budgétaires consolidées et livrables.",
+      title: "Rapport d'activité de l'EFO",
+      desc: "Exécution budgétaire par tâche et suivi des extrants (GAR) par activité.",
       icon: FileText,
       badge: "PDF",
       badgeClass: "bg-destructive text-destructive-foreground",
