@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { SousTacheLivrablesTab } from "@/components/livrables/SousTacheLivrablesTab";
+
 import BudgetLinesTab from "@/components/budget/BudgetLinesTab";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import EditHistory from "@/components/pta/EditHistory";
