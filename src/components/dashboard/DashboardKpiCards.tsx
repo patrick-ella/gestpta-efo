@@ -52,9 +52,10 @@ function getTextStatus(realized: string | null, target: string | null): { label:
   return { label: "En cours", emoji: "⚠️", variant: "secondary" };
 }
 
-const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConformity, trainairPlus, centreAvsec }: KpiCardsProps) => {
+const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConformity, trainairPlus, centreAvsec, extrantStats }: KpiCardsProps) => {
   const trainairStatus = getTextStatus(trainairPlus?.realized ?? null, trainairPlus?.target ?? null);
   const avsecStatus = getTextStatus(centreAvsec?.realized ?? null, centreAvsec?.target ?? null);
+  const extTaux = extrantStats?.taux ?? 0;
 
   return (
     <div className="space-y-4">
