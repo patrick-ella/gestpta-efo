@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, Copy, Loader2, Package, CheckCircle2, AlertTriangle, Lock, Pencil, Trash2, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Loader2, CheckCircle2, AlertTriangle, Lock, Pencil, Trash2, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -308,12 +308,6 @@ const PtaTreeView = ({ activites, isAdmin, onSelectSousTache, onRefresh }: PtaTr
                             <TooltipContent>Modifié récemment</TooltipContent></Tooltip>
                         )}
                         <span className="text-sm text-foreground truncate">{st.libelle}</span>
-                        {livrableCounts[st.id] && (
-                          <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-                            livrableCounts[st.id].done === livrableCounts[st.id].total ? "bg-green-100 text-green-800"
-                            : livrableCounts[st.id].done > 0 ? "bg-amber-100 text-amber-800" : "bg-muted text-muted-foreground"
-                          }`}><Package className="h-3 w-3" />{livrableCounts[st.id].done}/{livrableCounts[st.id].total}</span>
-                        )}
                       </div>
                       <div className="flex items-center gap-4 shrink-0">
                         {isAdmin && (
