@@ -435,10 +435,13 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
           </SheetHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-            <TabsList className="w-full grid grid-cols-3">
+            <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger value="info">📋 Infos</TabsTrigger>
               <TabsTrigger value="criteres">✅ Critères</TabsTrigger>
               <TabsTrigger value="sous-taches">🔗 Liens</TabsTrigger>
+              <TabsTrigger value="preuves">
+                📎 Preuves{preuvesCount > 0 ? ` (${preuvesCount})` : ""}
+              </TabsTrigger>
             </TabsList>
 
             {/* ===================== TAB 1 — INFORMATIONS ===================== */}
