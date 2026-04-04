@@ -54,6 +54,23 @@ const ActivitiesSummary = () => {
     },
   });
 
+  // Fetch extrants per activity
+  const { data: extrantsRaw } = useQuery({
+    queryKey: ["extrants-per-activity-cl"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("extrants").select("activite_id, statut");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const extrantsMap: Record<string, { total: number; produits: number }> = {};
+  (extrantsRaw ?? []).forEach((e) => {
+    if (!extrantsMap[e.activite_id]) extrantsMap[e.activite_id] = { total: 0, produits: 0 };
+    extrantsMap[e.activite_id].total++;
+    if (e.statut === "produit" || e.statut === "valide") extrantsMap[e.activite_id].produits++;
+  });
+
   // Filter to official codes and deduplicate by id
   const uniqueActivites = activitesRaw
     ? Array.from(new Map(
