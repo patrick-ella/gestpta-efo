@@ -94,6 +94,15 @@ const ActivityMatrix = ({ activities }: Props) => {
                   </span>
                 </TableCell>
                 <TableCell className="text-center">
+                  {act.extrantsTotal != null && act.extrantsTotal > 0 ? (
+                    <Badge className={act.extrantsProduits === act.extrantsTotal ? "bg-success/20 text-success-foreground" : (act.extrantsProduits ?? 0) > 0 ? "bg-warning/20 text-warning-foreground" : "bg-destructive/10 text-destructive"}>
+                      📦 {act.extrantsProduits ?? 0}/{act.extrantsTotal}
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center">
                   <Badge className={statusColors[status]}>{status}</Badge>
                 </TableCell>
               </TableRow>
