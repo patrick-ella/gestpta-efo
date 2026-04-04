@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Package } from "lucide-react";
 
 const OFFICIAL_CODES = ['30201', '30202', '30203', '30204', '30205'];
 
