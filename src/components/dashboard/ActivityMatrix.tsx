@@ -64,6 +64,7 @@ const ActivityMatrix = ({ activities }: Props) => {
             <TableHead className="text-primary-foreground font-semibold text-right">Budget consommé</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center">Taux budgétaire</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center">Avancement physique</TableHead>
+            <TableHead className="text-primary-foreground font-semibold text-center">Extrants produits</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center">Statut</TableHead>
           </TableRow>
         </TableHeader>
