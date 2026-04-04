@@ -65,7 +65,7 @@ function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, anne
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text("Rapport budgétaire et livrables", 14, 6);
+  doc.text("Rapport d'activité de l'EFO", 14, 6);
   doc.setTextColor(174, 214, 241);
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
