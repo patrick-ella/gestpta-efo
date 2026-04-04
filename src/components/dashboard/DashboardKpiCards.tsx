@@ -14,6 +14,14 @@ interface TextKpiInfo {
   target: string | null;
 }
 
+interface ExtrantStatsInfo {
+  total: number;
+  produits: number;
+  enCours: number;
+  nonProduits: number;
+  taux: number;
+}
+
 interface KpiCardsProps {
   apprenants: { realized: number; target: number };
   budgetExec: number;
@@ -21,6 +29,7 @@ interface KpiCardsProps {
   isoConformity: number;
   trainairPlus?: TextKpiInfo;
   centreAvsec?: TextKpiInfo;
+  extrantStats?: ExtrantStatsInfo;
 }
 
 function gaugeData(pct: number) {
