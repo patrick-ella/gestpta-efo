@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, Copy, Loader2, Package, CheckCircle2, AlertTriangle, Lock, Pencil, Trash2, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Loader2, CheckCircle2, AlertTriangle, Lock, Pencil, Trash2, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
