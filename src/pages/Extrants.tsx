@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Loader2, Package, ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { Loader2, ChevronDown, ChevronRight, Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const Extrants = () => {
   const [filter, setFilter] = useState("all");
   const [selectedExtrant, setSelectedExtrant] = useState<Extrant | null>(null);
   const [selectedActiviteId, setSelectedActiviteId] = useState<string | null>(null);
+  const [initialTab, setInitialTab] = useState<string | undefined>();
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardActiviteId, setWizardActiviteId] = useState<string | null>(null);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(activites.map((a) => a.id)));
@@ -57,6 +58,12 @@ const Extrants = () => {
       else next.add(id);
       return next;
     });
+  };
+
+  const openDetail = (ext: Extrant, actId: string, tab?: string) => {
+    setSelectedExtrant(ext);
+    setSelectedActiviteId(actId);
+    setInitialTab(tab);
   };
 
   if (isLoading) {
@@ -146,12 +153,13 @@ const Extrants = () => {
                       const st = getStatut(ext.statut);
                       const totalCrit = ext.criteres?.length ?? 0;
                       const validCrit = ext.criteres?.filter((c) => c.valide_final).length ?? 0;
+                      const noCriteres = totalCrit === 0;
 
                       return (
                         <div
                           key={ext.id}
-                          className="flex items-start justify-between p-3 rounded-lg border hover:bg-accent/20 transition-colors cursor-pointer"
-                          onClick={() => { setSelectedExtrant(ext); setSelectedActiviteId(act.id); }}
+                          className="group flex items-start justify-between p-3 rounded-lg border hover:bg-accent/20 transition-colors cursor-pointer"
+                          onClick={() => openDetail(ext, act.id)}
                         >
                           <div className="flex-1 min-w-0 space-y-1">
                             <div className="flex items-center gap-2">
@@ -159,15 +167,41 @@ const Extrants = () => {
                               <span className="text-sm font-medium text-foreground truncate">{ext.libelle}</span>
                             </div>
                             <p className="text-xs text-muted-foreground truncate">Indicateur : {ext.indicateur_mesure}</p>
-                            {totalCrit > 0 && (
+                            {totalCrit > 0 ? (
                               <p className="text-xs text-muted-foreground">
                                 Critères : <span className={validCrit === totalCrit ? "text-success-foreground font-semibold" : validCrit > 0 ? "text-warning-foreground" : "text-destructive"}>{validCrit}/{totalCrit}</span> validés
                               </p>
+                            ) : noCriteres && (
+                              <button
+                                className="flex items-center gap-1 text-xs text-warning-foreground hover:underline"
+                                onClick={(e) => { e.stopPropagation(); openDetail(ext, act.id, "criteres"); }}
+                              >
+                                <AlertTriangle className="h-3 w-3" /> Critères manquants
+                              </button>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 ml-2 shrink-0">
+                          <div className="flex items-center gap-1 ml-2 shrink-0">
                             <Badge className={`text-xs ${st.color}`}>{st.emoji} {st.label}</Badge>
-                            <Button variant="ghost" size="sm" className="text-xs h-7">▶ Détails</Button>
+                            {isAdmin && (
+                              <>
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => { e.stopPropagation(); openDetail(ext, act.id, "info"); }}
+                                  title="Modifier"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                                  onClick={(e) => { e.stopPropagation(); openDetail(ext, act.id); }}
+                                  title="Supprimer"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
                       );
@@ -196,9 +230,10 @@ const Extrants = () => {
         extrant={selectedExtrant}
         activiteId={selectedActiviteId}
         open={!!selectedExtrant}
-        onClose={() => setSelectedExtrant(null)}
+        onClose={() => { setSelectedExtrant(null); setInitialTab(undefined); }}
         isAdmin={isAdmin}
         onUpdate={invalidate}
+        initialTab={initialTab}
       />
 
       {/* Wizard */}
