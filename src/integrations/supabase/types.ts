@@ -115,6 +115,45 @@ export type Database = {
         }
         Relationships: []
       }
+      criteres_sous_taches: {
+        Row: {
+          condition_seuil: number | null
+          condition_type: string
+          critere_id: string
+          id: string
+          sous_tache_id: string
+        }
+        Insert: {
+          condition_seuil?: number | null
+          condition_type: string
+          critere_id: string
+          id?: string
+          sous_tache_id: string
+        }
+        Update: {
+          condition_seuil?: number | null
+          condition_type?: string
+          critere_id?: string
+          id?: string
+          sous_tache_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "criteres_sous_taches_critere_id_fkey"
+            columns: ["critere_id"]
+            isOneToOne: false
+            referencedRelation: "extrants_criteres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "criteres_sous_taches_sous_tache_id_fkey"
+            columns: ["sous_tache_id"]
+            isOneToOne: false
+            referencedRelation: "sous_taches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       executions: {
         Row: {
           avancement_pct: number | null
@@ -195,6 +234,121 @@ export type Database = {
           statut?: string | null
         }
         Relationships: []
+      }
+      extrants: {
+        Row: {
+          activite_id: string
+          created_at: string | null
+          date_production: string | null
+          date_validation: string | null
+          id: string
+          indicateur_mesure: string
+          libelle: string
+          ordre: number | null
+          reference: string
+          rejete_motif: string | null
+          statut: string
+          statut_mode: string
+          updated_at: string | null
+          updated_by: string | null
+          valide_par: string | null
+        }
+        Insert: {
+          activite_id: string
+          created_at?: string | null
+          date_production?: string | null
+          date_validation?: string | null
+          id?: string
+          indicateur_mesure: string
+          libelle: string
+          ordre?: number | null
+          reference: string
+          rejete_motif?: string | null
+          statut?: string
+          statut_mode?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          valide_par?: string | null
+        }
+        Update: {
+          activite_id?: string
+          created_at?: string | null
+          date_production?: string | null
+          date_validation?: string | null
+          id?: string
+          indicateur_mesure?: string
+          libelle?: string
+          ordre?: number | null
+          reference?: string
+          rejete_motif?: string | null
+          statut?: string
+          statut_mode?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          valide_par?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extrants_activite_id_fkey"
+            columns: ["activite_id"]
+            isOneToOne: false
+            referencedRelation: "activites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      extrants_criteres: {
+        Row: {
+          created_at: string | null
+          date_echeance: string | null
+          extrant_id: string
+          id: string
+          libelle: string
+          ordre: number | null
+          seuil_unite: string | null
+          seuil_valeur: number | null
+          type_critere: string
+          valide_auto: boolean | null
+          valide_final: boolean | null
+          valide_manuellement: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_echeance?: string | null
+          extrant_id: string
+          id?: string
+          libelle: string
+          ordre?: number | null
+          seuil_unite?: string | null
+          seuil_valeur?: number | null
+          type_critere: string
+          valide_auto?: boolean | null
+          valide_final?: boolean | null
+          valide_manuellement?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          date_echeance?: string | null
+          extrant_id?: string
+          id?: string
+          libelle?: string
+          ordre?: number | null
+          seuil_unite?: string | null
+          seuil_valeur?: number | null
+          type_critere?: string
+          valide_auto?: boolean | null
+          valide_final?: boolean | null
+          valide_manuellement?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extrants_criteres_extrant_id_fkey"
+            columns: ["extrant_id"]
+            isOneToOne: false
+            referencedRelation: "extrants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       indicateurs_kpi: {
         Row: {
@@ -661,6 +815,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      recalculate_extrant_statut: {
+        Args: { p_extrant_id: string }
+        Returns: undefined
       }
     }
     Enums: {
