@@ -17,6 +17,8 @@ interface ActivityRow {
   budgetConsomme: number;
   tauxBudgetaire: number;
   avancementPhysique: number;
+  extrantsProduits?: number;
+  extrantsTotal?: number;
 }
 
 interface Props {
