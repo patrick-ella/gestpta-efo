@@ -154,6 +154,12 @@ const ActivitiesSummary = () => {
                   <Badge className="bg-secondary text-secondary-foreground text-xs">
                     {act.code}
                   </Badge>
+                  {(() => {
+                    const ext = extrantsMap[act.id];
+                    if (!ext || ext.total === 0) return null;
+                    const color = ext.produits === ext.total ? "bg-success/20 text-success-foreground" : ext.produits > 0 ? "bg-warning/20 text-warning-foreground" : "bg-destructive/10 text-destructive";
+                    return <Badge className={`text-xs ${color}`}>📦 {ext.produits}/{ext.total}</Badge>;
+                  })()}
                 </div>
                 <CardTitle className="text-sm font-semibold text-foreground leading-tight mt-1">
                   {act.libelle}
