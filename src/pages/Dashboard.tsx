@@ -109,6 +109,8 @@ const Dashboard = () => {
     },
   });
 
+  const { data: extrantStats } = useExtrantStats();
+
   const exMap = useMemo(() => {
     const m: Record<string, Execution> = {};
     executions.forEach((e) => (m[e.sous_tache_id] = e));
