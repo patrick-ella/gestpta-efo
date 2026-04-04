@@ -35,6 +35,13 @@ function statutLabel(s: string): string {
   return map[s] || s;
 }
 
+function formatDateFr(d: string | null): string {
+  if (!d) return "—";
+  const parts = d.split("-");
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return d;
+}
+
 // ── Logo loader ─────────────────────────────────────────────
 let cachedLogo: string | null = null;
 async function loadLogo(): Promise<string | null> {
@@ -91,7 +98,6 @@ function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalP
 }
 
 function drawCoverPage(doc: jsPDF, logo: string | null, annee: number, scope: string) {
-  // Top navy band
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 30, "F");
   if (logo) doc.addImage(logo, "PNG", 14, 5, 0, 20);
@@ -104,21 +110,18 @@ function drawCoverPage(doc: jsPDF, logo: string | null, annee: number, scope: st
   doc.setFont("helvetica", "normal");
   doc.text("ÉCOLE DE FORMATION EN AÉRONAUTIQUE (EFO)", 50, 22);
 
-  // Title
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
   doc.text("RAPPORT D'ACTIVITÉ DE L'EFO", PAGE_W / 2, 55, { align: "center" });
   doc.setFontSize(16);
   doc.setTextColor(46, 117, 182);
-  doc.text("Exécution budgétaire et suivi des extrants — Action 302", PAGE_W / 2, 67, { align: "center" });
+  doc.text("Exécution budgétaire et suivi des extrants (GAR) — Action 302", PAGE_W / 2, 67, { align: "center" });
 
-  // Decorative line
   doc.setDrawColor(46, 117, 182);
   doc.setLineWidth(0.8);
   doc.line(50, 75, 247, 75);
 
-  // Info box
   doc.setDrawColor(46, 117, 182);
   doc.setLineWidth(0.3);
   doc.setFillColor(235, 243, 251);
@@ -140,7 +143,6 @@ function drawCoverPage(doc: jsPDF, logo: string | null, annee: number, scope: st
     PAGE_W / 2, 114, { align: "center" }
   );
 
-  // Bottom mentions
   doc.setFontSize(9);
   doc.setFont("helvetica", "italic");
   doc.setTextColor(107, 114, 128);
@@ -193,6 +195,30 @@ function drawActiviteTotalBar(doc: jsPDF, y: number, code: string, prevu: number
   return y + 13;
 }
 
+// ── Extrant helpers ─────────────────────────────────────────
+interface ExtrantForReport {
+  id: string;
+  reference: string;
+  libelle: string;
+  indicateur_mesure: string;
+  statut: string;
+  date_production: string | null;
+  activite_id: string;
+  ordre: number | null;
+  criteres: { id: string; valide_final: boolean | null }[];
+  preuvesCount: number;
+}
+
+function computeExtrantSummary(extrants: ExtrantForReport[]) {
+  const total = extrants.length;
+  const produits = extrants.filter(e => e.statut === "produit" || e.statut === "valide").length;
+  const enCours = extrants.filter(e => e.statut === "en_cours").length;
+  const nonProduits = extrants.filter(e => e.statut === "non_produit").length;
+  const rejetes = extrants.filter(e => e.statut === "rejete").length;
+  const taux = total > 0 ? Math.round((produits / total) * 100) : 0;
+  return { total, produits, enCours, nonProduits, rejetes, taux };
+}
+
 // ── Main export function ────────────────────────────────────
 export async function exportBudgetLivrablesPdf(
   annee: number,
@@ -203,39 +229,53 @@ export async function exportBudgetLivrablesPdf(
   const logo = await loadLogo();
 
   // Fetch data
-  const [actRes, tachRes, stRes, linesRes, livRes] = await Promise.all([
+  const [actRes, tachRes, stRes, linesRes, extRes, critRes, preuvRes] = await Promise.all([
     supabase.from("activites").select("*").eq("exercice_id", exerciceId).order("ordre"),
     supabase.from("taches").select("*").order("ordre"),
     supabase.from("sous_taches").select("id, tache_id"),
     supabase.from("sous_tache_lignes_budgetaires").select("*").eq("exercice_id", exerciceId),
-    supabase.from("livrables").select("*"),
+    supabase.from("extrants").select("id, reference, libelle, indicateur_mesure, statut, date_production, activite_id, ordre").order("ordre"),
+    supabase.from("extrants_criteres").select("id, extrant_id, valide_final"),
+    supabase.from("extrants_preuves").select("id, extrant_id"),
   ]);
 
   let activites = actRes.data || [];
   const taches = tachRes.data || [];
   const sousTaches = stRes.data || [];
   const allLines = linesRes.data || [];
-  const allLivrables = livRes.data || [];
+  const allExtrants = extRes.data || [];
+  const allCriteres = critRes.data || [];
+  const allPreuves = preuvRes.data || [];
 
   if (filterActiviteId) {
     activites = activites.filter((a) => a.id === filterActiviteId);
+  }
+
+  // Build enriched extrants
+  const extrantsMap = new Map<string, ExtrantForReport[]>();
+  for (const e of allExtrants) {
+    const ext: ExtrantForReport = {
+      ...e,
+      ordre: e.ordre ?? 0,
+      criteres: allCriteres.filter(c => c.extrant_id === e.id).map(c => ({ id: c.id, valide_final: c.valide_final })),
+      preuvesCount: allPreuves.filter(p => p.extrant_id === e.id).length,
+    };
+    const arr = extrantsMap.get(e.activite_id) ?? [];
+    arr.push(ext);
+    extrantsMap.set(e.activite_id, arr);
   }
 
   const scope = filterActiviteId
     ? `Activité ${activites[0]?.code || ""}`
     : "Toutes les activités";
 
-  // Track page section titles for header
   const pageSections: Record<number, string> = {};
 
   // ── PAGE 1: Cover ────────────────────────────────────────
   drawCoverPage(doc, logo, annee, scope);
 
-  // Grand totals
   let grandTotalPrevu = 0;
   let grandTotalExecute = 0;
-  let grandTotalLiv = 0;
-  let grandTotalLivDone = 0;
 
   // ── Content pages ────────────────────────────────────────
   for (let ai = 0; ai < activites.length; ai++) {
@@ -245,7 +285,7 @@ export async function exportBudgetLivrablesPdf(
     // New page for each activité
     doc.addPage();
     const pageIdx = doc.getNumberOfPages();
-    pageSections[pageIdx] = `Activité ${act.code} — Budget`;
+    pageSections[pageIdx] = `Exécution budgétaire — ${act.code}`;
     let currentY = 16;
 
     currentY = drawActiviteHeader(doc, currentY, act.code, act.libelle, act.budget_total || 0);
@@ -256,18 +296,16 @@ export async function exportBudgetLivrablesPdf(
     for (const tache of actTaches) {
       if (currentY > MAX_Y - 35) {
         doc.addPage();
-        pageSections[doc.getNumberOfPages()] = `Activité ${act.code} — Tâche ${tache.code}`;
+        pageSections[doc.getNumberOfPages()] = `Exécution budgétaire — ${act.code}`;
         currentY = 16;
       }
 
       currentY = drawTacheHeader(doc, currentY, tache.code, tache.libelle, tache.budget_total || 0);
 
-      // Get consolidated budget lines for this tâche
       const tacheSts = sousTaches.filter((st) => st.tache_id === tache.id);
       const stIds = new Set(tacheSts.map((st) => st.id));
       const tacheLines = allLines.filter((l) => stIds.has(l.sous_tache_id));
 
-      // Group by nomenclature code
       const grouped = new Map<string, { code: string; libelle: string; prevu: number; execute: number }>();
       for (const l of tacheLines) {
         const existing = grouped.get(l.code_ligne);
@@ -291,8 +329,6 @@ export async function exportBudgetLivrablesPdf(
           return [r.code, r.libelle.substring(0, 60), formatFCFA(r.prevu), formatFCFA(r.execute), formatFCFA(r.execute), formatTaux(taux)];
         });
 
-        // Fix: col 3 = Engagé (same as Réalisé for now since we only track execute), col 4 = Réalisé
-        // Actually the data model only has prevu/execute, so Engagé = Réalisé
         const tacheTaux = tachePrevu > 0 ? Math.round((tacheExecute / tachePrevu) * 1000) / 10 : 0;
 
         autoTable(doc, {
@@ -350,14 +386,12 @@ export async function exportBudgetLivrablesPdf(
             5: { halign: "center", cellWidth: 45, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 1 } },
           },
           didParseCell: (data) => {
-            // Truncate long libellés
             if (data.column.index === 1 && data.section === "body") {
               const text = String(data.cell.raw);
               if (text.length > 45) {
                 data.cell.text = [text.substring(0, 42) + "..."];
               }
             }
-            // Color taux column
             if (data.column.index === 5 && data.section === "body") {
               const raw = String(data.cell.raw).replace(",", ".").replace(" %", "");
               const taux = parseFloat(raw);
@@ -370,7 +404,6 @@ export async function exportBudgetLivrablesPdf(
             }
           },
           willDrawCell: (data) => {
-            // Force right-align on amount columns in all sections
             if ([2, 3, 4].includes(data.column.index)) {
               data.cell.styles.halign = "right";
             }
@@ -394,66 +427,74 @@ export async function exportBudgetLivrablesPdf(
     }
 
     // Activité total bar
-    if (currentY > MAX_Y - 12) { doc.addPage(); pageSections[doc.getNumberOfPages()] = `Activité ${act.code} — Total`; currentY = 16; }
+    if (currentY > MAX_Y - 12) { doc.addPage(); pageSections[doc.getNumberOfPages()] = `Exécution budgétaire — ${act.code}`; currentY = 16; }
     currentY = drawActiviteTotalBar(doc, currentY, act.code, actTotalPrevu, actTotalExecute);
 
     grandTotalPrevu += actTotalPrevu;
     grandTotalExecute += actTotalExecute;
 
-    // ── Livrables section for this activité ──
-    const actTacheIds = new Set(actTaches.map((t) => t.id));
-    const actStIds = new Set(sousTaches.filter((st) => actTacheIds.has(st.tache_id)).map((st) => st.id));
-    const actLivrables = allLivrables.filter(
-      (l) => actTacheIds.has(l.tache_id) || (l.sous_tache_id && actStIds.has(l.sous_tache_id))
-    );
+    // ── Volet B: Extrants section for this activité ──
+    const actExtrants = extrantsMap.get(act.id) ?? [];
 
-    if (actLivrables.length > 0) {
+    if (actExtrants.length > 0) {
       doc.addPage();
-      pageSections[doc.getNumberOfPages()] = `Activité ${act.code} — Livrables`;
+      pageSections[doc.getNumberOfPages()] = `Extrants (GAR) — ${act.code}`;
       currentY = 16;
+
+      const extSummary = computeExtrantSummary(actExtrants);
 
       // Green header
       doc.setFillColor(29, 106, 59);
-      doc.roundedRect(MARGIN_L, currentY, CONTENT_W, 8, 1, 1, "F");
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
+      doc.roundedRect(MARGIN_L, currentY, CONTENT_W, 10, 1, 1, "F");
       doc.setTextColor(255, 255, 255);
-      doc.text(`LIVRABLES — Activité ${act.code}`, MARGIN_L + 4, currentY + 5.5);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(`EXTRANTS (GAR) — Activité ${act.code}`, MARGIN_L + 4, currentY + 6.5);
       doc.setFontSize(8);
-      doc.setTextColor(187, 247, 208);
-      doc.text(`${actLivrables.length} livrables au total`, PAGE_W - MARGIN_R - 4, currentY + 5.5, { align: "right" });
-      currentY += 12;
+      doc.text(
+        `${extSummary.total} extrant(s)  |  ${extSummary.produits} produits/validés  |  ${extSummary.enCours} en cours`,
+        PAGE_W - MARGIN_R - 4, currentY + 6.5, { align: "right" }
+      );
+      currentY += 14;
 
-      const livBody = actLivrables.map((l) => {
-        const tache = taches.find((t) => t.id === l.tache_id);
+      // Build table rows
+      const extBody = actExtrants.map((e) => {
+        const totalC = e.criteres.length;
+        const validC = e.criteres.filter(c => c.valide_final).length;
+        const criteresLabel = totalC > 0 ? `${validC}/${totalC}` : "—";
+        const preuvesLabel = e.preuvesCount > 0 ? String(e.preuvesCount) : "—";
         return [
-          tache?.code || "",
-          l.libelle.substring(0, 55),
-          statutLabel(l.statut || "non_produit"),
-          l.date_production || "—",
-          l.fichier_nom || "—",
+          e.reference,
+          e.libelle.substring(0, 55),
+          e.indicateur_mesure.substring(0, 50),
+          statutLabel(e.statut),
+          formatDateFr(e.date_production),
+          criteresLabel,
+          preuvesLabel,
         ];
       });
-
-      const livDone = actLivrables.filter((l) => l.statut === "produit" || l.statut === "valide").length;
-      const livEnCours = actLivrables.filter((l) => l.statut === "en_cours").length;
-      const livNon = actLivrables.filter((l) => l.statut === "non_produit" || !l.statut).length;
-      grandTotalLiv += actLivrables.length;
-      grandTotalLivDone += livDone;
 
       autoTable(doc, {
         startY: currentY,
         margin: { left: MARGIN_L, right: MARGIN_R },
         tableWidth: CONTENT_W,
-        head: [["Tâche", "Libellé du livrable", "Statut", "Date", "Fichier joint"]],
-        body: livBody,
+        head: [[
+          { content: "Réf.", styles: { halign: "center" as const } },
+          { content: "Libellé de l'extrant", styles: { halign: "left" as const } },
+          { content: "Indicateur de mesure", styles: { halign: "left" as const } },
+          { content: "Statut", styles: { halign: "center" as const } },
+          { content: "Date prod.", styles: { halign: "center" as const } },
+          { content: "Critères", styles: { halign: "center" as const } },
+          { content: "Preuves", styles: { halign: "center" as const } },
+        ]],
+        body: extBody,
         headStyles: {
           fillColor: [29, 106, 59],
           textColor: [255, 255, 255],
           fontStyle: "bold",
           fontSize: 8,
-          halign: "center",
           cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
+          lineWidth: 0.2,
         },
         bodyStyles: {
           fontSize: 8,
@@ -464,42 +505,79 @@ export async function exportBudgetLivrablesPdf(
         },
         alternateRowStyles: { fillColor: [240, 253, 244] },
         columnStyles: {
-          0: { halign: "center", cellWidth: 35 },
-          1: { halign: "left", cellWidth: 130 },
-          2: { halign: "center", cellWidth: 35 },
-          3: { halign: "center", cellWidth: 30 },
-          4: { halign: "left", cellWidth: 43 },
+          0: { halign: "center", cellWidth: 14, fontStyle: "bold" },
+          1: { halign: "left", cellWidth: 78, overflow: "ellipsize" },
+          2: { halign: "left", cellWidth: 70, fontSize: 7, fontStyle: "italic", textColor: [80, 80, 80], overflow: "ellipsize" },
+          3: { halign: "center", cellWidth: 34 },
+          4: { halign: "center", cellWidth: 27 },
+          5: { halign: "center", cellWidth: 25 },
+          6: { halign: "center", cellWidth: 25 },
         },
         didParseCell: (data) => {
-          if (data.column.index === 2 && data.section === "body") {
+          // Color statut column
+          if (data.column.index === 3 && data.section === "body") {
             const s = String(data.cell.raw);
             if (s === "Non produit") data.cell.styles.textColor = [239, 68, 68];
             else if (s === "En cours") data.cell.styles.textColor = [245, 158, 11];
-            else if (s === "Produit") data.cell.styles.textColor = [34, 197, 94];
+            else if (s === "Produit") { data.cell.styles.textColor = [34, 197, 94]; data.cell.styles.fontStyle = "bold"; }
             else if (s === "Validé") { data.cell.styles.textColor = [59, 130, 246]; data.cell.styles.fontStyle = "bold"; }
-            else if (s === "Rejeté") data.cell.styles.textColor = [153, 27, 27];
+            else if (s === "Rejeté") { data.cell.styles.textColor = [153, 27, 27]; data.cell.styles.fontStyle = "italic"; }
+          }
+          // Color critères column
+          if (data.column.index === 5 && data.section === "body") {
+            const val = String(data.cell.raw);
+            if (val === "—") {
+              data.cell.styles.textColor = [156, 163, 175];
+            } else {
+              const parts = val.split("/").map(Number);
+              if (parts.length === 2) {
+                if (parts[0] === parts[1] && parts[1] > 0) { data.cell.styles.textColor = [34, 197, 94]; data.cell.styles.fontStyle = "bold"; }
+                else if (parts[0] > 0) data.cell.styles.textColor = [245, 158, 11];
+                else data.cell.styles.textColor = [239, 68, 68];
+              }
+            }
+          }
+          // Color preuves column
+          if (data.column.index === 6 && data.section === "body") {
+            const val = String(data.cell.raw);
+            if (val !== "—") { data.cell.styles.textColor = [59, 130, 246]; data.cell.styles.fontStyle = "bold"; }
+            else data.cell.styles.textColor = [156, 163, 175];
           }
         },
         pageBreak: "auto",
         rowPageBreak: "avoid",
       });
 
-      currentY = (doc as any).lastAutoTable.finalY + 3;
+      currentY = (doc as any).lastAutoTable.finalY + 4;
 
       // Summary bar
-      if (currentY > MAX_Y - 10) { doc.addPage(); pageSections[doc.getNumberOfPages()] = `Activité ${act.code} — Livrables`; currentY = 16; }
+      if (currentY > MAX_Y - 18) { doc.addPage(); pageSections[doc.getNumberOfPages()] = `Extrants (GAR) — ${act.code}`; currentY = 16; }
+
       doc.setFillColor(226, 239, 218);
       doc.setDrawColor(34, 197, 94);
       doc.setLineWidth(0.3);
-      doc.roundedRect(MARGIN_L, currentY, CONTENT_W, 8, 1, 1, "FD");
+      doc.roundedRect(MARGIN_L, currentY, CONTENT_W, 9, 1, 1, "FD");
+      doc.setTextColor(29, 106, 59);
       doc.setFontSize(8);
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(21, 128, 61);
-      const livPct = actLivrables.length > 0 ? Math.round((livDone / actLivrables.length) * 100) : 0;
       doc.text(
-        `Total : ${actLivrables.length} livrables  |  Produits / Validés : ${livDone}  |  En cours : ${livEnCours}  |  Non produits : ${livNon}  |  Taux de production : ${livPct}%`,
+        `Total extrants : ${extSummary.total}   |   Produits / Validés : ${extSummary.produits}   |   En cours : ${extSummary.enCours}   |   Non produits : ${extSummary.nonProduits}   |   Taux de production : ${extSummary.taux}%`,
         PAGE_W / 2, currentY + 5.5, { align: "center" }
       );
+      currentY += 13;
+
+      // Progress bar
+      const progressWidth = CONTENT_W * (extSummary.taux / 100);
+      doc.setFillColor(209, 231, 209);
+      doc.roundedRect(MARGIN_L, currentY, CONTENT_W, 3, 1, 1, "F");
+      if (progressWidth > 0) {
+        doc.setFillColor(34, 197, 94);
+        doc.roundedRect(MARGIN_L, currentY, progressWidth, 3, 1, 1, "F");
+      }
+      doc.setTextColor(29, 106, 59);
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.text(`${extSummary.taux}%`, PAGE_W - MARGIN_R, currentY + 2.5, { align: "right" });
     }
   }
 
@@ -563,43 +641,76 @@ export async function exportBudgetLivrablesPdf(
 
   sumY = (doc as any).lastAutoTable.finalY + 10;
 
-  // Livrables summary table
-  const livSummaryBody = activites.map((act) => {
-    const actTaches = taches.filter((t) => t.activite_id === act.id);
-    const actTacheIds = new Set(actTaches.map((t) => t.id));
-    const actStIds = new Set(sousTaches.filter((st) => actTacheIds.has(st.tache_id)).map((st) => st.id));
-    const actLiv = allLivrables.filter((l) => actTacheIds.has(l.tache_id) || (l.sous_tache_id && actStIds.has(l.sous_tache_id)));
-    const done = actLiv.filter((l) => l.statut === "produit" || l.statut === "valide").length;
-    const enCours = actLiv.filter((l) => l.statut === "en_cours").length;
-    const nonP = actLiv.filter((l) => l.statut === "non_produit" || !l.statut).length;
-    const pct = actLiv.length > 0 ? Math.round((done / actLiv.length) * 100) : 0;
-    return [`${act.code}`, String(actLiv.length), String(done), String(enCours), String(nonP), `${pct}%`];
+  // Extrants summary table
+  const extSummaryBody = activites.map((act) => {
+    const actExt = extrantsMap.get(act.id) ?? [];
+    const s = computeExtrantSummary(actExt);
+    return [
+      `${act.code} — ${act.libelle.substring(0, 30)}`,
+      String(s.total),
+      String(s.produits),
+      String(s.enCours),
+      String(s.nonProduits),
+      String(s.rejetes),
+      `${s.taux}%`,
+    ];
   });
 
-  const livGlobalPct = grandTotalLiv > 0 ? Math.round((grandTotalLivDone / grandTotalLiv) * 100) : 0;
-  livSummaryBody.push(["TOTAL", String(grandTotalLiv), String(grandTotalLivDone), "", "", `${livGlobalPct}%`]);
+  // Grand total extrants
+  const allExtList = activites.flatMap(act => extrantsMap.get(act.id) ?? []);
+  const grandExtSummary = computeExtrantSummary(allExtList);
+  extSummaryBody.push([
+    "TOTAL ACTION 302",
+    String(grandExtSummary.total),
+    String(grandExtSummary.produits),
+    String(grandExtSummary.enCours),
+    String(grandExtSummary.nonProduits),
+    String(grandExtSummary.rejetes),
+    `${grandExtSummary.taux}%`,
+  ]);
 
   autoTable(doc, {
     startY: sumY,
     margin: { left: MARGIN_L, right: MARGIN_R },
     tableWidth: CONTENT_W,
-    head: [["Activité", "Total livrables", "Produits/Validés", "En cours", "Non produits", "Taux prod."]],
-    body: livSummaryBody,
+    head: [["Activité", "Nb extrants", "Produits/Validés", "En cours", "Non produits", "Rejetés", "Taux prod."]],
+    body: extSummaryBody,
     headStyles: { fillColor: [29, 106, 59], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8 },
     bodyStyles: { fontSize: 8, cellPadding: 2, textColor: [30, 30, 30] },
     columnStyles: {
-      0: { cellWidth: 80 },
-      1: { halign: "center", cellWidth: 40 },
-      2: { halign: "center", cellWidth: 45 },
-      3: { halign: "center", cellWidth: 40 },
-      4: { halign: "center", cellWidth: 40 },
-      5: { halign: "center", cellWidth: 28 },
+      0: { cellWidth: 60 },
+      1: { halign: "center", cellWidth: 30 },
+      2: { halign: "center", cellWidth: 40 },
+      3: { halign: "center", cellWidth: 35 },
+      4: { halign: "center", cellWidth: 35 },
+      5: { halign: "center", cellWidth: 30 },
+      6: { halign: "center", cellWidth: 43 },
     },
     didParseCell: (data) => {
-      if (data.row.index === livSummaryBody.length - 1 && data.section === "body") {
+      if (data.row.index === extSummaryBody.length - 1 && data.section === "body") {
         data.cell.styles.fillColor = [0, 0, 0];
         data.cell.styles.textColor = [255, 215, 0];
         data.cell.styles.fontStyle = "bold";
+      }
+      // Color produits column green
+      if (data.column.index === 2 && data.section === "body" && data.row.index < extSummaryBody.length - 1) {
+        const v = parseInt(String(data.cell.raw));
+        if (v > 0) data.cell.styles.textColor = [34, 197, 94];
+      }
+      // Color en cours amber
+      if (data.column.index === 3 && data.section === "body" && data.row.index < extSummaryBody.length - 1) {
+        const v = parseInt(String(data.cell.raw));
+        if (v > 0) data.cell.styles.textColor = [245, 158, 11];
+      }
+      // Color non produits red
+      if (data.column.index === 4 && data.section === "body" && data.row.index < extSummaryBody.length - 1) {
+        const v = parseInt(String(data.cell.raw));
+        if (v > 0) data.cell.styles.textColor = [239, 68, 68];
+      }
+      // Color rejetés dark red
+      if (data.column.index === 5 && data.section === "body" && data.row.index < extSummaryBody.length - 1) {
+        const v = parseInt(String(data.cell.raw));
+        if (v > 0) data.cell.styles.textColor = [153, 27, 27];
       }
     },
   });
@@ -617,5 +728,5 @@ export async function exportBudgetLivrablesPdf(
   const pad = (n: number) => String(n).padStart(2, "0");
   const now = new Date();
   const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
-  doc.save(`Rapport_Budgetaire_Livrables_EFO_${annee}_${ts}.pdf`);
+  doc.save(`Rapport_Activite_EFO_${annee}_${ts}.pdf`);
 }
