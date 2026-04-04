@@ -172,9 +172,11 @@ const Dashboard = () => {
         budgetConsomme,
         tauxBudgetaire: tauxBudg,
         avancementPhysique: avgPct,
+        extrantsProduits: extProduits,
+        extrantsTotal: extTotal,
       };
     });
-  }, [activites, taches, sousTaches, exMap]);
+  }, [activites, taches, sousTaches, exMap, extrantsPerActivity]);
 
   const budgetChartData = activityRows.map((a) => ({
     name: a.code,
