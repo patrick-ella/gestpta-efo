@@ -160,6 +160,10 @@ const Dashboard = () => {
       const avgPct = pcts.length > 0 ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) : 0;
       const tauxBudg = budgetPrevu > 0 ? Math.round((budgetConsomme / budgetPrevu) * 100) : 0;
 
+      const actExtrants = extrantsPerActivity.filter((e) => e.activite_id === act.id);
+      const extTotal = actExtrants.length;
+      const extProduits = actExtrants.filter((e) => e.statut === "produit" || e.statut === "valide").length;
+
       return {
         id: act.id,
         code: act.code,
