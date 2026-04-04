@@ -17,6 +17,8 @@ interface ActivityRow {
   budgetConsomme: number;
   tauxBudgetaire: number;
   avancementPhysique: number;
+  extrantsProduits?: number;
+  extrantsTotal?: number;
 }
 
 interface Props {
@@ -62,6 +64,7 @@ const ActivityMatrix = ({ activities }: Props) => {
             <TableHead className="text-primary-foreground font-semibold text-right">Budget consommé</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center">Taux budgétaire</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center">Avancement physique</TableHead>
+            <TableHead className="text-primary-foreground font-semibold text-center">Extrants produits</TableHead>
             <TableHead className="text-primary-foreground font-semibold text-center">Statut</TableHead>
           </TableRow>
         </TableHeader>
@@ -89,6 +92,15 @@ const ActivityMatrix = ({ activities }: Props) => {
                   <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${pctCellClass(act.avancementPhysique)}`}>
                     {act.avancementPhysique}%
                   </span>
+                </TableCell>
+                <TableCell className="text-center">
+                  {act.extrantsTotal != null && act.extrantsTotal > 0 ? (
+                    <Badge className={act.extrantsProduits === act.extrantsTotal ? "bg-success/20 text-success-foreground" : (act.extrantsProduits ?? 0) > 0 ? "bg-warning/20 text-warning-foreground" : "bg-destructive/10 text-destructive"}>
+                      📦 {act.extrantsProduits ?? 0}/{act.extrantsTotal}
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-center">
                   <Badge className={statusColors[status]}>{status}</Badge>

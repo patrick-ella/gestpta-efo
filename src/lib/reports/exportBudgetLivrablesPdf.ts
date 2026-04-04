@@ -65,7 +65,7 @@ function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, anne
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text("Rapport budgétaire et livrables", 14, 6);
+  doc.text("Rapport d'activité de l'EFO", 14, 6);
   doc.setTextColor(174, 214, 241);
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
@@ -108,10 +108,10 @@ function drawCoverPage(doc: jsPDF, logo: string | null, annee: number, scope: st
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
-  doc.text("RAPPORT BUDGÉTAIRE ET LIVRABLES", PAGE_W / 2, 55, { align: "center" });
+  doc.text("RAPPORT D'ACTIVITÉ DE L'EFO", PAGE_W / 2, 55, { align: "center" });
   doc.setFontSize(16);
   doc.setTextColor(46, 117, 182);
-  doc.text("PAR ACTIVITÉ / TÂCHE", PAGE_W / 2, 67, { align: "center" });
+  doc.text("Exécution budgétaire et suivi des extrants — Action 302", PAGE_W / 2, 67, { align: "center" });
 
   // Decorative line
   doc.setDrawColor(46, 117, 182);
@@ -608,7 +608,7 @@ export async function exportBudgetLivrablesPdf(
   const totalPages = doc.getNumberOfPages();
   for (let i = 2; i <= totalPages; i++) {
     doc.setPage(i);
-    const sectionTitle = pageSections[i] || "Rapport budgétaire et livrables";
+    const sectionTitle = pageSections[i] || "Rapport d'activité de l'EFO";
     drawPageHeader(doc, logo, sectionTitle, annee);
     drawPageFooter(doc, logo, i, totalPages);
   }

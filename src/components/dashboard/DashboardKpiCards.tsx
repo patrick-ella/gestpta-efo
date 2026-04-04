@@ -14,6 +14,14 @@ interface TextKpiInfo {
   target: string | null;
 }
 
+interface ExtrantStatsInfo {
+  total: number;
+  produits: number;
+  enCours: number;
+  nonProduits: number;
+  taux: number;
+}
+
 interface KpiCardsProps {
   apprenants: { realized: number; target: number };
   budgetExec: number;
@@ -21,6 +29,7 @@ interface KpiCardsProps {
   isoConformity: number;
   trainairPlus?: TextKpiInfo;
   centreAvsec?: TextKpiInfo;
+  extrantStats?: ExtrantStatsInfo;
 }
 
 function gaugeData(pct: number) {
@@ -43,9 +52,10 @@ function getTextStatus(realized: string | null, target: string | null): { label:
   return { label: "En cours", emoji: "⚠️", variant: "secondary" };
 }
 
-const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConformity, trainairPlus, centreAvsec }: KpiCardsProps) => {
+const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConformity, trainairPlus, centreAvsec, extrantStats }: KpiCardsProps) => {
   const trainairStatus = getTextStatus(trainairPlus?.realized ?? null, trainairPlus?.target ?? null);
   const avsecStatus = getTextStatus(centreAvsec?.realized ?? null, centreAvsec?.target ?? null);
+  const extTaux = extrantStats?.taux ?? 0;
 
   return (
     <div className="space-y-4">
@@ -141,8 +151,8 @@ const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConfor
         </Card>
       </div>
 
-      {/* Row 2: Text-based accreditation KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Row 2: Text-based accreditation KPIs + Extrants */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* TRAINAIR PLUS */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -185,6 +195,23 @@ const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConfor
             </div>
             <p className="text-xs text-muted-foreground">
               Cible 2027 : {centreAvsec?.target ?? "Centre AVSEC"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Extrants KPI */}
+        <Card className="border-success/50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              📦 Production des extrants
+            </CardTitle>
+            <Award className="h-4 w-4 text-success-foreground" />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold text-foreground">{extTaux}%</div>
+            <Progress value={extTaux} className="h-2" />
+            <p className="text-xs text-muted-foreground">
+              {extrantStats?.produits ?? 0}/{extrantStats?.total ?? 0} extrants produits ou validés
             </p>
           </CardContent>
         </Card>

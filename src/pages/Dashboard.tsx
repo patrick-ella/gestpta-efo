@@ -15,6 +15,7 @@ import DashboardKpiCards from "@/components/dashboard/DashboardKpiCards";
 import ActivityMatrix from "@/components/dashboard/ActivityMatrix";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import AlertPanel, { type Alert } from "@/components/dashboard/AlertPanel";
+import { useExtrantStats } from "@/hooks/useExtrantsData";
 import type { Database } from "@/integrations/supabase/types";
 
 type Execution = Database["public"]["Tables"]["executions"]["Row"];
@@ -108,6 +109,17 @@ const Dashboard = () => {
     },
   });
 
+  const { data: extrantStats } = useExtrantStats();
+
+  // Fetch per-activity extrant counts
+  const { data: extrantsPerActivity = [] } = useQuery({
+    queryKey: ["dashboard-extrants-per-activity"],
+    queryFn: async () => {
+      const { data } = await supabase.from("extrants").select("activite_id, statut");
+      return data ?? [];
+    },
+  });
+
   const exMap = useMemo(() => {
     const m: Record<string, Execution> = {};
     executions.forEach((e) => (m[e.sous_tache_id] = e));
@@ -148,6 +160,10 @@ const Dashboard = () => {
       const avgPct = pcts.length > 0 ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) : 0;
       const tauxBudg = budgetPrevu > 0 ? Math.round((budgetConsomme / budgetPrevu) * 100) : 0;
 
+      const actExtrants = extrantsPerActivity.filter((e) => e.activite_id === act.id);
+      const extTotal = actExtrants.length;
+      const extProduits = actExtrants.filter((e) => e.statut === "produit" || e.statut === "valide").length;
+
       return {
         id: act.id,
         code: act.code,
@@ -156,9 +172,11 @@ const Dashboard = () => {
         budgetConsomme,
         tauxBudgetaire: tauxBudg,
         avancementPhysique: avgPct,
+        extrantsProduits: extProduits,
+        extrantsTotal: extTotal,
       };
     });
-  }, [activites, taches, sousTaches, exMap]);
+  }, [activites, taches, sousTaches, exMap, extrantsPerActivity]);
 
   const budgetChartData = activityRows.map((a) => ({
     name: a.code,
@@ -315,6 +333,7 @@ const Dashboard = () => {
           realized: avsecKpi?.valeur_realisee ?? null,
           target: avsecKpi?.cible_2027 ?? "Centre AVSEC",
         }}
+        extrantStats={extrantStats ?? undefined}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

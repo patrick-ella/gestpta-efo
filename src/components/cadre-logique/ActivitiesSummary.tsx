@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Package } from "lucide-react";
 
 const OFFICIAL_CODES = ['30201', '30202', '30203', '30204', '30205'];
 
@@ -52,6 +52,23 @@ const ActivitiesSummary = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  // Fetch extrants per activity
+  const { data: extrantsRaw } = useQuery({
+    queryKey: ["extrants-per-activity-cl"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("extrants").select("activite_id, statut");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const extrantsMap: Record<string, { total: number; produits: number }> = {};
+  (extrantsRaw ?? []).forEach((e) => {
+    if (!extrantsMap[e.activite_id]) extrantsMap[e.activite_id] = { total: 0, produits: 0 };
+    extrantsMap[e.activite_id].total++;
+    if (e.statut === "produit" || e.statut === "valide") extrantsMap[e.activite_id].produits++;
   });
 
   // Filter to official codes and deduplicate by id
@@ -137,6 +154,12 @@ const ActivitiesSummary = () => {
                   <Badge className="bg-secondary text-secondary-foreground text-xs">
                     {act.code}
                   </Badge>
+                  {(() => {
+                    const ext = extrantsMap[act.id];
+                    if (!ext || ext.total === 0) return null;
+                    const color = ext.produits === ext.total ? "bg-success/20 text-success-foreground" : ext.produits > 0 ? "bg-warning/20 text-warning-foreground" : "bg-destructive/10 text-destructive";
+                    return <Badge className={`text-xs ${color}`}>📦 {ext.produits}/{ext.total}</Badge>;
+                  })()}
                 </div>
                 <CardTitle className="text-sm font-semibold text-foreground leading-tight mt-1">
                   {act.libelle}

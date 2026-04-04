@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { SousTacheLivrablesTab } from "@/components/livrables/SousTacheLivrablesTab";
+
 import BudgetLinesTab from "@/components/budget/BudgetLinesTab";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import EditHistory from "@/components/pta/EditHistory";
@@ -153,10 +153,9 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
         </SheetHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="w-full grid grid-cols-4">
+          <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="details">📋 Détails</TabsTrigger>
             <TabsTrigger value="budget-lines">💰 Budget</TabsTrigger>
-            <TabsTrigger value="livrables">📦 Livrables</TabsTrigger>
             <TabsTrigger value="risques">⚠️ Risques</TabsTrigger>
           </TabsList>
 
@@ -320,12 +319,6 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
             </ErrorBoundary>
           </TabsContent>
 
-          {/* Livrables tab */}
-          <TabsContent value="livrables" className="mt-4">
-            <ErrorBoundary tabName="Livrables" onReset={() => {}}>
-              <SousTacheLivrablesTab sousTacheId={sousTache.id} tacheId={sousTache.tache_id} tacheLivrables={tacheLivrables} />
-            </ErrorBoundary>
-          </TabsContent>
 
           {/* Risques tab */}
           <TabsContent value="risques" className="space-y-4 mt-4">
