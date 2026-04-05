@@ -4,6 +4,7 @@ import {
   ClipboardList,
   PlayCircle,
   FileCheck,
+  Users,
   BarChart3,
   Settings,
   LogOut,
