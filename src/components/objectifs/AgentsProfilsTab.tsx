@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAllProfiles, useAssignations } from "@/hooks/useObjectifsData";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { useToast } from "@/hooks/use-toast";
+import ImportPersonnelSection from "./ImportPersonnelSection";
 
 interface Props {
   exerciceId: string | null;
