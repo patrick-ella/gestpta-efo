@@ -284,24 +284,25 @@ export const AdminUsers = () => {
                       >
                         {u.actif !== false ? <Ban className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
                       </Button>
-                      {/* Transfer to EFO */}
-                      {!u.agentProfil ? (
-                        <Button variant="outline" size="sm" title="Transférer vers le personnel EFO" onClick={() => openTransfer(u)}>
-                          <Users className="h-3 w-3" />
-                        </Button>
-                      ) : (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex items-center px-1.5">
-                                <UserCheck className="h-3.5 w-3.5 text-green-600" />
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent>Personnel EFO lié</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                      {/* Transfer to EFO — hidden for protected roles */}
+                      {!NON_TRANSFERABLE_ROLES.includes(u.role) && (
+                        !u.agentProfil ? (
+                          <Button variant="outline" size="sm" title="Transférer vers le personnel EFO" onClick={() => openTransfer(u)}>
+                            <Users className="h-3 w-3" />
+                          </Button>
+                        ) : (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center px-1.5">
+                                  <UserCheck className="h-3.5 w-3.5 text-green-600" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>Personnel EFO lié</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )
                       )}
-                      {/* Delete */}
                       {isDeletable(u) ? (
                         <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" title="Supprimer" onClick={() => openDelete(u)}>
                           <Trash2 className="h-3 w-3" />
