@@ -24,6 +24,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const PROTECTED_ROLES = ["super_admin", "admin_pta", "responsable_activite", "agent_saisie", "consultant"];
+const NON_TRANSFERABLE_ROLES = PROTECTED_ROLES;
 const ROLES = Object.keys(ROLE_LABELS);
 const CENTRES = ["Yaoundé", "Douala", "Les deux"];
 const DIRECTIONS = [
