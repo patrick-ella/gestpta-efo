@@ -170,6 +170,76 @@ serve(async (req) => {
       });
     }
 
+    if (action === "delete_user") {
+      const { user_id, delete_staff_too } = payload;
+
+      // Check caller is super_admin
+      if (roleCheck.role !== "super_admin") {
+        throw new Error("Seul l'administrateur principal peut supprimer des comptes");
+      }
+
+      // Cannot delete yourself
+      if (user_id === caller.id) {
+        throw new Error("Vous ne pouvez pas supprimer votre propre compte");
+      }
+
+      if (delete_staff_too) {
+        // Delete agents_profils (cascade deletes assignations & evaluations)
+        await supabaseAdmin.from("agents_profils").delete().eq("user_id", user_id);
+      } else {
+        // Unlink user_id from agents_profils
+        await supabaseAdmin.from("agents_profils").update({ user_id: null, updated_at: new Date().toISOString() }).eq("user_id", user_id);
+      }
+
+      // Delete user_roles
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
+
+      // Delete users_profiles
+      await supabaseAdmin.from("users_profiles").delete().eq("id", user_id);
+
+      // Delete auth account
+      const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+      if (authErr) console.warn("Auth delete failed:", authErr.message);
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "delete_agent") {
+      const { agent_id } = payload;
+      // Delete agents_profils (cascade deletes assignations & evaluations)
+      await supabaseAdmin.from("agents_profils").delete().eq("id", agent_id);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "transfer_to_staff") {
+      const { user_id, email, nom, prenom, matricule, direction, service, poste_travail, superieur_id, date_recrutement, date_reclassement, anciennete_poste } = payload;
+
+      // Check if email already exists in agents_profils
+      const { data: existingByEmail } = await supabaseAdmin.from("agents_profils").select("id").eq("email", email).maybeSingle();
+
+      if (existingByEmail) {
+        // Link existing staff record to this user
+        await supabaseAdmin.from("agents_profils").update({ user_id, updated_at: new Date().toISOString() }).eq("id", existingByEmail.id);
+      } else {
+        // Create new agents_profils record
+        await supabaseAdmin.from("agents_profils").insert({
+          user_id, email, nom, prenom, matricule: matricule || null,
+          direction: direction || null, service: service || null,
+          poste_travail: poste_travail || null, superieur_id: superieur_id || null,
+          date_recrutement: date_recrutement || null, date_reclassement: date_reclassement || null,
+          anciennete_poste: anciennete_poste || null, actif: true,
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, linked: !!existingByEmail }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     throw new Error("Action inconnue");
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
