@@ -404,7 +404,7 @@ const ImportPersonnelSection = () => {
                             <TableCell className="text-xs">{r.email}</TableCell>
                             <TableCell>
                               {r.valid ? (
-                                <Badge variant={r.action === "create" ? "default" : "secondary"} className={r.action === "create" ? "bg-green-600" : "bg-blue-600 text-primary-foreground"}>
+                                <Badge variant={r.action === "create" ? "default" : "secondary"}>
                                   {r.action === "create" ? "➕ Créer" : "🔄 Mettre à jour"}
                                 </Badge>
                               ) : (
