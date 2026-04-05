@@ -7,13 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Pencil } from "lucide-react";
+import { Search, Pencil, Info } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAllProfiles, useAssignations } from "@/hooks/useObjectifsData";
+import { useAssignations } from "@/hooks/useObjectifsData";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { useToast } from "@/hooks/use-toast";
 import ImportPersonnelSection from "./ImportPersonnelSection";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Props {
   exerciceId: string | null;
@@ -24,56 +25,67 @@ const AgentsProfilsTab = ({ exerciceId }: Props) => {
   const qc = useQueryClient();
   const isAdmin = useIsAdmin();
   const [search, setSearch] = useState("");
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
 
-  const { data: profiles = [] } = useAllProfiles();
-  const { data: assignations = [] } = useAssignations(exerciceId);
-
-  const { data: agentsProfils = [] } = useQuery({
+  const { data: agents = [] } = useQuery({
     queryKey: ["agents-profils-all"],
     queryFn: async () => {
-      const { data } = await supabase.from("agents_profils").select("*");
+      const { data } = await supabase
+        .from("agents_profils")
+        .select("*")
+        .eq("actif", true)
+        .order("nom");
       return data ?? [];
     },
   });
 
-  const { data: allProfiles = [] } = useQuery({
-    queryKey: ["all-profiles-supervisors"],
+  const { data: assignations = [] } = useAssignations(exerciceId);
+
+  const { data: allAgentsForSup = [] } = useQuery({
+    queryKey: ["agents-for-sup-select"],
     queryFn: async () => {
-      const { data } = await supabase.from("users_profiles").select("id, nom, prenom").eq("actif", true);
+      const { data } = await supabase
+        .from("agents_profils")
+        .select("id, nom, prenom, poste_travail")
+        .eq("actif", true)
+        .order("nom");
       return data ?? [];
     },
   });
 
-  const filtered = profiles.filter(p => {
+  const filtered = agents.filter(a => {
     const q = search.toLowerCase();
-    return !q || `${p.nom} ${p.prenom} ${p.email}`.toLowerCase().includes(q);
+    return !q || `${a.nom} ${a.prenom} ${a.email} ${a.matricule}`.toLowerCase().includes(q);
   });
 
-  const getAgentProfil = (userId: string) => agentsProfils.find(a => a.user_id === userId);
-  const getAssignationCount = (userId: string) => assignations.filter(a => a.agent_id === userId).length;
+  const getAssignationCount = (agentId: string) => assignations.filter(a => a.agent_id === agentId).length;
 
-  const openEdit = (userId: string) => {
-    const ap = getAgentProfil(userId);
+  const openEdit = (agentId: string) => {
+    const agent = agents.find(a => a.id === agentId);
+    if (!agent) return;
     setForm({
-      matricule: ap?.matricule ?? "",
-      direction: ap?.direction ?? "",
-      service: ap?.service ?? "",
-      poste_travail: ap?.poste_travail ?? "",
-      superieur_id: ap?.superieur_id ?? "",
-      date_recrutement: ap?.date_recrutement ?? "",
-      date_reclassement: ap?.date_reclassement ?? "",
-      anciennete_poste: ap?.anciennete_poste ?? "",
+      nom: agent.nom ?? "",
+      prenom: agent.prenom ?? "",
+      email: agent.email ?? "",
+      matricule: agent.matricule ?? "",
+      direction: agent.direction ?? "",
+      service: agent.service ?? "",
+      poste_travail: agent.poste_travail ?? "",
+      superieur_id: agent.superieur_id ?? "",
+      date_recrutement: agent.date_recrutement ?? "",
+      date_reclassement: agent.date_reclassement ?? "",
+      anciennete_poste: agent.anciennete_poste ?? "",
     });
-    setEditingUserId(userId);
+    setEditingAgentId(agentId);
   };
 
   const handleSave = async () => {
-    if (!editingUserId) return;
-    const existing = getAgentProfil(editingUserId);
+    if (!editingAgentId) return;
     const payload = {
-      user_id: editingUserId,
+      nom: form.nom || null,
+      prenom: form.prenom || null,
+      email: form.email || null,
       matricule: form.matricule || null,
       direction: form.direction || null,
       service: form.service || null,
@@ -84,23 +96,22 @@ const AgentsProfilsTab = ({ exerciceId }: Props) => {
       anciennete_poste: form.anciennete_poste || null,
     };
 
-    let error;
-    if (existing) {
-      ({ error } = await supabase.from("agents_profils").update(payload).eq("id", existing.id));
-    } else {
-      ({ error } = await supabase.from("agents_profils").insert(payload));
-    }
+    const { error } = await supabase
+      .from("agents_profils")
+      .update(payload)
+      .eq("id", editingAgentId);
 
     if (error) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "✅ Profil agent enregistré" });
       qc.invalidateQueries({ queryKey: ["agents-profils-all"] });
-      setEditingUserId(null);
+      qc.invalidateQueries({ queryKey: ["agents-for-sup-select"] });
+      setEditingAgentId(null);
     }
   };
 
-  const editingProfile = editingUserId ? profiles.find(p => p.id === editingUserId) : null;
+  const editingAgent = editingAgentId ? agents.find(a => a.id === editingAgentId) : null;
 
   return (
     <div className="space-y-4">
@@ -108,94 +119,133 @@ const AgentsProfilsTab = ({ exerciceId }: Props) => {
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher un agent..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Rechercher un agent EFO..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            </div>
           </div>
-        </div>
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nom</TableHead>
-              <TableHead>Matricule</TableHead>
-              <TableHead>Poste</TableHead>
-              <TableHead>Direction</TableHead>
-              <TableHead>PTI (nb ST)</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map(p => {
-              const ap = getAgentProfil(p.id);
-              const stCount = getAssignationCount(p.id);
-              return (
-                <TableRow key={p.id}>
-                  <TableCell className="font-medium">{p.nom} {p.prenom}</TableCell>
-                  <TableCell>{ap?.matricule ?? "—"}</TableCell>
-                  <TableCell>{ap?.poste_travail ?? "—"}</TableCell>
-                  <TableCell>{ap?.direction ?? "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant={stCount > 0 ? "default" : "secondary"}>{stCount}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {isAdmin && (
-                      <Button size="sm" variant="outline" onClick={() => openEdit(p.id)}>
-                        <Pencil className="h-3.5 w-3.5 mr-1" /> Profil
-                      </Button>
-                    )}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nom & Prénom</TableHead>
+                <TableHead>Matricule</TableHead>
+                <TableHead>Poste</TableHead>
+                <TableHead>Direction</TableHead>
+                <TableHead>PTI (nb ST)</TableHead>
+                <TableHead>Compte app</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map(agent => {
+                const stCount = getAssignationCount(agent.id);
+                const hasAccount = !!agent.user_id;
+                return (
+                  <TableRow key={agent.id}>
+                    <TableCell className="font-medium">{agent.nom} {agent.prenom}</TableCell>
+                    <TableCell>{agent.matricule ?? "—"}</TableCell>
+                    <TableCell>{agent.poste_travail ?? "—"}</TableCell>
+                    <TableCell>{agent.direction ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant={stCount > 0 ? "default" : "secondary"}>{stCount}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {hasAccount ? (
+                        <Badge className="bg-green-100 text-green-800 text-xs">🟢 Compte actif</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">⚪ Sans compte</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isAdmin && (
+                        <Button size="sm" variant="outline" onClick={() => openEdit(agent.id)}>
+                          <Pencil className="h-3.5 w-3.5 mr-1" /> Profil
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Aucun agent EFO enregistré. Importez la liste du personnel via le gabarit Excel ou ajoutez les agents un par un.
                   </TableCell>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
 
-        <Sheet open={!!editingUserId} onOpenChange={(v) => { if (!v) setEditingUserId(null); }}>
-          <SheetContent className="overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>✏️ Profil agent — {editingProfile?.nom} {editingProfile?.prenom}</SheetTitle>
-            </SheetHeader>
-            <div className="space-y-4 mt-4">
-              {([
-                ["matricule", "Matricule"],
-                ["direction", "Direction"],
-                ["service", "Service / Bureau"],
-                ["poste_travail", "Poste de travail"],
-                ["anciennete_poste", "Ancienneté au poste"],
-              ] as const).map(([key, label]) => (
-                <div key={key} className="space-y-1">
-                  <Label className="text-sm">{label}</Label>
-                  <Input value={form[key] ?? ""} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
+          <Sheet open={!!editingAgentId} onOpenChange={(v) => { if (!v) setEditingAgentId(null); }}>
+            <SheetContent className="overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>✏️ Agent EFO — {editingAgent?.nom} {editingAgent?.prenom}</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-sm">Nom</Label>
+                    <Input value={form.nom ?? ""} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-sm">Prénom</Label>
+                    <Input value={form.prenom ?? ""} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} />
+                  </div>
                 </div>
-              ))}
-              <div className="space-y-1">
-                <Label className="text-sm">Supérieur (N+1)</Label>
-                <Select value={form.superieur_id ?? ""} onValueChange={v => setForm(f => ({ ...f, superieur_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
-                  <SelectContent>
-                    {allProfiles.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.nom} {p.prenom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {([
-                ["date_recrutement", "Date de recrutement"],
-                ["date_reclassement", "Date de reclassement"],
-              ] as const).map(([key, label]) => (
-                <div key={key} className="space-y-1">
-                  <Label className="text-sm">{label}</Label>
-                  <Input type="date" value={form[key] ?? ""} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
+                <div className="space-y-1">
+                  <Label className="text-sm">Email</Label>
+                  <Input value={form.email ?? ""} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
                 </div>
-              ))}
-              <div className="flex gap-2 pt-4 border-t">
-                <Button onClick={handleSave}>💾 Enregistrer</Button>
-                <Button variant="outline" onClick={() => setEditingUserId(null)}>Annuler</Button>
+                {([
+                  ["matricule", "Matricule"],
+                  ["direction", "Direction"],
+                  ["service", "Service / Bureau"],
+                  ["poste_travail", "Poste de travail"],
+                  ["anciennete_poste", "Ancienneté au poste"],
+                ] as const).map(([key, label]) => (
+                  <div key={key} className="space-y-1">
+                    <Label className="text-sm">{label}</Label>
+                    <Input value={form[key] ?? ""} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
+                  </div>
+                ))}
+                <div className="space-y-1">
+                  <Label className="text-sm">Supérieur (N+1)</Label>
+                  <Select value={form.superieur_id ?? ""} onValueChange={v => setForm(f => ({ ...f, superieur_id: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
+                    <SelectContent>
+                      {allAgentsForSup
+                        .filter(a => a.id !== editingAgentId)
+                        .map(a => (
+                          <SelectItem key={a.id} value={a.id}>{a.nom} {a.prenom}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {([
+                  ["date_recrutement", "Date de recrutement"],
+                  ["date_reclassement", "Date de reclassement"],
+                ] as const).map(([key, label]) => (
+                  <div key={key} className="space-y-1">
+                    <Label className="text-sm">{label}</Label>
+                    <Input type="date" value={form[key] ?? ""} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
+                  </div>
+                ))}
+
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    Cet agent est un membre du personnel EFO. S'il doit également accéder à l'application, créez son compte dans Administration → Utilisateurs en indiquant son email.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button onClick={handleSave}>💾 Enregistrer</Button>
+                  <Button variant="outline" onClick={() => setEditingAgentId(null)}>Annuler</Button>
+                </div>
               </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+            </SheetContent>
+          </Sheet>
         </CardContent>
       </Card>
     </div>

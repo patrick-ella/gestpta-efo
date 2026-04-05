@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Plus, Trash2, Save, AlertTriangle } from "lucide-react";
+import { Users, Plus, Trash2, AlertTriangle } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSousTacheAssignations } from "@/hooks/useObjectifsData";
@@ -29,18 +29,16 @@ const SousTacheAgentsTab = ({ sousTacheId, sousTacheCode, exerciceId }: Props) =
   const [assignForm, setAssignForm] = useState({ agent_id: "", role_agent: "contributeur", poids_objectif: "", date_limite: "", observations: "" });
 
   const { data: assignations = [], refetch } = useSousTacheAssignations(sousTacheId);
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles-for-assign"],
-    queryFn: async () => {
-      const { data } = await supabase.from("users_profiles").select("*").eq("actif", true).order("nom");
-      return data ?? [];
-    },
-  });
 
-  const { data: agentsProfils = [] } = useQuery({
-    queryKey: ["ap-for-assign"],
+  // Search agents from agents_profils (EFO staff), NOT users_profiles
+  const { data: agents = [] } = useQuery({
+    queryKey: ["agents-for-assign"],
     queryFn: async () => {
-      const { data } = await supabase.from("agents_profils").select("*");
+      const { data } = await supabase
+        .from("agents_profils")
+        .select("id, nom, prenom, email, matricule, poste_travail, direction, user_id")
+        .eq("actif", true)
+        .order("nom");
       return data ?? [];
     },
   });
@@ -96,8 +94,7 @@ const SousTacheAgentsTab = ({ sousTacheId, sousTacheCode, exerciceId }: Props) =
     }
   };
 
-  const getProfile = (id: string) => profiles.find(p => p.id === id);
-  const getAp = (userId: string) => agentsProfils.find(a => a.user_id === userId);
+  const getAgent = (id: string) => agents.find(a => a.id === id);
 
   return (
     <div className="space-y-4">
@@ -127,15 +124,15 @@ const SousTacheAgentsTab = ({ sousTacheId, sousTacheCode, exerciceId }: Props) =
       ) : (
         <div className="space-y-3">
           {assignations.map(a => {
-            const p = getProfile(a.agent_id);
-            const ap = getAp(a.agent_id);
+            const agent = getAgent(a.agent_id);
             return (
               <div key={a.id} className="border rounded-lg p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">👤 {p?.nom} {p?.prenom}</p>
+                    <p className="text-sm font-medium">👤 {agent?.nom} {agent?.prenom}</p>
                     <p className="text-xs text-muted-foreground">
-                      {ap?.matricule ? `Matricule: ${ap.matricule}` : ""} {ap?.poste_travail ? `| ${ap.poste_travail}` : ""}
+                      {agent?.matricule ? `Matricule: ${agent.matricule}` : ""} {agent?.poste_travail ? `| ${agent.poste_travail}` : ""}
+                      {agent?.user_id ? " 🟢" : " ⚪"}
                     </p>
                   </div>
                   <Badge variant={a.role_agent === "responsable" ? "default" : "secondary"}>
@@ -163,25 +160,22 @@ const SousTacheAgentsTab = ({ sousTacheId, sousTacheCode, exerciceId }: Props) =
       <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>👥 Assigner un agent</DialogTitle>
+            <DialogTitle>👥 Assigner un agent EFO</DialogTitle>
             <p className="text-xs text-muted-foreground">Sous-tâche : {sousTacheCode}</p>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1">
-              <Label>Agent *</Label>
+              <Label>Agent EFO *</Label>
               <Select value={assignForm.agent_id} onValueChange={v => setAssignForm(f => ({ ...f, agent_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner un agent..." /></SelectTrigger>
                 <SelectContent>
-                  {profiles
-                    .filter(p => !assignations.some(a => a.agent_id === p.id))
-                    .map(p => {
-                      const ap = getAp(p.id);
-                      return (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.nom} {p.prenom} {ap?.matricule ? `— ${ap.matricule}` : ""} {ap?.poste_travail ? `— ${ap.poste_travail}` : ""}
-                        </SelectItem>
-                      );
-                    })}
+                  {agents
+                    .filter(a => !assignations.some(as => as.agent_id === a.id))
+                    .map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.nom} {a.prenom} {a.matricule ? `— ${a.matricule}` : ""} {a.poste_travail ? `— ${a.poste_travail}` : ""} {a.user_id ? "🟢" : "⚪"}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, Upload, FileSpreadsheet, X, Search, Loader2, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, X, Search, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +35,7 @@ interface ValidationResult {
 
 interface ImportResult {
   email: string; nom: string; prenom: string; matricule: string;
-  action: string; tempPassword?: string; status: string; error?: string;
+  action: string; status: string; error?: string;
 }
 
 function generateGabaritPersonnel(): ArrayBuffer {
@@ -62,8 +62,11 @@ function generateGabaritPersonnel(): ArrayBuffer {
     [], ["CHAMPS OBLIGATOIRES (*)"],
     ["Prénom, Nom, Email, Matricule, Direction, Poste de travail"],
     [], ["FORMAT DES DATES"], ["Utilisez le format JJ/MM/AAAA"], ["Exemple : 01/01/2015"],
-    [], ["EMAIL"], ["L'email sert d'identifiant de connexion."],
-    ["Si l'agent existe déjà, son profil sera mis à jour."],
+    [], ["EMAIL"],
+    ["L'email est l'identifiant unique de l'agent dans le système."],
+    ["Il ne crée PAS de compte de connexion à l'application."],
+    ["Pour donner accès à l'application à un agent, créez son compte"],
+    ["séparément dans le module Administration."],
     [], ["MATRICULE"], ["Le matricule doit être unique."],
     [], ["EMAIL N+1"], ["Renseignez l'email du supérieur direct (N+1)."],
     ["Ce supérieur doit être présent dans le fichier ou dans l'application."],
@@ -152,8 +155,9 @@ const ImportPersonnelSection = () => {
         return;
       }
 
-      const { data: existingProfiles } = await supabase.from("users_profiles").select("id, email");
-      const existingEmails = new Set((existingProfiles ?? []).map(p => p.email?.toLowerCase()));
+      // Check existing agents in agents_profils (not users_profiles)
+      const { data: existingAgents } = await supabase.from("agents_profils").select("email");
+      const existingEmails = new Set((existingAgents ?? []).map(a => a.email?.toLowerCase()));
 
       const seenEmails = new Set<string>();
       const seenMatricules = new Set<string>();
@@ -195,7 +199,6 @@ const ImportPersonnelSection = () => {
         if (dateReclas && !isValidDate(dateReclas)) errors.push(`Date reclassement invalide : "${dateReclas}"`);
 
         const action = existingEmails.has(email) ? "update" as const : "create" as const;
-
         results.push({ rowNum, prenom, nom, email, matricule, direction, service, poste, emailN1, dateRecr, dateReclas, anciennete, errors, warnings, action, valid: errors.length === 0 });
       }
 
@@ -222,34 +225,71 @@ const ImportPersonnelSection = () => {
     setImporting(true);
     setImportProgress(0);
 
+    const results: ImportResult[] = [];
+
     try {
-      const agents = validRows.map(r => ({
-        prenom: r.prenom, nom: r.nom, email: r.email, matricule: r.matricule,
-        direction: r.direction, service: r.service, poste: r.poste,
-        emailN1: r.emailN1,
-        dateRecr: parseDate(r.dateRecr),
-        dateReclas: parseDate(r.dateReclas),
-        anciennete: r.anciennete,
-        importAction: r.action,
-      }));
+      for (let i = 0; i < validRows.length; i++) {
+        const row = validRows[i];
+        try {
+          if (row.action === "create") {
+            // Create agents_profils record ONLY — no auth account
+            const { error } = await supabase.from("agents_profils").insert({
+              email: row.email,
+              nom: row.nom,
+              prenom: row.prenom,
+              matricule: row.matricule,
+              direction: row.direction,
+              service: row.service,
+              poste_travail: row.poste,
+              date_recrutement: parseDate(row.dateRecr),
+              date_reclassement: row.dateReclas ? parseDate(row.dateReclas) : null,
+              anciennete_poste: row.anciennete || null,
+              user_id: null,
+              actif: true,
+            });
+            if (error) throw error;
+            results.push({ email: row.email, nom: row.nom, prenom: row.prenom, matricule: row.matricule, action: "Créé", status: "ok" });
+          } else {
+            // Update existing agents_profils by email
+            const { error } = await supabase.from("agents_profils").update({
+              nom: row.nom,
+              prenom: row.prenom,
+              matricule: row.matricule,
+              direction: row.direction,
+              service: row.service,
+              poste_travail: row.poste,
+              date_recrutement: parseDate(row.dateRecr),
+              date_reclassement: row.dateReclas ? parseDate(row.dateReclas) : null,
+              anciennete_poste: row.anciennete || null,
+            }).eq("email", row.email);
+            if (error) throw error;
+            results.push({ email: row.email, nom: row.nom, prenom: row.prenom, matricule: row.matricule, action: "Mis à jour", status: "ok" });
+          }
+        } catch (err: any) {
+          results.push({ email: row.email, nom: row.nom, prenom: row.prenom, matricule: row.matricule, action: row.action === "create" ? "Créé" : "Mis à jour", status: "error", error: err.message });
+        }
+        setImportProgress(Math.round(((i + 1) / validRows.length) * 100));
+      }
 
-      const { data, error } = await supabase.functions.invoke("admin-users", {
-        body: { action: "bulk_import", agents },
-      });
+      // Resolve N+1 links using agents_profils
+      for (const row of validRows) {
+        if (!row.emailN1) continue;
+        try {
+          const { data: sup } = await supabase.from("agents_profils").select("id").eq("email", row.emailN1.toLowerCase()).single();
+          if (!sup) continue;
+          await supabase.from("agents_profils").update({ superieur_id: sup.id }).eq("email", row.email);
+        } catch { /* skip */ }
+      }
 
-      if (error) throw error;
-
-      const results = data.results as ImportResult[];
       setImportResults(results);
       setImportProgress(100);
 
-      const created = results.filter(r => r.status === "ok" && r.action === "created").length;
-      const updated = results.filter(r => r.status === "ok" && r.action === "updated").length;
+      const created = results.filter(r => r.status === "ok" && r.action === "Créé").length;
+      const updated = results.filter(r => r.status === "ok" && r.action === "Mis à jour").length;
       const errors = results.filter(r => r.status === "error").length;
 
-      qc.invalidateQueries({ queryKey: ["all-profiles"] });
       qc.invalidateQueries({ queryKey: ["agents-profils-all"] });
-      qc.invalidateQueries({ queryKey: ["all-profiles-supervisors"] });
+      qc.invalidateQueries({ queryKey: ["agents-for-sup-select"] });
 
       toast({ title: `✅ Import terminé : ${created} créés, ${updated} mis à jour${errors > 0 ? `, ${errors} erreurs` : ""}` });
     } catch (err: any) {
@@ -262,9 +302,9 @@ const ImportPersonnelSection = () => {
   const downloadReport = () => {
     if (!importResults) return;
     const wb = XLSX.utils.book_new();
-    const data = importResults.map(r => [r.prenom, r.nom, r.email, r.matricule, r.action === "created" ? "Créé" : "Mis à jour", r.tempPassword ?? "—", r.status === "ok" ? "✅ OK" : `❌ ${r.error ?? "Erreur"}`]);
-    const ws = XLSX.utils.aoa_to_sheet([["Prénom", "Nom", "Email", "Matricule", "Action", "Mot de passe temp.", "Statut"], ...data]);
-    ws["!cols"] = [{ wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 20 }];
+    const data = importResults.map(r => [r.prenom, r.nom, r.email, r.matricule, r.action, r.status === "ok" ? "✅ OK" : `❌ ${r.error ?? "Erreur"}`]);
+    const ws = XLSX.utils.aoa_to_sheet([["Prénom", "Nom", "Email", "Matricule", "Action", "Statut"], ...data]);
+    ws["!cols"] = [{ wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 12 }, { wch: 15 }, { wch: 20 }];
     XLSX.utils.book_append_sheet(wb, ws, "Rapport");
     const buffer = XLSX.write(wb, { type: "array", bookType: "xlsx" });
     const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -289,7 +329,7 @@ const ImportPersonnelSection = () => {
         <CardContent className="pt-6 space-y-4">
           <div className="flex items-center gap-2">
             <Upload className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Import en masse du personnel</h3>
+            <h3 className="font-semibold text-foreground">Import du personnel EFO</h3>
           </div>
 
           <p className="text-sm text-muted-foreground">
@@ -353,13 +393,13 @@ const ImportPersonnelSection = () => {
           {importResults ? (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-3 text-center">
-                <Card><CardContent className="pt-4 pb-3"><p className="text-2xl font-bold text-primary">{importResults.filter(r => r.action === "created" && r.status === "ok").length}</p><p className="text-xs text-muted-foreground">Agents créés</p></CardContent></Card>
-                <Card><CardContent className="pt-4 pb-3"><p className="text-2xl font-bold text-accent-foreground">{importResults.filter(r => r.action === "updated" && r.status === "ok").length}</p><p className="text-xs text-muted-foreground">Mis à jour</p></CardContent></Card>
+                <Card><CardContent className="pt-4 pb-3"><p className="text-2xl font-bold text-primary">{importResults.filter(r => r.action === "Créé" && r.status === "ok").length}</p><p className="text-xs text-muted-foreground">Agents créés</p></CardContent></Card>
+                <Card><CardContent className="pt-4 pb-3"><p className="text-2xl font-bold text-accent-foreground">{importResults.filter(r => r.action === "Mis à jour" && r.status === "ok").length}</p><p className="text-xs text-muted-foreground">Mis à jour</p></CardContent></Card>
                 <Card><CardContent className="pt-4 pb-3"><p className="text-2xl font-bold text-destructive">{importResults.filter(r => r.status === "error").length}</p><p className="text-xs text-muted-foreground">Erreurs</p></CardContent></Card>
               </div>
-              {importResults.some(r => r.action === "created" && r.status === "ok") && (
-                <p className="text-sm text-muted-foreground">Les agents créés ont reçu un mot de passe temporaire de type EFO@XXXX.</p>
-              )}
+              <p className="text-sm text-muted-foreground">
+                Les agents ont été ajoutés à la liste du personnel EFO. Pour leur donner accès à l'application, créez leurs comptes dans le module Administration.
+              </p>
               <Button variant="outline" onClick={downloadReport}>
                 <Download className="h-4 w-4 mr-2" /> Télécharger le rapport d'import
               </Button>

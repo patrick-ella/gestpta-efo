@@ -7,18 +7,20 @@ export const useAgentsProfils = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("agents_profils")
-        .select("*, users_profiles!agents_profils_user_id_fkey(id, nom, prenom, email, centre, actif)");
+        .select("*")
+        .eq("actif", true)
+        .order("nom");
       if (error) throw error;
       return data ?? [];
     },
   });
 
-export const useAllProfiles = () =>
+export const useAllAgents = () =>
   useQuery({
-    queryKey: ["all-profiles"],
+    queryKey: ["all-agents"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("users_profiles")
+        .from("agents_profils")
         .select("*")
         .eq("actif", true)
         .order("nom");

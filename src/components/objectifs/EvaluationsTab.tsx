@@ -23,18 +23,11 @@ const EvaluationsTab = ({ exerciceId, exercice }: Props) => {
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [generatingXlsx, setGeneratingXlsx] = useState<string | null>(null);
 
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["all-profiles-eval"],
-    queryFn: async () => {
-      const { data } = await supabase.from("users_profiles").select("*").eq("actif", true);
-      return data ?? [];
-    },
-  });
-
-  const { data: agentsProfils = [] } = useQuery({
+  // Use agents_profils as primary data source
+  const { data: agents = [] } = useQuery({
     queryKey: ["agents-profils-eval"],
     queryFn: async () => {
-      const { data } = await supabase.from("agents_profils").select("*");
+      const { data } = await supabase.from("agents_profils").select("*").eq("actif", true);
       return data ?? [];
     },
   });
@@ -42,30 +35,30 @@ const EvaluationsTab = ({ exerciceId, exercice }: Props) => {
   const { data: assignations = [] } = useAssignations(exerciceId);
   const { data: evaluations = [] } = useEvaluations(exerciceId);
 
+  // agent_id now references agents_profils.id
   const agentIds = [...new Set(assignations.map(a => a.agent_id))];
-  const agentRows = profiles
-    .filter(p => agentIds.includes(p.id))
-    .map(p => {
-      const ev = evaluations.find(e => e.agent_id === p.id);
-      const ap = agentsProfils.find(a => a.user_id === p.id);
-      return { profile: p, evaluation: ev, agentProfil: ap };
+  const agentRows = agents
+    .filter(a => agentIds.includes(a.id))
+    .map(a => {
+      const ev = evaluations.find(e => e.agent_id === a.id);
+      return { agent: a, evaluation: ev };
     });
 
   const handleGenerateXlsx = async (row: typeof agentRows[0]) => {
     if (!row.evaluation) { toast.error("Aucune évaluation à exporter"); return; }
-    setGeneratingXlsx(row.profile.id);
+    setGeneratingXlsx(row.agent.id);
     try {
       const agentInfo = {
-        nom_complet: `${row.profile.nom ?? ""} ${row.profile.prenom ?? ""}`.trim(),
-        matricule: row.agentProfil?.matricule,
-        direction: row.agentProfil?.direction,
-        service: row.agentProfil?.service,
-        poste_travail: row.agentProfil?.poste_travail,
-        anciennete_poste: row.agentProfil?.anciennete_poste,
-        date_recrutement: row.agentProfil?.date_recrutement,
-        date_reclassement: row.agentProfil?.date_reclassement,
+        nom_complet: `${row.agent.nom ?? ""} ${row.agent.prenom ?? ""}`.trim(),
+        matricule: row.agent.matricule,
+        direction: row.agent.direction,
+        service: row.agent.service,
+        poste_travail: row.agent.poste_travail,
+        anciennete_poste: row.agent.anciennete_poste,
+        date_recrutement: row.agent.date_recrutement,
+        date_reclassement: row.agent.date_reclassement,
       };
-      const agentAssigns = assignations.filter(a => a.agent_id === row.profile.id);
+      const agentAssigns = assignations.filter(a => a.agent_id === row.agent.id);
       const { data: sousTaches = [] } = await supabase.from("sous_taches").select("id, code, libelle");
       const { data: executions = [] } = await supabase.from("executions").select("*").eq("exercice_id", exerciceId!);
       const assignData = agentAssigns.map(a => {
@@ -90,7 +83,7 @@ const EvaluationsTab = ({ exerciceId, exercice }: Props) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Fiche_Evaluation_${row.agentProfil?.matricule ?? row.profile.id}_${exercice}.xlsx`;
+      a.download = `Fiche_Evaluation_${row.agent.matricule ?? row.agent.id}_${exercice}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Fiche d'évaluation générée");
@@ -132,21 +125,21 @@ const EvaluationsTab = ({ exerciceId, exercice }: Props) => {
             </TableHeader>
             <TableBody>
               {agentRows.map(row => (
-                <TableRow key={row.profile.id}>
-                  <TableCell className="font-medium">{row.profile.nom} {row.profile.prenom}</TableCell>
-                  <TableCell>{row.agentProfil?.matricule ?? "—"}</TableCell>
+                <TableRow key={row.agent.id}>
+                  <TableCell className="font-medium">{row.agent.nom} {row.agent.prenom}</TableCell>
+                  <TableCell>{row.agent.matricule ?? "—"}</TableCell>
                   <TableCell>{row.evaluation?.note_realisation != null ? `${row.evaluation.note_realisation}/10` : "—"}</TableCell>
                   <TableCell>{row.evaluation?.note_globale != null ? `${row.evaluation.note_globale}/20` : "—"}</TableCell>
                   <TableCell>{statusBadge(row.evaluation?.statut)}</TableCell>
                   <TableCell className="space-x-1">
                     {isAdmin && (
-                      <Button size="sm" variant="outline" onClick={() => setEditingAgentId(row.profile.id)}>
+                      <Button size="sm" variant="outline" onClick={() => setEditingAgentId(row.agent.id)}>
                         <Star className="h-3.5 w-3.5 mr-1" /> Évaluer
                       </Button>
                     )}
                     {row.evaluation && (
-                      <Button size="sm" variant="outline" disabled={generatingXlsx === row.profile.id} onClick={() => handleGenerateXlsx(row)}>
-                        {generatingXlsx === row.profile.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
+                      <Button size="sm" variant="outline" disabled={generatingXlsx === row.agent.id} onClick={() => handleGenerateXlsx(row)}>
+                        {generatingXlsx === row.agent.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
                         .xlsx
                       </Button>
                     )}
