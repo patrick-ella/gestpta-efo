@@ -117,21 +117,22 @@ export const AdminUsers = () => {
         return Promise.reject(new Error(`Le rôle « ${ROLE_LABELS[transferUser.role]} » ne peut pas être transféré vers le personnel EFO.`));
       }
       return callAdmin({
-      action: "transfer_to_staff",
-      user_id: transferUser.id,
-      email: transferUser.email,
-      nom: transferForm.nom,
-      prenom: transferForm.prenom,
-      matricule: transferForm.matricule,
-      direction: transferForm.direction,
-      service: transferForm.service,
-      poste_travail: transferForm.poste,
-      superieur_id: transferForm.superieurId || null,
-      date_recrutement: transferForm.dateRecr || null,
-      date_reclassement: transferForm.dateReclas || null,
-      anciennete_poste: transferForm.anciennete || null,
-    }),
-    onSuccess: (data) => {
+        action: "transfer_to_staff",
+        user_id: transferUser.id,
+        email: transferUser.email,
+        nom: transferForm.nom,
+        prenom: transferForm.prenom,
+        matricule: transferForm.matricule,
+        direction: transferForm.direction,
+        service: transferForm.service,
+        poste_travail: transferForm.poste,
+        superieur_id: transferForm.superieurId || null,
+        date_recrutement: transferForm.dateRecr || null,
+        date_reclassement: transferForm.dateReclas || null,
+        anciennete_poste: transferForm.anciennete || null,
+      });
+    },
+    onSuccess: (data: any) => {
       qc.invalidateQueries({ queryKey: ["admin-users"] });
       qc.invalidateQueries({ queryKey: ["agents-profils-all"] });
       toast.success(data?.linked
