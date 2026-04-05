@@ -375,7 +375,7 @@ const ImportPersonnelSection = () => {
                 <>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                     <Card><CardContent className="pt-3 pb-2"><p className="text-xl font-bold">{validationResult.totalRows}</p><p className="text-xs text-muted-foreground">Total</p></CardContent></Card>
-                    <Card><CardContent className="pt-3 pb-2"><p className="text-xl font-bold text-green-600">{validationResult.validRows}</p><p className="text-xs text-muted-foreground">Valides</p></CardContent></Card>
+                    <Card><CardContent className="pt-3 pb-2"><p className="text-xl font-bold text-primary">{validationResult.validRows}</p><p className="text-xs text-muted-foreground">Valides</p></CardContent></Card>
                     <Card><CardContent className="pt-3 pb-2"><p className="text-xl font-bold text-destructive">{validationResult.errorRows}</p><p className="text-xs text-muted-foreground">Erreurs</p></CardContent></Card>
                     <Card><CardContent className="pt-3 pb-2"><p className="text-xs text-muted-foreground">➕ {validationResult.createRows} créer · 🔄 {validationResult.updateRows} maj</p></CardContent></Card>
                   </div>
