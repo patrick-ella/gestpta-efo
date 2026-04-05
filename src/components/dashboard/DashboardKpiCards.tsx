@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Users, TrendingUp, Award, Trophy, Shield, TrendingDown, Banknote } from "lucide-react";
+import HalfCircleGauge from "./HalfCircleGauge";
 
 interface TextKpiInfo {
   realized: string | null;
