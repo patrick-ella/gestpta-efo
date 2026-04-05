@@ -47,7 +47,7 @@ const ObjectifsEvaluation = () => {
           <h1 className="text-2xl font-bold text-foreground">👥 Objectifs & Évaluation du personnel EFO</h1>
           <p className="text-sm text-muted-foreground">Gestion des contrats d'objectifs et évaluations annuelles du personnel</p>
         </div>
-        <Select value={annee} onValueChange={setAnnee}>
+        <Select value={resolvedAnnee} onValueChange={setAnnee}>
           <SelectTrigger className="w-32">
             <SelectValue />
           </SelectTrigger>
