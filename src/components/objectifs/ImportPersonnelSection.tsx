@@ -353,8 +353,8 @@ const ImportPersonnelSection = () => {
           {importResults ? (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-3 text-center">
-                <Card><CardContent className="pt-4 pb-3"><p className="text-2xl font-bold text-green-600">{importResults.filter(r => r.action === "created" && r.status === "ok").length}</p><p className="text-xs text-muted-foreground">Agents créés</p></CardContent></Card>
-                <Card><CardContent className="pt-4 pb-3"><p className="text-2xl font-bold text-blue-600">{importResults.filter(r => r.action === "updated" && r.status === "ok").length}</p><p className="text-xs text-muted-foreground">Mis à jour</p></CardContent></Card>
+                <Card><CardContent className="pt-4 pb-3"><p className="text-2xl font-bold text-primary">{importResults.filter(r => r.action === "created" && r.status === "ok").length}</p><p className="text-xs text-muted-foreground">Agents créés</p></CardContent></Card>
+                <Card><CardContent className="pt-4 pb-3"><p className="text-2xl font-bold text-accent-foreground">{importResults.filter(r => r.action === "updated" && r.status === "ok").length}</p><p className="text-xs text-muted-foreground">Mis à jour</p></CardContent></Card>
                 <Card><CardContent className="pt-4 pb-3"><p className="text-2xl font-bold text-destructive">{importResults.filter(r => r.status === "error").length}</p><p className="text-xs text-muted-foreground">Erreurs</p></CardContent></Card>
               </div>
               {importResults.some(r => r.action === "created" && r.status === "ok") && (
