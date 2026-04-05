@@ -17,7 +17,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Verify caller is super_admin
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data: { user: caller } } = await supabaseAdmin.auth.getUser(token);
@@ -27,10 +26,11 @@ serve(async (req) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", caller.id)
-      .eq("role", "super_admin")
-      .single();
+      .in("role", ["super_admin", "admin_pta"])
+      .limit(1)
+      .maybeSingle();
 
-    if (!roleCheck) throw new Error("Accès réservé au super administrateur");
+    if (!roleCheck) throw new Error("Accès réservé aux administrateurs");
 
     const { action, ...payload } = await req.json();
 
@@ -54,6 +54,88 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ user: newUser.user }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "bulk_import") {
+      const { agents } = payload as {
+        agents: {
+          prenom: string; nom: string; email: string; matricule: string;
+          direction: string; service: string; poste: string;
+          emailN1: string; dateRecr: string | null; dateReclas: string | null;
+          anciennete: string; importAction: "create" | "update";
+        }[];
+      };
+
+      const results: { email: string; nom: string; prenom: string; matricule: string; action: string; tempPassword?: string; status: string; error?: string }[] = [];
+
+      // Process all agents
+      for (const agent of agents) {
+        try {
+          if (agent.importAction === "create") {
+            const tempPw = `EFO@${Math.floor(1000 + Math.random() * 9000)}`;
+            const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+              email: agent.email,
+              password: tempPw,
+              email_confirm: true,
+            });
+            if (createErr) throw createErr;
+
+            await supabaseAdmin.from("users_profiles").upsert({
+              id: newUser.user.id, email: agent.email, nom: agent.nom, prenom: agent.prenom, actif: true,
+            });
+
+            await supabaseAdmin.from("agents_profils").upsert({
+              user_id: newUser.user.id,
+              matricule: agent.matricule || null,
+              direction: agent.direction || null,
+              service: agent.service || null,
+              poste_travail: agent.poste || null,
+              date_recrutement: agent.dateRecr || null,
+              date_reclassement: agent.dateReclas || null,
+              anciennete_poste: agent.anciennete || null,
+            }, { onConflict: "user_id" });
+
+            results.push({ email: agent.email, nom: agent.nom, prenom: agent.prenom, matricule: agent.matricule, action: "created", tempPassword: tempPw, status: "ok" });
+          } else {
+            // Update existing
+            const { data: existing } = await supabaseAdmin.from("users_profiles").select("id").eq("email", agent.email).single();
+            if (!existing) throw new Error("Agent introuvable");
+
+            await supabaseAdmin.from("users_profiles").update({ nom: agent.nom, prenom: agent.prenom }).eq("id", existing.id);
+
+            await supabaseAdmin.from("agents_profils").upsert({
+              user_id: existing.id,
+              matricule: agent.matricule || null,
+              direction: agent.direction || null,
+              service: agent.service || null,
+              poste_travail: agent.poste || null,
+              date_recrutement: agent.dateRecr || null,
+              date_reclassement: agent.dateReclas || null,
+              anciennete_poste: agent.anciennete || null,
+            }, { onConflict: "user_id" });
+
+            results.push({ email: agent.email, nom: agent.nom, prenom: agent.prenom, matricule: agent.matricule, action: "updated", status: "ok" });
+          }
+        } catch (err) {
+          results.push({ email: agent.email, nom: agent.nom, prenom: agent.prenom, matricule: agent.matricule, action: agent.importAction, status: "error", error: err.message });
+        }
+      }
+
+      // Resolve N+1 links
+      for (const agent of agents) {
+        if (!agent.emailN1) continue;
+        try {
+          const { data: sup } = await supabaseAdmin.from("users_profiles").select("id").eq("email", agent.emailN1.toLowerCase()).single();
+          if (!sup) continue;
+          const { data: ag } = await supabaseAdmin.from("users_profiles").select("id").eq("email", agent.email).single();
+          if (!ag) continue;
+          await supabaseAdmin.from("agents_profils").update({ superieur_id: sup.id }).eq("user_id", ag.id);
+        } catch { /* skip */ }
+      }
+
+      return new Response(JSON.stringify({ results }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
