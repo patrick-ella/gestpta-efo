@@ -179,8 +179,9 @@ function drawTacheHeader(doc: jsPDF, y: number, code: string, libelle: string, p
   return y + 10;
 }
 
-function drawActiviteTotalBar(doc: jsPDF, y: number, code: string, prevu: number, execute: number): number {
-  const taux = prevu > 0 ? (execute / prevu) * 100 : 0;
+function drawActiviteTotalBar(doc: jsPDF, y: number, code: string, prevu: number, engage: number, execute: number): number {
+  const tauxEng = prevu > 0 ? (engage / prevu) * 100 : 0;
+  const tauxReal = prevu > 0 ? (execute / prevu) * 100 : 0;
   doc.setFillColor(31, 78, 121);
   doc.roundedRect(MARGIN_L, y, CONTENT_W, 9, 1, 1, "F");
   doc.setFontSize(9);
@@ -189,7 +190,7 @@ function drawActiviteTotalBar(doc: jsPDF, y: number, code: string, prevu: number
   doc.text(`TOTAL ACTIVITÉ ${code}`, MARGIN_L + 4, y + 6);
   doc.setFontSize(8);
   doc.text(
-    `Prévu : ${formatFCFA(prevu)}  |  Réalisé : ${formatFCFA(execute)}  |  Taux : ${formatTaux(taux)}`,
+    `Prévu : ${formatFCFA(prevu)}  |  Engagé : ${formatFCFA(engage)} (${formatTaux(tauxEng)})  |  Réalisé : ${formatFCFA(execute)} (${formatTaux(tauxReal)})`,
     PAGE_W - MARGIN_R - 4, y + 6, { align: "right" }
   );
   return y + 13;
