@@ -15,6 +15,7 @@ const CadreLogique = lazy(() => import("@/pages/CadreLogique"));
 const PlanTravail = lazy(() => import("@/pages/PlanTravail"));
 const Execution = lazy(() => import("@/pages/Execution"));
 const Extrants = lazy(() => import("@/pages/Extrants"));
+const ObjectifsEvaluation = lazy(() => import("@/pages/ObjectifsEvaluation"));
 const Rapports = lazy(() => import("@/pages/Rapports"));
 const Administration = lazy(() => import("@/pages/Administration"));
 const Notifications = lazy(() => import("@/pages/Notifications"));
@@ -62,6 +63,7 @@ const ProtectedRoutes = () => {
           <Route path="/pta" element={<PlanTravail />} />
           <Route path="/execution" element={<Execution />} />
           <Route path="/extrants" element={<Extrants />} />
+          <Route path="/objectifs-evaluation" element={<ObjectifsEvaluation />} />
           <Route path="/rapports" element={<Rapports />} />
           <Route path="/administration" element={<Administration />} />
           <Route path="/notifications" element={<Notifications />} />

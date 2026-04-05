@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import BudgetLinesTab from "@/components/budget/BudgetLinesTab";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import SousTacheAgentsTab from "@/components/objectifs/SousTacheAgentsTab";
 import EditHistory from "@/components/pta/EditHistory";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Lock, Pencil, Save, AlertTriangle } from "lucide-react";
@@ -153,9 +154,10 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
         </SheetHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="w-full grid grid-cols-3">
+          <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="details">📋 Détails</TabsTrigger>
             <TabsTrigger value="budget-lines">💰 Budget</TabsTrigger>
+            <TabsTrigger value="agents">👥 Agents</TabsTrigger>
             <TabsTrigger value="risques">⚠️ Risques</TabsTrigger>
           </TabsList>
 
@@ -319,6 +321,15 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
             </ErrorBoundary>
           </TabsContent>
 
+
+          {/* Agents tab */}
+          <TabsContent value="agents" className="mt-4">
+            <SousTacheAgentsTab
+              sousTacheId={sousTache.id}
+              sousTacheCode={sousTache.code}
+              exerciceId={exerciceId ?? null}
+            />
+          </TabsContent>
 
           {/* Risques tab */}
           <TabsContent value="risques" className="space-y-4 mt-4">
