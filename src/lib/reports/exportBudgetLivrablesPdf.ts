@@ -444,12 +444,13 @@ export async function exportBudgetLivrablesPdf(
       }
 
       actTotalPrevu += tachePrevu;
+      actTotalEngage += tacheEngage;
       actTotalExecute += tacheExecute;
     }
 
     // Activité total bar
     if (currentY > MAX_Y - 12) { doc.addPage(); pageSections[doc.getNumberOfPages()] = `Exécution budgétaire — ${act.code}`; currentY = 16; }
-    currentY = drawActiviteTotalBar(doc, currentY, act.code, actTotalPrevu, actTotalExecute);
+    currentY = drawActiviteTotalBar(doc, currentY, act.code, actTotalPrevu, actTotalEngage, actTotalExecute);
 
     grandTotalPrevu += actTotalPrevu;
     grandTotalExecute += actTotalExecute;
