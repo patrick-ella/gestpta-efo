@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Users, TrendingUp, Award, Trophy, Shield, TrendingDown, Banknote } from "lucide-react";
+import HalfCircleGauge from "./HalfCircleGauge";
 
 interface TextKpiInfo {
   realized: string | null;
@@ -114,47 +115,61 @@ const DashboardKpiCards = ({ apprenants, physicalProgress, isoConformity, traina
           </CardContent>
         </Card>
 
-        {/* Card 3 — Taux d'engagement (BLUE) */}
+        {/* Card 3 — Taux d'engagement (BLUE gauge) */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               🔵 Taux d'engagement budgétaire
             </CardTitle>
             <Banknote className="h-4 w-4" style={{ color: "#3B82F6" }} />
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-3xl font-bold" style={{ color: engColor }}>
-              {tauxEng}%{tauxEng > 100 ? " ⚠️" : ""}
+          <CardContent className="flex flex-col items-center pt-0">
+            <div className="relative">
+              <HalfCircleGauge value={tauxEng} color="#3B82F6" />
+              <div className="absolute inset-x-0 bottom-0 text-center">
+                <span className="text-2xl font-bold" style={{ color: engColor }}>
+                  {tauxEng}%
+                </span>
+                {tauxEng > 100 && <span className="ml-1">⚠️</span>}
+              </div>
             </div>
-            <Progress value={Math.min(tauxEng, 100)} className="h-2 [&>div]:bg-[#3B82F6]" />
-            <p className="text-xs text-muted-foreground">
-              Engagé : {formatFCFA(budgetKpis?.totalEngage ?? 0)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Prévu : {formatFCFA(budgetKpis?.totalPrevu ?? 0)}
-            </p>
+            <div className="w-full mt-1 space-y-0.5">
+              <p className="text-xs text-muted-foreground">
+                Engagé : {formatFCFA(budgetKpis?.totalEngage ?? 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Prévu : {formatFCFA(budgetKpis?.totalPrevu ?? 0)}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Card 4 — Taux de réalisation (GREEN) */}
+        {/* Card 4 — Taux de réalisation (GREEN gauge) */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               🟢 Taux de réalisation budgétaire
             </CardTitle>
             <TrendingDown className="h-4 w-4" style={{ color: "#22C55E" }} />
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-3xl font-bold" style={{ color: realColor }}>
-              {tauxReal}%{tauxReal > 100 ? " ⚠️" : ""}
+          <CardContent className="flex flex-col items-center pt-0">
+            <div className="relative">
+              <HalfCircleGauge value={tauxReal} color="#22C55E" />
+              <div className="absolute inset-x-0 bottom-0 text-center">
+                <span className="text-2xl font-bold" style={{ color: realColor }}>
+                  {tauxReal}%
+                </span>
+                {tauxReal > 100 && <span className="ml-1">⚠️</span>}
+              </div>
             </div>
-            <Progress value={Math.min(tauxReal, 100)} className="h-2 [&>div]:bg-[#22C55E]" />
-            <p className="text-xs text-muted-foreground">
-              Réalisé : {formatFCFA(budgetKpis?.totalRealise ?? 0)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Prévu : {formatFCFA(budgetKpis?.totalPrevu ?? 0)}
-            </p>
+            <div className="w-full mt-1 space-y-0.5">
+              <p className="text-xs text-muted-foreground">
+                Réalisé : {formatFCFA(budgetKpis?.totalRealise ?? 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Prévu : {formatFCFA(budgetKpis?.totalPrevu ?? 0)}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
