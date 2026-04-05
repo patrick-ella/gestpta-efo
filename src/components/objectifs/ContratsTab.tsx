@@ -19,18 +19,11 @@ const ContratsTab = ({ exerciceId, exercice }: Props) => {
   const [generating, setGenerating] = useState<string | null>(null);
   const { data: assignations = [] } = useAssignations(exerciceId);
 
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["all-profiles-contrats"],
-    queryFn: async () => {
-      const { data } = await supabase.from("users_profiles").select("*").eq("actif", true);
-      return data ?? [];
-    },
-  });
-
-  const { data: agentsProfils = [] } = useQuery({
+  // Use agents_profils as primary data source
+  const { data: agents = [] } = useQuery({
     queryKey: ["agents-profils-contrats"],
     queryFn: async () => {
-      const { data } = await supabase.from("agents_profils").select("*");
+      const { data } = await supabase.from("agents_profils").select("*").eq("actif", true);
       return data ?? [];
     },
   });
@@ -51,7 +44,7 @@ const ContratsTab = ({ exerciceId, exercice }: Props) => {
     },
   });
 
-  // Group assignations by agent
+  // Group assignations by agent (agent_id now references agents_profils.id)
   const agentMap = new Map<string, typeof assignations>();
   assignations.forEach(a => {
     const list = agentMap.get(a.agent_id) ?? [];
@@ -59,24 +52,23 @@ const ContratsTab = ({ exerciceId, exercice }: Props) => {
     agentMap.set(a.agent_id, list);
   });
 
-  const agentRows = profiles
-    .filter(p => agentMap.has(p.id))
-    .map(p => {
-      const assigns = agentMap.get(p.id) ?? [];
-      const totalPoids = assigns.reduce((s, a) => s + Number(a.poids_objectif), 0);
-      const ap = agentsProfils.find(a => a.user_id === p.id);
-      return { profile: p, agentProfil: ap, assigns, totalPoids };
+  const agentRows = agents
+    .filter(a => agentMap.has(a.id))
+    .map(a => {
+      const assigns = agentMap.get(a.id) ?? [];
+      const totalPoids = assigns.reduce((s, as) => s + Number(as.poids_objectif), 0);
+      return { agent: a, assigns, totalPoids };
     });
 
   const handleGenerate = async (row: typeof agentRows[0]) => {
-    setGenerating(row.profile.id);
+    setGenerating(row.agent.id);
     try {
       const agentInfo = {
-        nom_complet: `${row.profile.nom ?? ""} ${row.profile.prenom ?? ""}`.trim(),
-        matricule: row.agentProfil?.matricule,
-        direction: row.agentProfil?.direction,
-        service: row.agentProfil?.service,
-        poste_travail: row.agentProfil?.poste_travail,
+        nom_complet: `${row.agent.nom ?? ""} ${row.agent.prenom ?? ""}`.trim(),
+        matricule: row.agent.matricule,
+        direction: row.agent.direction,
+        service: row.agent.service,
+        poste_travail: row.agent.poste_travail,
       };
 
       const assignationData = row.assigns.map(a => {
@@ -86,10 +78,7 @@ const ContratsTab = ({ exerciceId, exercice }: Props) => {
           sous_tache_code: st?.code ?? "—",
           poids_objectif: Number(a.poids_objectif),
           date_limite: a.date_limite,
-          extrants: extrants
-            .filter(e => e.activite_id) // simplified — in production, map through tache→activite
-            .slice(0, 2)
-            .map(e => ({ libelle: e.libelle })),
+          extrants: extrants.slice(0, 2).map(e => ({ libelle: e.libelle })),
         };
       });
 
@@ -100,7 +89,7 @@ const ContratsTab = ({ exerciceId, exercice }: Props) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Contrat_Objectifs_${row.agentProfil?.matricule ?? row.profile.id}_${exercice}.docx`;
+      a.download = `Contrat_Objectifs_${row.agent.matricule ?? row.agent.id}_${exercice}.docx`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success(`Contrat généré pour ${agentInfo.nom_complet}`);
@@ -134,9 +123,9 @@ const ContratsTab = ({ exerciceId, exercice }: Props) => {
             </TableHeader>
             <TableBody>
               {agentRows.map(row => (
-                <TableRow key={row.profile.id}>
-                  <TableCell className="font-medium">{row.profile.nom} {row.profile.prenom}</TableCell>
-                  <TableCell>{row.agentProfil?.matricule ?? "—"}</TableCell>
+                <TableRow key={row.agent.id}>
+                  <TableCell className="font-medium">{row.agent.nom} {row.agent.prenom}</TableCell>
+                  <TableCell>{row.agent.matricule ?? "—"}</TableCell>
                   <TableCell>{row.assigns.length}</TableCell>
                   <TableCell>
                     <span className={row.totalPoids === 100 ? "text-green-600 font-bold" : "text-destructive font-bold"}>
@@ -154,10 +143,10 @@ const ContratsTab = ({ exerciceId, exercice }: Props) => {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={row.totalPoids !== 100 || generating === row.profile.id}
+                      disabled={row.totalPoids !== 100 || generating === row.agent.id}
                       onClick={() => handleGenerate(row)}
                     >
-                      {generating === row.profile.id ? (
+                      {generating === row.agent.id ? (
                         <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> Génération...</>
                       ) : (
                         <><Download className="h-3.5 w-3.5 mr-1" /> Générer .docx</>

@@ -25,7 +25,7 @@ const ObjectifsEvaluation = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">👥 Objectifs & Évaluation</h1>
+          <h1 className="text-2xl font-bold text-foreground">👥 Objectifs & Évaluation du personnel EFO</h1>
           <p className="text-sm text-muted-foreground">Gestion des contrats d'objectifs et évaluations annuelles du personnel</p>
         </div>
         <Select value={annee} onValueChange={setAnnee}>
@@ -42,7 +42,7 @@ const ObjectifsEvaluation = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="agents">👤 Agents & Profils</TabsTrigger>
+          <TabsTrigger value="agents">👤 Personnel EFO</TabsTrigger>
           <TabsTrigger value="contrats">📋 Contrats d'Objectifs</TabsTrigger>
           <TabsTrigger value="evaluations">⭐ Évaluations</TabsTrigger>
         </TabsList>

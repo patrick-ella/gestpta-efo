@@ -9,14 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { UserPlus, KeyRound, Ban, CheckCircle, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { UserPlus, KeyRound, Ban, CheckCircle, Loader2, Info } from "lucide-react";
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Administrateur",
+  super_admin: "Administrateur principal",
   admin_pta: "Administrateur PTA",
-  responsable_activite: "Responsable d'Activité",
-  agent_saisie: "Agent de Saisie",
-  consultant: "Consultant / Lecture seule",
+  responsable_activite: "Responsable d'activité",
+  agent_saisie: "Agent de saisie",
+  consultant: "Consultant externe",
 };
 
 const ROLES = Object.keys(ROLE_LABELS);
@@ -32,9 +33,11 @@ export const AdminUsers = () => {
     queryFn: async () => {
       const { data: profiles } = await supabase.from("users_profiles").select("*").order("created_at");
       const { data: roles } = await supabase.from("user_roles").select("*");
+      const { data: agentsProfiles } = await supabase.from("agents_profils").select("id, user_id, matricule, poste_travail, direction");
       return (profiles || []).map((p) => ({
         ...p,
         role: roles?.find((r) => r.user_id === p.id)?.role || "consultant",
+        agentProfil: agentsProfiles?.find((ap) => ap.user_id === p.id) || null,
       }));
     },
   });
@@ -89,8 +92,15 @@ export const AdminUsers = () => {
 
   return (
     <div className="space-y-4">
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription className="text-sm">
+          Cette page gère les comptes d'accès à l'application. Pour gérer le personnel EFO (contrats d'objectifs, évaluations), allez dans 👥 Objectifs & Évaluation.
+        </AlertDescription>
+      </Alert>
+
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">Gestion des utilisateurs</h2>
+        <h2 className="text-lg font-semibold text-foreground">Utilisateurs de l'application</h2>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button><UserPlus className="h-4 w-4 mr-2" />Créer un utilisateur</Button>
@@ -131,24 +141,32 @@ export const AdminUsers = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nom</TableHead><TableHead>Prénom</TableHead><TableHead>Email</TableHead>
-                <TableHead>Rôle</TableHead><TableHead>Centre</TableHead><TableHead>Statut</TableHead>
+                <TableHead>Nom</TableHead><TableHead>Email</TableHead>
+                <TableHead>Rôle</TableHead><TableHead>Centre</TableHead>
+                <TableHead>Personnel EFO</TableHead>
+                <TableHead>Statut</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {users.map((u: any) => (
                 <TableRow key={u.id}>
-                  <TableCell className="font-medium">{u.nom || "—"}</TableCell>
-                  <TableCell>{u.prenom || "—"}</TableCell>
+                  <TableCell className="font-medium">{u.nom || "—"} {u.prenom || ""}</TableCell>
                   <TableCell className="text-xs">{u.email}</TableCell>
                   <TableCell>
                     <Select value={u.role} onValueChange={(v) => updateRole.mutate({ user_id: u.id, role: v })}>
-                      <SelectTrigger className="w-[180px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>{ROLES.map((r) => <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>)}</SelectContent>
                     </Select>
                   </TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{u.centre || "—"}</Badge></TableCell>
+                  <TableCell>
+                    {u.agentProfil ? (
+                      <Badge className="bg-green-100 text-green-800 text-xs">Oui — {u.agentProfil.matricule ?? ""}</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">Non (externe)</Badge>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={u.actif !== false ? "default" : "destructive"} className="text-xs">
                       {u.actif !== false ? "Actif" : "Inactif"}
