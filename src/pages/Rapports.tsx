@@ -197,33 +197,62 @@ const Rapports = () => {
               <CardDescription className="text-xs">{r.desc}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-end gap-3">
-              {r.params === "mois" && (
-                <Select value={mois} onValueChange={setMois}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Mois" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {moisOptions.map((m, i) => (
-                      <SelectItem key={i} value={String(i + 1)}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {(r.params === "mensuel") && (
+                <>
+                  <Select value={mois} onValueChange={setMois}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Mois" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {moisOptions.map((m, i) => (
+                        <SelectItem key={i} value={String(i + 1)}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={activiteFilter} onValueChange={setActiviteFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Activité" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les activités</SelectItem>
+                      {activitesList.map((a: any) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.code} — {a.libelle}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
               )}
-              {r.params === "trimestre" && (
-                <Select value={trimestre} onValueChange={setTrimestre}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Trimestre" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4].map((t) => (
-                      <SelectItem key={t} value={String(t)}>
-                        T{t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {(r.params === "trimestriel") && (
+                <>
+                  <Select value={trimestre} onValueChange={setTrimestre}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Trimestre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">T1 (Jan-Mar)</SelectItem>
+                      <SelectItem value="2">T2 (Avr-Jun)</SelectItem>
+                      <SelectItem value="3">T3 (Jul-Sep)</SelectItem>
+                      <SelectItem value="4">T4 (Oct-Déc)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={activiteFilter} onValueChange={setActiviteFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Activité" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les activités</SelectItem>
+                      {activitesList.map((a: any) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.code} — {a.libelle}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
               )}
               {r.params === "budget-livrables" && (
                 <Select value={activiteFilter} onValueChange={setActiviteFilter}>
