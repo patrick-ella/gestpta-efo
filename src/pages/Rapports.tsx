@@ -76,30 +76,38 @@ const Rapports = () => {
     },
     {
       key: "mensuel",
-      title: "Rapport mensuel d'exécution",
-      desc: "Rapport PDF avec tableau d'avancement par activité, alertes et bloc signature.",
+      title: "Rapport mensuel d'activité de l'EFO",
+      desc: "Rapport PDF avec exécution budgétaire par tâche et suivi des extrants (GAR) par activité.",
       icon: FileText,
       badge: "PDF",
       badgeClass: "bg-destructive text-destructive-foreground",
-      params: "mois",
+      params: "mensuel",
       action: async () => {
-        const data = await fetchReportData(selectedExercice?.id);
-        const { exportMensuelPdf } = await import("@/lib/reports/exportMensuelPdf");
-        await exportMensuelPdf(data, parseInt(annee), parseInt(mois));
+        const { generateRapportActivite } = await import("@/lib/reports/generateRapportActivite");
+        await generateRapportActivite({
+          type: "mensuel",
+          exercice: parseInt(annee),
+          mois: parseInt(mois),
+          activiteId: activiteFilter !== "all" ? activiteFilter : undefined,
+        });
       },
     },
     {
       key: "trimestriel",
-      title: "Rapport trimestriel",
-      desc: "Rapport PDF comparatif prévu vs réalisé, KPIs cadre logique et analyse des écarts.",
+      title: "Rapport trimestriel d'activité de l'EFO",
+      desc: "Rapport PDF avec exécution budgétaire par tâche et suivi des extrants (GAR) par activité.",
       icon: FileText,
       badge: "PDF",
       badgeClass: "bg-destructive text-destructive-foreground",
-      params: "trimestre",
+      params: "trimestriel",
       action: async () => {
-        const data = await fetchReportData(selectedExercice?.id);
-        const { exportTrimestrielPdf } = await import("@/lib/reports/exportTrimestrielPdf");
-        await exportTrimestrielPdf(data, parseInt(annee), parseInt(trimestre));
+        const { generateRapportActivite } = await import("@/lib/reports/generateRapportActivite");
+        await generateRapportActivite({
+          type: "trimestriel",
+          exercice: parseInt(annee),
+          trimestre: parseInt(trimestre) as 1 | 2 | 3 | 4,
+          activiteId: activiteFilter !== "all" ? activiteFilter : undefined,
+        });
       },
     },
     {
@@ -139,10 +147,12 @@ const Rapports = () => {
       badgeClass: "bg-destructive text-destructive-foreground",
       params: "budget-livrables",
       action: async () => {
-        if (!selectedExercice) return;
-        const filterId = activiteFilter !== "all" ? activiteFilter : undefined;
-        const { exportBudgetLivrablesPdf } = await import("@/lib/reports/exportBudgetLivrablesPdf");
-        await exportBudgetLivrablesPdf(parseInt(annee), selectedExercice.id, filterId);
+        const { generateRapportActivite } = await import("@/lib/reports/generateRapportActivite");
+        await generateRapportActivite({
+          type: "annuel",
+          exercice: parseInt(annee),
+          activiteId: activiteFilter !== "all" ? activiteFilter : undefined,
+        });
       },
     },
   ];
@@ -187,33 +197,62 @@ const Rapports = () => {
               <CardDescription className="text-xs">{r.desc}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-end gap-3">
-              {r.params === "mois" && (
-                <Select value={mois} onValueChange={setMois}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Mois" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {moisOptions.map((m, i) => (
-                      <SelectItem key={i} value={String(i + 1)}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {(r.params === "mensuel") && (
+                <>
+                  <Select value={mois} onValueChange={setMois}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Mois" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {moisOptions.map((m, i) => (
+                        <SelectItem key={i} value={String(i + 1)}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={activiteFilter} onValueChange={setActiviteFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Activité" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les activités</SelectItem>
+                      {activitesList.map((a: any) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.code} — {a.libelle}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
               )}
-              {r.params === "trimestre" && (
-                <Select value={trimestre} onValueChange={setTrimestre}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Trimestre" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4].map((t) => (
-                      <SelectItem key={t} value={String(t)}>
-                        T{t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {(r.params === "trimestriel") && (
+                <>
+                  <Select value={trimestre} onValueChange={setTrimestre}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Trimestre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">T1 (Jan-Mar)</SelectItem>
+                      <SelectItem value="2">T2 (Avr-Jun)</SelectItem>
+                      <SelectItem value="3">T3 (Jul-Sep)</SelectItem>
+                      <SelectItem value="4">T4 (Oct-Déc)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={activiteFilter} onValueChange={setActiviteFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Activité" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les activités</SelectItem>
+                      {activitesList.map((a: any) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.code} — {a.libelle}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
               )}
               {r.params === "budget-livrables" && (
                 <Select value={activiteFilter} onValueChange={setActiviteFilter}>
