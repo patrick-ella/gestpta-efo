@@ -344,12 +344,7 @@ export const AdminUsers = () => {
             </div>
             <div><Label className="text-sm">Email</Label><Input value={transferUser?.email ?? ""} disabled className="bg-muted" /></div>
             <div><Label className="text-sm">Matricule *</Label><Input value={transferForm.matricule} onChange={e => setTransferForm(f => ({ ...f, matricule: e.target.value }))} /></div>
-            <div><Label className="text-sm">Direction *</Label>
-              <Select value={transferForm.direction} onValueChange={v => setTransferForm(f => ({ ...f, direction: v }))}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner..." /></SelectTrigger>
-                <SelectContent>{DIRECTIONS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
+            <div><Label className="text-sm">Direction *</Label><Input value={transferForm.direction} onChange={e => setTransferForm(f => ({ ...f, direction: e.target.value }))} placeholder="Ex: Formation Continue" /></div>
             <div><Label className="text-sm">Service/Bureau</Label><Input value={transferForm.service} onChange={e => setTransferForm(f => ({ ...f, service: e.target.value }))} /></div>
             <div><Label className="text-sm">Poste de travail *</Label><Input value={transferForm.poste} onChange={e => setTransferForm(f => ({ ...f, poste: e.target.value }))} /></div>
             <div><Label className="text-sm">Supérieur hiérarchique (N+1)</Label>
