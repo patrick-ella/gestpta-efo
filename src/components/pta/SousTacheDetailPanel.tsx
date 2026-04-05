@@ -322,6 +322,15 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
           </TabsContent>
 
 
+          {/* Agents tab */}
+          <TabsContent value="agents" className="mt-4">
+            <SousTacheAgentsTab
+              sousTacheId={sousTache.id}
+              sousTacheCode={sousTache.code}
+              exerciceId={exerciceId ?? null}
+            />
+          </TabsContent>
+
           {/* Risques tab */}
           <TabsContent value="risques" className="space-y-4 mt-4">
             {riskFields.map(({ key, label }) => (
