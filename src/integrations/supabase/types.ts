@@ -84,59 +84,71 @@ export type Database = {
       }
       agents_profils: {
         Row: {
+          actif: boolean
           anciennete_poste: string | null
           created_at: string | null
           date_reclassement: string | null
           date_recrutement: string | null
           direction: string | null
+          email: string | null
           id: string
           matricule: string | null
+          nom: string
           poste_travail: string | null
+          prenom: string
           service: string | null
           superieur_id: string | null
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          actif?: boolean
           anciennete_poste?: string | null
           created_at?: string | null
           date_reclassement?: string | null
           date_recrutement?: string | null
           direction?: string | null
+          email?: string | null
           id?: string
           matricule?: string | null
+          nom?: string
           poste_travail?: string | null
+          prenom?: string
           service?: string | null
           superieur_id?: string | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          actif?: boolean
           anciennete_poste?: string | null
           created_at?: string | null
           date_reclassement?: string | null
           date_recrutement?: string | null
           direction?: string | null
+          email?: string | null
           id?: string
           matricule?: string | null
+          nom?: string
           poste_travail?: string | null
+          prenom?: string
           service?: string | null
           superieur_id?: string | null
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "agents_profils_superieur_id_fkey"
             columns: ["superieur_id"]
             isOneToOne: false
-            referencedRelation: "users_profiles"
+            referencedRelation: "agents_profils"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "agents_profils_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "users_profiles"
             referencedColumns: ["id"]
           },
@@ -220,7 +232,7 @@ export type Database = {
             foreignKeyName: "assignations_sous_taches_agent_id_fkey"
             columns: ["agent_id"]
             isOneToOne: false
-            referencedRelation: "users_profiles"
+            referencedRelation: "agents_profils"
             referencedColumns: ["id"]
           },
           {
@@ -407,7 +419,7 @@ export type Database = {
             foreignKeyName: "evaluations_agents_agent_id_fkey"
             columns: ["agent_id"]
             isOneToOne: false
-            referencedRelation: "users_profiles"
+            referencedRelation: "agents_profils"
             referencedColumns: ["id"]
           },
           {
