@@ -196,8 +196,9 @@ const AgentsProfilsTab = ({ exerciceId }: Props) => {
             </div>
           </SheetContent>
         </Sheet>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
