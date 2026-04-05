@@ -24,7 +24,6 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const PROTECTED_ROLES = ["super_admin", "admin_pta", "responsable_activite", "agent_saisie", "consultant"];
-const NON_TRANSFERABLE_ROLES = PROTECTED_ROLES;
 const ROLES = Object.keys(ROLE_LABELS);
 const CENTRES = ["Yaoundé", "Douala", "Les deux"];
 const DIRECTIONS = [
@@ -112,27 +111,22 @@ export const AdminUsers = () => {
   });
 
   const transferMut = useMutation({
-    mutationFn: () => {
-      if (NON_TRANSFERABLE_ROLES.includes(transferUser?.role)) {
-        return Promise.reject(new Error(`Le rôle « ${ROLE_LABELS[transferUser.role]} » ne peut pas être transféré vers le personnel EFO.`));
-      }
-      return callAdmin({
-        action: "transfer_to_staff",
-        user_id: transferUser.id,
-        email: transferUser.email,
-        nom: transferForm.nom,
-        prenom: transferForm.prenom,
-        matricule: transferForm.matricule,
-        direction: transferForm.direction,
-        service: transferForm.service,
-        poste_travail: transferForm.poste,
-        superieur_id: transferForm.superieurId || null,
-        date_recrutement: transferForm.dateRecr || null,
-        date_reclassement: transferForm.dateReclas || null,
-        anciennete_poste: transferForm.anciennete || null,
-      });
-    },
-    onSuccess: (data: any) => {
+    mutationFn: () => callAdmin({
+      action: "transfer_to_staff",
+      user_id: transferUser.id,
+      email: transferUser.email,
+      nom: transferForm.nom,
+      prenom: transferForm.prenom,
+      matricule: transferForm.matricule,
+      direction: transferForm.direction,
+      service: transferForm.service,
+      poste_travail: transferForm.poste,
+      superieur_id: transferForm.superieurId || null,
+      date_recrutement: transferForm.dateRecr || null,
+      date_reclassement: transferForm.dateReclas || null,
+      anciennete_poste: transferForm.anciennete || null,
+    }),
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["admin-users"] });
       qc.invalidateQueries({ queryKey: ["agents-profils-all"] });
       toast.success(data?.linked
@@ -263,12 +257,10 @@ export const AdminUsers = () => {
                   </TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{u.centre || "—"}</Badge></TableCell>
                   <TableCell>
-                    {NON_TRANSFERABLE_ROLES.includes(u.role) ? (
-                      <Badge variant="secondary" className="text-xs italic text-muted-foreground">Non applicable</Badge>
-                    ) : u.agentProfil ? (
+                    {u.agentProfil ? (
                       <Badge className="bg-green-100 text-green-800 text-xs">✅ EFO lié — {u.agentProfil.matricule ?? ""}</Badge>
                     ) : (
-                      <Badge variant="outline" className="text-xs">⚪ Non lié</Badge>
+                      <Badge variant="secondary" className="text-xs">Non (externe)</Badge>
                     )}
                   </TableCell>
                   <TableCell>
@@ -289,25 +281,24 @@ export const AdminUsers = () => {
                       >
                         {u.actif !== false ? <Ban className="h-3 w-3" /> : <CheckCircle className="h-3 w-3" />}
                       </Button>
-                      {/* Transfer to EFO — hidden for protected roles */}
-                      {!NON_TRANSFERABLE_ROLES.includes(u.role) && (
-                        !u.agentProfil ? (
-                          <Button variant="outline" size="sm" title="Transférer vers le personnel EFO" onClick={() => openTransfer(u)}>
-                            <Users className="h-3 w-3" />
-                          </Button>
-                        ) : (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="inline-flex items-center px-1.5">
-                                  <UserCheck className="h-3.5 w-3.5 text-green-600" />
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>Personnel EFO lié</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )
+                      {/* Transfer to EFO */}
+                      {!u.agentProfil ? (
+                        <Button variant="outline" size="sm" title="Transférer vers le personnel EFO" onClick={() => openTransfer(u)}>
+                          <Users className="h-3 w-3" />
+                        </Button>
+                      ) : (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex items-center px-1.5">
+                                <UserCheck className="h-3.5 w-3.5 text-green-600" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Personnel EFO lié</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
+                      {/* Delete */}
                       {isDeletable(u) ? (
                         <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" title="Supprimer" onClick={() => openDelete(u)}>
                           <Trash2 className="h-3 w-3" />
