@@ -76,30 +76,38 @@ const Rapports = () => {
     },
     {
       key: "mensuel",
-      title: "Rapport mensuel d'exécution",
-      desc: "Rapport PDF avec tableau d'avancement par activité, alertes et bloc signature.",
+      title: "Rapport mensuel d'activité de l'EFO",
+      desc: "Rapport PDF avec exécution budgétaire par tâche et suivi des extrants (GAR) par activité.",
       icon: FileText,
       badge: "PDF",
       badgeClass: "bg-destructive text-destructive-foreground",
-      params: "mois",
+      params: "mensuel",
       action: async () => {
-        const data = await fetchReportData(selectedExercice?.id);
-        const { exportMensuelPdf } = await import("@/lib/reports/exportMensuelPdf");
-        await exportMensuelPdf(data, parseInt(annee), parseInt(mois));
+        const { generateRapportActivite } = await import("@/lib/reports/generateRapportActivite");
+        await generateRapportActivite({
+          type: "mensuel",
+          exercice: parseInt(annee),
+          mois: parseInt(mois),
+          activiteId: activiteFilter !== "all" ? activiteFilter : undefined,
+        });
       },
     },
     {
       key: "trimestriel",
-      title: "Rapport trimestriel",
-      desc: "Rapport PDF comparatif prévu vs réalisé, KPIs cadre logique et analyse des écarts.",
+      title: "Rapport trimestriel d'activité de l'EFO",
+      desc: "Rapport PDF avec exécution budgétaire par tâche et suivi des extrants (GAR) par activité.",
       icon: FileText,
       badge: "PDF",
       badgeClass: "bg-destructive text-destructive-foreground",
-      params: "trimestre",
+      params: "trimestriel",
       action: async () => {
-        const data = await fetchReportData(selectedExercice?.id);
-        const { exportTrimestrielPdf } = await import("@/lib/reports/exportTrimestrielPdf");
-        await exportTrimestrielPdf(data, parseInt(annee), parseInt(trimestre));
+        const { generateRapportActivite } = await import("@/lib/reports/generateRapportActivite");
+        await generateRapportActivite({
+          type: "trimestriel",
+          exercice: parseInt(annee),
+          trimestre: parseInt(trimestre) as 1 | 2 | 3 | 4,
+          activiteId: activiteFilter !== "all" ? activiteFilter : undefined,
+        });
       },
     },
     {
@@ -139,10 +147,12 @@ const Rapports = () => {
       badgeClass: "bg-destructive text-destructive-foreground",
       params: "budget-livrables",
       action: async () => {
-        if (!selectedExercice) return;
-        const filterId = activiteFilter !== "all" ? activiteFilter : undefined;
-        const { exportBudgetLivrablesPdf } = await import("@/lib/reports/exportBudgetLivrablesPdf");
-        await exportBudgetLivrablesPdf(parseInt(annee), selectedExercice.id, filterId);
+        const { generateRapportActivite } = await import("@/lib/reports/generateRapportActivite");
+        await generateRapportActivite({
+          type: "annuel",
+          exercice: parseInt(annee),
+          activiteId: activiteFilter !== "all" ? activiteFilter : undefined,
+        });
       },
     },
   ];
