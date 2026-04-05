@@ -112,7 +112,11 @@ export const AdminUsers = () => {
   });
 
   const transferMut = useMutation({
-    mutationFn: () => callAdmin({
+    mutationFn: () => {
+      if (NON_TRANSFERABLE_ROLES.includes(transferUser?.role)) {
+        return Promise.reject(new Error(`Le rôle « ${ROLE_LABELS[transferUser.role]} » ne peut pas être transféré vers le personnel EFO.`));
+      }
+      return callAdmin({
       action: "transfer_to_staff",
       user_id: transferUser.id,
       email: transferUser.email,
