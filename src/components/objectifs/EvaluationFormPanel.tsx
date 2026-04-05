@@ -133,10 +133,11 @@ const EvaluationFormPanel = ({ agentId, exerciceId, open, onClose }: Props) => {
   const set = (key: string, value: any) => setForm(f => ({ ...f, [key]: value }));
 
   const handleSave = async (finalize = false) => {
+    const { id, created_at, updated_at, ...rest } = form;
     const payload = {
+      ...rest,
       agent_id: agentId,
       exercice_id: exerciceId,
-      ...form,
       note_realisation: noteReal,
       note_comp_comportement: compScores.noteComp,
       note_comp_performance: compScores.notePerf,
@@ -146,11 +147,6 @@ const EvaluationFormPanel = ({ agentId, exerciceId, open, onClose }: Props) => {
       statut: finalize ? "finalise" : "en_evaluation",
       date_evaluation: finalize ? new Date().toISOString().split("T")[0] : form.date_evaluation,
     };
-
-    // Remove read-only fields
-    delete payload.id;
-    delete payload.created_at;
-    delete payload.updated_at;
 
     let error;
     if (evaluation) {

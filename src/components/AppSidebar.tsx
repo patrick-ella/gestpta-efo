@@ -31,6 +31,7 @@ const menuItems = [
   { title: "Plan de Travail (PTA)", url: "/pta", icon: ClipboardList },
   { title: "Exécution", url: "/execution", icon: PlayCircle },
   { title: "Extrants", url: "/extrants", icon: FileCheck },
+  { title: "Objectifs & Évaluation", url: "/objectifs-evaluation", icon: Users },
   { title: "Rapports", url: "/rapports", icon: BarChart3 },
   { title: "Administration", url: "/administration", icon: Settings },
 ];

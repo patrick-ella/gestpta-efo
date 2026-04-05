@@ -94,7 +94,7 @@ const ContratsTab = ({ exerciceId, exercice }: Props) => {
       });
 
       const buffer = await generateContratObjectifs(agentInfo, assignationData, exercice);
-      const blob = new Blob([buffer], {
+      const blob = new Blob([buffer as BlobPart], {
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
       const url = URL.createObjectURL(blob);
