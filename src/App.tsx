@@ -15,6 +15,7 @@ const CadreLogique = lazy(() => import("@/pages/CadreLogique"));
 const PlanTravail = lazy(() => import("@/pages/PlanTravail"));
 const Execution = lazy(() => import("@/pages/Execution"));
 const Extrants = lazy(() => import("@/pages/Extrants"));
+const ObjectifsEvaluation = lazy(() => import("@/pages/ObjectifsEvaluation"));
 const Rapports = lazy(() => import("@/pages/Rapports"));
 const Administration = lazy(() => import("@/pages/Administration"));
 const Notifications = lazy(() => import("@/pages/Notifications"));
