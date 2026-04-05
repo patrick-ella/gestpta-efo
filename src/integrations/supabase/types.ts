@@ -82,6 +82,66 @@ export type Database = {
           },
         ]
       }
+      agents_profils: {
+        Row: {
+          anciennete_poste: string | null
+          created_at: string | null
+          date_reclassement: string | null
+          date_recrutement: string | null
+          direction: string | null
+          id: string
+          matricule: string | null
+          poste_travail: string | null
+          service: string | null
+          superieur_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          anciennete_poste?: string | null
+          created_at?: string | null
+          date_reclassement?: string | null
+          date_recrutement?: string | null
+          direction?: string | null
+          id?: string
+          matricule?: string | null
+          poste_travail?: string | null
+          service?: string | null
+          superieur_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          anciennete_poste?: string | null
+          created_at?: string | null
+          date_reclassement?: string | null
+          date_recrutement?: string | null
+          direction?: string | null
+          id?: string
+          matricule?: string | null
+          poste_travail?: string | null
+          service?: string | null
+          superieur_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agents_profils_superieur_id_fkey"
+            columns: ["superieur_id"]
+            isOneToOne: false
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agents_profils_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           admin_email: string | null
@@ -114,6 +174,70 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      assignations_sous_taches: {
+        Row: {
+          agent_id: string
+          created_at: string | null
+          created_by: string | null
+          date_limite: string | null
+          exercice_id: string
+          id: string
+          observations: string | null
+          poids_objectif: number
+          role_agent: string
+          sous_tache_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string | null
+          created_by?: string | null
+          date_limite?: string | null
+          exercice_id: string
+          id?: string
+          observations?: string | null
+          poids_objectif?: number
+          role_agent?: string
+          sous_tache_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          date_limite?: string | null
+          exercice_id?: string
+          id?: string
+          observations?: string | null
+          poids_objectif?: number
+          role_agent?: string
+          sous_tache_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignations_sous_taches_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignations_sous_taches_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignations_sous_taches_sous_tache_id_fkey"
+            columns: ["sous_tache_id"]
+            isOneToOne: false
+            referencedRelation: "sous_taches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       criteres_sous_taches: {
         Row: {
@@ -150,6 +274,154 @@ export type Database = {
             columns: ["sous_tache_id"]
             isOneToOne: false
             referencedRelation: "sous_taches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluations_agents: {
+        Row: {
+          actions_comp: Json | null
+          agent_id: string
+          appreciation_globale: string | null
+          besoins_formation: Json | null
+          commentaire_agent: string | null
+          commentaire_evaluateur: string | null
+          comp_actualisation: number | null
+          comp_assiduite: number | null
+          comp_communication: number | null
+          comp_discretion: number | null
+          comp_esprit_critique: number | null
+          comp_habiletes: number | null
+          comp_initiative: number | null
+          comp_organisation: number | null
+          comp_qualite_travail: number | null
+          comp_quantite_travail: number | null
+          comp_responsabilite: number | null
+          created_at: string | null
+          date_evaluation: string | null
+          elements_defavorables: string | null
+          elements_favorables: string | null
+          evaluateur_id: string | null
+          exercice_id: string
+          id: string
+          modifications_taches: string | null
+          note_comp_comportement: number | null
+          note_comp_performance: number | null
+          note_comp_pro: number | null
+          note_globale: number | null
+          note_realisation: number | null
+          points_ameliorer: string | null
+          points_forts: string | null
+          responsabilite_r1: string | null
+          responsabilite_r2: string | null
+          responsabilite_r3: string | null
+          responsabilite_r4: string | null
+          responsabilite_r5: string | null
+          statut: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actions_comp?: Json | null
+          agent_id: string
+          appreciation_globale?: string | null
+          besoins_formation?: Json | null
+          commentaire_agent?: string | null
+          commentaire_evaluateur?: string | null
+          comp_actualisation?: number | null
+          comp_assiduite?: number | null
+          comp_communication?: number | null
+          comp_discretion?: number | null
+          comp_esprit_critique?: number | null
+          comp_habiletes?: number | null
+          comp_initiative?: number | null
+          comp_organisation?: number | null
+          comp_qualite_travail?: number | null
+          comp_quantite_travail?: number | null
+          comp_responsabilite?: number | null
+          created_at?: string | null
+          date_evaluation?: string | null
+          elements_defavorables?: string | null
+          elements_favorables?: string | null
+          evaluateur_id?: string | null
+          exercice_id: string
+          id?: string
+          modifications_taches?: string | null
+          note_comp_comportement?: number | null
+          note_comp_performance?: number | null
+          note_comp_pro?: number | null
+          note_globale?: number | null
+          note_realisation?: number | null
+          points_ameliorer?: string | null
+          points_forts?: string | null
+          responsabilite_r1?: string | null
+          responsabilite_r2?: string | null
+          responsabilite_r3?: string | null
+          responsabilite_r4?: string | null
+          responsabilite_r5?: string | null
+          statut?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actions_comp?: Json | null
+          agent_id?: string
+          appreciation_globale?: string | null
+          besoins_formation?: Json | null
+          commentaire_agent?: string | null
+          commentaire_evaluateur?: string | null
+          comp_actualisation?: number | null
+          comp_assiduite?: number | null
+          comp_communication?: number | null
+          comp_discretion?: number | null
+          comp_esprit_critique?: number | null
+          comp_habiletes?: number | null
+          comp_initiative?: number | null
+          comp_organisation?: number | null
+          comp_qualite_travail?: number | null
+          comp_quantite_travail?: number | null
+          comp_responsabilite?: number | null
+          created_at?: string | null
+          date_evaluation?: string | null
+          elements_defavorables?: string | null
+          elements_favorables?: string | null
+          evaluateur_id?: string | null
+          exercice_id?: string
+          id?: string
+          modifications_taches?: string | null
+          note_comp_comportement?: number | null
+          note_comp_performance?: number | null
+          note_comp_pro?: number | null
+          note_globale?: number | null
+          note_realisation?: number | null
+          points_ameliorer?: string | null
+          points_forts?: string | null
+          responsabilite_r1?: string | null
+          responsabilite_r2?: string | null
+          responsabilite_r3?: string | null
+          responsabilite_r4?: string | null
+          responsabilite_r5?: string | null
+          statut?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_agents_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_agents_evaluateur_id_fkey"
+            columns: ["evaluateur_id"]
+            isOneToOne: false
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_agents_exercice_id_fkey"
+            columns: ["exercice_id"]
+            isOneToOne: false
+            referencedRelation: "exercices"
             referencedColumns: ["id"]
           },
         ]
