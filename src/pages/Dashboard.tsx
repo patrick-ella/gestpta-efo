@@ -134,7 +134,16 @@ const Dashboard = () => {
 
   const totalBudgetPrevu = sousTaches.reduce((s, st) => s + (st.budget_prevu ?? 0), 0);
   const totalRealized = executions.reduce((s, e) => s + (e.montant_realise ?? 0), 0);
+  const totalEngage = executions.reduce((s, e) => s + ((e as any).montant_engage ?? 0), 0);
   const budgetExecPct = totalBudgetPrevu > 0 ? Math.round((totalRealized / totalBudgetPrevu) * 100) : 0;
+
+  const budgetKpis = {
+    totalPrevu: totalBudgetPrevu,
+    totalEngage,
+    totalRealise: totalRealized,
+    tauxEngagement: totalBudgetPrevu > 0 ? Math.round((totalEngage / totalBudgetPrevu) * 1000) / 10 : 0,
+    tauxRealisation: totalBudgetPrevu > 0 ? Math.round((totalRealized / totalBudgetPrevu) * 1000) / 10 : 0,
+  };
 
   const allPcts = sousTaches.map((st) => exMap[st.id]?.avancement_pct ?? 0);
   const physicalProgress = allPcts.length > 0 ? Math.round(allPcts.reduce((s, v) => s + v, 0) / allPcts.length) : 0;
@@ -322,9 +331,9 @@ const Dashboard = () => {
 
       <DashboardKpiCards
         apprenants={apprenants}
-        budgetExec={budgetExecPct}
         physicalProgress={physicalProgress}
         isoConformity={isoConformity}
+        budgetKpis={budgetKpis}
         trainairPlus={{
           realized: trainairKpi?.valeur_realisee ?? null,
           target: trainairKpi?.cible_2027 ?? "Gold Member",

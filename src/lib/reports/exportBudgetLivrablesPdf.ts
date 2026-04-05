@@ -179,8 +179,9 @@ function drawTacheHeader(doc: jsPDF, y: number, code: string, libelle: string, p
   return y + 10;
 }
 
-function drawActiviteTotalBar(doc: jsPDF, y: number, code: string, prevu: number, execute: number): number {
-  const taux = prevu > 0 ? (execute / prevu) * 100 : 0;
+function drawActiviteTotalBar(doc: jsPDF, y: number, code: string, prevu: number, engage: number, execute: number): number {
+  const tauxEng = prevu > 0 ? (engage / prevu) * 100 : 0;
+  const tauxReal = prevu > 0 ? (execute / prevu) * 100 : 0;
   doc.setFillColor(31, 78, 121);
   doc.roundedRect(MARGIN_L, y, CONTENT_W, 9, 1, 1, "F");
   doc.setFontSize(9);
@@ -189,7 +190,7 @@ function drawActiviteTotalBar(doc: jsPDF, y: number, code: string, prevu: number
   doc.text(`TOTAL ACTIVITÉ ${code}`, MARGIN_L + 4, y + 6);
   doc.setFontSize(8);
   doc.text(
-    `Prévu : ${formatFCFA(prevu)}  |  Réalisé : ${formatFCFA(execute)}  |  Taux : ${formatTaux(taux)}`,
+    `Prévu : ${formatFCFA(prevu)}  |  Engagé : ${formatFCFA(engage)} (${formatTaux(tauxEng)})  |  Réalisé : ${formatFCFA(execute)} (${formatTaux(tauxReal)})`,
     PAGE_W - MARGIN_R - 4, y + 6, { align: "right" }
   );
   return y + 13;
@@ -291,6 +292,7 @@ export async function exportBudgetLivrablesPdf(
     currentY = drawActiviteHeader(doc, currentY, act.code, act.libelle, act.budget_total || 0);
 
     let actTotalPrevu = 0;
+    let actTotalEngage = 0;
     let actTotalExecute = 0;
 
     for (const tache of actTaches) {
@@ -306,30 +308,36 @@ export async function exportBudgetLivrablesPdf(
       const stIds = new Set(tacheSts.map((st) => st.id));
       const tacheLines = allLines.filter((l) => stIds.has(l.sous_tache_id));
 
-      const grouped = new Map<string, { code: string; libelle: string; prevu: number; execute: number }>();
+      const grouped = new Map<string, { code: string; libelle: string; prevu: number; engage: number; execute: number }>();
       for (const l of tacheLines) {
+        const engage = (l as any).montant_engage ?? 0;
         const existing = grouped.get(l.code_ligne);
         if (existing) {
           existing.prevu += l.montant_prevu;
+          existing.engage += engage;
           existing.execute += l.montant_execute;
         } else {
-          grouped.set(l.code_ligne, { code: l.code_ligne, libelle: l.libelle_ligne, prevu: l.montant_prevu, execute: l.montant_execute });
+          grouped.set(l.code_ligne, { code: l.code_ligne, libelle: l.libelle_ligne, prevu: l.montant_prevu, engage, execute: l.montant_execute });
         }
       }
 
       const budgetRows = Array.from(grouped.values()).sort((a, b) => a.code.localeCompare(b.code));
       let tachePrevu = 0;
+      let tacheEngage = 0;
       let tacheExecute = 0;
 
       if (budgetRows.length > 0) {
         const tableBody: (string | number)[][] = budgetRows.map((r) => {
           tachePrevu += r.prevu;
+          tacheEngage += r.engage;
           tacheExecute += r.execute;
-          const taux = r.prevu > 0 ? Math.round((r.execute / r.prevu) * 1000) / 10 : 0;
-          return [r.code, r.libelle.substring(0, 60), formatFCFA(r.prevu), formatFCFA(r.execute), formatFCFA(r.execute), formatTaux(taux)];
+          const tauxEng = r.prevu > 0 ? Math.round((r.engage / r.prevu) * 1000) / 10 : 0;
+          const tauxReal = r.prevu > 0 ? Math.round((r.execute / r.prevu) * 1000) / 10 : 0;
+          return [r.code, r.libelle.substring(0, 50), formatFCFA(r.prevu), formatFCFA(r.engage), formatTaux(tauxEng), formatFCFA(r.execute), formatTaux(tauxReal)];
         });
 
-        const tacheTaux = tachePrevu > 0 ? Math.round((tacheExecute / tachePrevu) * 1000) / 10 : 0;
+        const tacheTauxEng = tachePrevu > 0 ? Math.round((tacheEngage / tachePrevu) * 1000) / 10 : 0;
+        const tacheTauxReal = tachePrevu > 0 ? Math.round((tacheExecute / tachePrevu) * 1000) / 10 : 0;
 
         autoTable(doc, {
           startY: currentY,
@@ -340,17 +348,19 @@ export async function exportBudgetLivrablesPdf(
             { content: "Libellé de la ligne budgétaire", styles: { halign: "left" as const } },
             { content: "Prévu", styles: { halign: "right" as const } },
             { content: "Engagé", styles: { halign: "right" as const } },
+            { content: "Taux eng.", styles: { halign: "center" as const } },
             { content: "Réalisé", styles: { halign: "right" as const } },
-            { content: "Taux %", styles: { halign: "center" as const } },
+            { content: "Taux réal.", styles: { halign: "center" as const } },
           ]],
           body: tableBody,
           foot: [[
             { content: "", styles: { halign: "center" as const } },
             { content: `TOTAL TÂCHE ${tache.code}`, styles: { halign: "left" as const, fontStyle: "bold" as const } },
             { content: formatFCFA(tachePrevu), styles: { halign: "right" as const, fontStyle: "bold" as const } },
+            { content: formatFCFA(tacheEngage), styles: { halign: "right" as const, fontStyle: "bold" as const } },
+            { content: formatTaux(tacheTauxEng), styles: { halign: "center" as const, fontStyle: "bold" as const } },
             { content: formatFCFA(tacheExecute), styles: { halign: "right" as const, fontStyle: "bold" as const } },
-            { content: formatFCFA(tacheExecute), styles: { halign: "right" as const, fontStyle: "bold" as const } },
-            { content: formatTaux(tacheTaux), styles: { halign: "center" as const, fontStyle: "bold" as const } },
+            { content: formatTaux(tacheTauxReal), styles: { halign: "center" as const, fontStyle: "bold" as const } },
           ]],
           headStyles: {
             fillColor: [214, 228, 240],
@@ -378,33 +388,44 @@ export async function exportBudgetLivrablesPdf(
             lineWidth: 0.2,
           },
           columnStyles: {
-            0: { halign: "center", cellWidth: 15, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 1 } },
-            1: { halign: "left", cellWidth: 81, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 2 }, overflow: "ellipsize" },
-            2: { halign: "right", cellWidth: 44, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 3 } },
-            3: { halign: "right", cellWidth: 44, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 3 } },
-            4: { halign: "right", cellWidth: 44, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 3 } },
-            5: { halign: "center", cellWidth: 45, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 1 } },
+            0: { halign: "center", cellWidth: 14, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 1 } },
+            1: { halign: "left", cellWidth: 71, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 2 }, overflow: "ellipsize" },
+            2: { halign: "right", cellWidth: 40, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 3 } },
+            3: { halign: "right", cellWidth: 40, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 3 } },
+            4: { halign: "center", cellWidth: 27, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 1 } },
+            5: { halign: "right", cellWidth: 40, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 3 } },
+            6: { halign: "center", cellWidth: 41, cellPadding: { top: 2.5, bottom: 2.5, left: 1, right: 1 } },
           },
           didParseCell: (data) => {
             if (data.column.index === 1 && data.section === "body") {
               const text = String(data.cell.raw);
-              if (text.length > 45) {
-                data.cell.text = [text.substring(0, 42) + "..."];
+              if (text.length > 40) {
+                data.cell.text = [text.substring(0, 37) + "..."];
               }
             }
-            if (data.column.index === 5 && data.section === "body") {
+            // Taux engagement (col 4) — blue tones
+            if (data.column.index === 4 && data.section === "body") {
+              const raw = String(data.cell.raw).replace(",", ".").replace(" %", "");
+              const taux = parseFloat(raw);
+              if (isNaN(taux) || taux === 0) data.cell.styles.textColor = [156, 163, 175];
+              else if (taux < 50) data.cell.styles.textColor = [239, 68, 68];
+              else if (taux < 75) data.cell.styles.textColor = [245, 158, 11];
+              else if (taux < 100) data.cell.styles.textColor = [59, 130, 246];
+              else { data.cell.styles.textColor = [29, 78, 216]; data.cell.styles.fontStyle = "bold"; }
+            }
+            // Taux réalisation (col 6) — green tones
+            if (data.column.index === 6 && data.section === "body") {
               const raw = String(data.cell.raw).replace(",", ".").replace(" %", "");
               const taux = parseFloat(raw);
               if (isNaN(taux) || taux === 0) data.cell.styles.textColor = [156, 163, 175];
               else if (taux < 50) data.cell.styles.textColor = [239, 68, 68];
               else if (taux < 75) data.cell.styles.textColor = [245, 158, 11];
               else if (taux < 100) data.cell.styles.textColor = [34, 197, 94];
-              else if (taux === 100) { data.cell.styles.textColor = [21, 128, 61]; data.cell.styles.fontStyle = "bold"; }
-              else { data.cell.styles.textColor = [153, 27, 27]; data.cell.styles.fontStyle = "bold"; }
+              else { data.cell.styles.textColor = [21, 128, 61]; data.cell.styles.fontStyle = "bold"; }
             }
           },
           willDrawCell: (data) => {
-            if ([2, 3, 4].includes(data.column.index)) {
+            if ([2, 3, 5].includes(data.column.index)) {
               data.cell.styles.halign = "right";
             }
           },
@@ -423,12 +444,13 @@ export async function exportBudgetLivrablesPdf(
       }
 
       actTotalPrevu += tachePrevu;
+      actTotalEngage += tacheEngage;
       actTotalExecute += tacheExecute;
     }
 
     // Activité total bar
     if (currentY > MAX_Y - 12) { doc.addPage(); pageSections[doc.getNumberOfPages()] = `Exécution budgétaire — ${act.code}`; currentY = 16; }
-    currentY = drawActiviteTotalBar(doc, currentY, act.code, actTotalPrevu, actTotalExecute);
+    currentY = drawActiviteTotalBar(doc, currentY, act.code, actTotalPrevu, actTotalEngage, actTotalExecute);
 
     grandTotalPrevu += actTotalPrevu;
     grandTotalExecute += actTotalExecute;
