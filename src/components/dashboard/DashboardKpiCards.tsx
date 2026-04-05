@@ -1,13 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Users, DollarSign, TrendingUp, Award, Trophy, Shield } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-} from "recharts";
+import { Users, TrendingUp, Award, Trophy, Shield, TrendingDown, Banknote } from "lucide-react";
 
 interface TextKpiInfo {
   realized: string | null;
@@ -22,27 +16,42 @@ interface ExtrantStatsInfo {
   taux: number;
 }
 
+interface BudgetKpiInfo {
+  totalPrevu: number;
+  totalEngage: number;
+  totalRealise: number;
+  tauxEngagement: number;
+  tauxRealisation: number;
+}
+
 interface KpiCardsProps {
   apprenants: { realized: number; target: number };
-  budgetExec: number;
   physicalProgress: number;
   isoConformity: number;
   trainairPlus?: TextKpiInfo;
   centreAvsec?: TextKpiInfo;
   extrantStats?: ExtrantStatsInfo;
+  budgetKpis?: BudgetKpiInfo;
 }
 
-function gaugeData(pct: number) {
-  return [
-    { name: "val", value: Math.min(pct, 100) },
-    { name: "rest", value: Math.max(100 - pct, 0) },
-  ];
+function formatFCFA(amount: number): string {
+  if (amount === 0) return "0 FCFA";
+  const abs = Math.abs(amount);
+  const str = abs.toString();
+  const parts: string[] = [];
+  for (let i = str.length; i > 0; i -= 3) {
+    parts.unshift(str.slice(Math.max(0, i - 3), i));
+  }
+  return (amount < 0 ? "-" : "") + parts.join("\u00A0") + " FCFA";
 }
 
-function gaugeColor(pct: number): string {
-  if (pct >= 80) return "hsl(120, 26%, 55%)";
-  if (pct >= 50) return "hsl(35, 90%, 55%)";
-  return "hsl(0, 70%, 55%)";
+function getTauxColor(taux: number, variant: "blue" | "green"): string {
+  if (taux === 0) return "#9CA3AF";
+  if (taux < 50) return "#EF4444";
+  if (taux < 75) return "#F59E0B";
+  if (taux < 100) return variant === "blue" ? "#3B82F6" : "#22C55E";
+  if (taux === 100) return variant === "blue" ? "#1D4ED8" : "#15803D";
+  return "#991B1B"; // > 100%
 }
 
 function getTextStatus(realized: string | null, target: string | null): { label: string; emoji: string; variant: "default" | "secondary" | "outline" | "destructive" } {
@@ -52,15 +61,20 @@ function getTextStatus(realized: string | null, target: string | null): { label:
   return { label: "En cours", emoji: "⚠️", variant: "secondary" };
 }
 
-const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConformity, trainairPlus, centreAvsec, extrantStats }: KpiCardsProps) => {
+const DashboardKpiCards = ({ apprenants, physicalProgress, isoConformity, trainairPlus, centreAvsec, extrantStats, budgetKpis }: KpiCardsProps) => {
   const trainairStatus = getTextStatus(trainairPlus?.realized ?? null, trainairPlus?.target ?? null);
   const avsecStatus = getTextStatus(centreAvsec?.realized ?? null, centreAvsec?.target ?? null);
   const extTaux = extrantStats?.taux ?? 0;
 
+  const tauxEng = budgetKpis?.tauxEngagement ?? 0;
+  const tauxReal = budgetKpis?.tauxRealisation ?? 0;
+  const engColor = getTauxColor(tauxEng, "blue");
+  const realColor = getTauxColor(tauxReal, "green");
+
   return (
     <div className="space-y-4">
       {/* Row 1: Main numeric KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Card 1 — Apprenants */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -83,42 +97,7 @@ const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConfor
           </CardContent>
         </Card>
 
-        {/* Card 2 — Budget execution gauge */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Exécution budgétaire
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-secondary" />
-          </CardHeader>
-          <CardContent className="flex items-center justify-center pt-1">
-            <div className="relative w-28 h-16">
-              <ResponsiveContainer width="100%" height={64}>
-                <PieChart>
-                  <Pie
-                    data={gaugeData(budgetExec)}
-                    startAngle={180}
-                    endAngle={0}
-                    cx="50%"
-                    cy="100%"
-                    innerRadius={35}
-                    outerRadius={50}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    <Cell fill={gaugeColor(budgetExec)} />
-                    <Cell fill="hsl(210, 20%, 92%)" />
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute inset-x-0 bottom-0 text-center">
-                <span className="text-xl font-bold text-foreground">{budgetExec}%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 3 — Physical progress */}
+        {/* Card 2 — Physical progress */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -135,7 +114,51 @@ const DashboardKpiCards = ({ apprenants, budgetExec, physicalProgress, isoConfor
           </CardContent>
         </Card>
 
-        {/* Card 4 — ISO */}
+        {/* Card 3 — Taux d'engagement (BLUE) */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              🔵 Taux d'engagement budgétaire
+            </CardTitle>
+            <Banknote className="h-4 w-4" style={{ color: "#3B82F6" }} />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold" style={{ color: engColor }}>
+              {tauxEng}%{tauxEng > 100 ? " ⚠️" : ""}
+            </div>
+            <Progress value={Math.min(tauxEng, 100)} className="h-2 [&>div]:bg-[#3B82F6]" />
+            <p className="text-xs text-muted-foreground">
+              Engagé : {formatFCFA(budgetKpis?.totalEngage ?? 0)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Prévu : {formatFCFA(budgetKpis?.totalPrevu ?? 0)}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Card 4 — Taux de réalisation (GREEN) */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              🟢 Taux de réalisation budgétaire
+            </CardTitle>
+            <TrendingDown className="h-4 w-4" style={{ color: "#22C55E" }} />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-3xl font-bold" style={{ color: realColor }}>
+              {tauxReal}%{tauxReal > 100 ? " ⚠️" : ""}
+            </div>
+            <Progress value={Math.min(tauxReal, 100)} className="h-2 [&>div]:bg-[#22C55E]" />
+            <p className="text-xs text-muted-foreground">
+              Réalisé : {formatFCFA(budgetKpis?.totalRealise ?? 0)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Prévu : {formatFCFA(budgetKpis?.totalPrevu ?? 0)}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Card 5 — ISO */}
         <Card className="border-success/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">

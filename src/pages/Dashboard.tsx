@@ -331,9 +331,9 @@ const Dashboard = () => {
 
       <DashboardKpiCards
         apprenants={apprenants}
-        budgetExec={budgetExecPct}
         physicalProgress={physicalProgress}
         isoConformity={isoConformity}
+        budgetKpis={budgetKpis}
         trainairPlus={{
           realized: trainairKpi?.valeur_realisee ?? null,
           target: trainairKpi?.cible_2027 ?? "Gold Member",
