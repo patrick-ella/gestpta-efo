@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import BudgetLinesTab from "@/components/budget/BudgetLinesTab";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import SousTacheAgentsTab from "@/components/objectifs/SousTacheAgentsTab";
 import EditHistory from "@/components/pta/EditHistory";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Lock, Pencil, Save, AlertTriangle } from "lucide-react";
