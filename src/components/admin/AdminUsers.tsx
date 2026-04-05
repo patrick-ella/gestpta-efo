@@ -258,10 +258,12 @@ export const AdminUsers = () => {
                   </TableCell>
                   <TableCell><Badge variant="outline" className="text-xs">{u.centre || "—"}</Badge></TableCell>
                   <TableCell>
-                    {u.agentProfil ? (
+                    {NON_TRANSFERABLE_ROLES.includes(u.role) ? (
+                      <Badge variant="secondary" className="text-xs italic text-muted-foreground">Non applicable</Badge>
+                    ) : u.agentProfil ? (
                       <Badge className="bg-green-100 text-green-800 text-xs">✅ EFO lié — {u.agentProfil.matricule ?? ""}</Badge>
                     ) : (
-                      <Badge variant="secondary" className="text-xs">Non (externe)</Badge>
+                      <Badge variant="outline" className="text-xs">⚪ Non lié</Badge>
                     )}
                   </TableCell>
                   <TableCell>
