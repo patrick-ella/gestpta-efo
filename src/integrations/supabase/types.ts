@@ -160,6 +160,7 @@ export type Database = {
           date_maj: string | null
           exercice_id: string
           id: string
+          montant_engage: number | null
           montant_realise: number | null
           observations: string | null
           sous_tache_id: string
@@ -171,6 +172,7 @@ export type Database = {
           date_maj?: string | null
           exercice_id: string
           id?: string
+          montant_engage?: number | null
           montant_realise?: number | null
           observations?: string | null
           sous_tache_id: string
@@ -182,6 +184,7 @@ export type Database = {
           date_maj?: string | null
           exercice_id?: string
           id?: string
+          montant_engage?: number | null
           montant_realise?: number | null
           observations?: string | null
           sous_tache_id?: string
@@ -617,6 +620,7 @@ export type Database = {
           exercice_id: string
           id: string
           libelle_ligne: string
+          montant_engage: number
           montant_execute: number
           montant_prevu: number
           nomenclature_id: string
@@ -631,6 +635,7 @@ export type Database = {
           exercice_id: string
           id?: string
           libelle_ligne: string
+          montant_engage?: number
           montant_execute?: number
           montant_prevu?: number
           nomenclature_id: string
@@ -645,6 +650,7 @@ export type Database = {
           exercice_id?: string
           id?: string
           libelle_ligne?: string
+          montant_engage?: number
           montant_execute?: number
           montant_prevu?: number
           nomenclature_id?: string
