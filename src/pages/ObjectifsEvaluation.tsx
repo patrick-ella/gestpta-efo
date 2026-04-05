@@ -71,11 +71,11 @@ const ObjectifsEvaluation = () => {
         </TabsContent>
 
         <TabsContent value="contrats" className="mt-4">
-          <ContratsTab exerciceId={selectedExercice?.id ?? null} exercice={parseInt(annee)} />
+          <ContratsTab exerciceId={selectedExercice?.id ?? null} exercice={parseInt(resolvedAnnee)} />
         </TabsContent>
 
         <TabsContent value="evaluations" className="mt-4">
-          <EvaluationsTab exerciceId={selectedExercice?.id ?? null} exercice={parseInt(annee)} />
+          <EvaluationsTab exerciceId={selectedExercice?.id ?? null} exercice={parseInt(resolvedAnnee)} />
         </TabsContent>
       </Tabs>
     </div>
