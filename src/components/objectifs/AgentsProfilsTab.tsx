@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Pencil, Info } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Search, Pencil, Info, Trash2, Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAssignations } from "@/hooks/useObjectifsData";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import ImportPersonnelSection from "./ImportPersonnelSection";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -27,6 +29,10 @@ const AgentsProfilsTab = ({ exerciceId }: Props) => {
   const [search, setSearch] = useState("");
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
+
+  // Delete state
+  const [deleteAgent, setDeleteAgent] = useState<any>(null);
+  const [confirmMatricule, setConfirmMatricule] = useState("");
 
   const { data: agents = [] } = useQuery({
     queryKey: ["agents-profils-all"],
@@ -111,6 +117,35 @@ const AgentsProfilsTab = ({ exerciceId }: Props) => {
     }
   };
 
+  const callAdmin = async (body: any) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const resp = await supabase.functions.invoke("admin-users", {
+      body,
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    });
+    if (resp.error) throw new Error(resp.error.message);
+    if (resp.data?.error) throw new Error(resp.data.error);
+    return resp.data;
+  };
+
+  const deleteAgentMut = useMutation({
+    mutationFn: () => callAdmin({ action: "delete_agent", agent_id: deleteAgent.id }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agents-profils-all"] });
+      qc.invalidateQueries({ queryKey: ["agents-for-sup-select"] });
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+      const hasAccount = !!deleteAgent.user_id;
+      sonnerToast.success(
+        hasAccount
+          ? `🗑 ${deleteAgent.nom} ${deleteAgent.prenom} retiré(e) du personnel EFO — compte app conservé`
+          : `🗑 Agent ${deleteAgent.nom} ${deleteAgent.prenom} supprimé du personnel EFO`
+      );
+      setDeleteAgent(null);
+      setConfirmMatricule("");
+    },
+    onError: (e: Error) => sonnerToast.error(e.message),
+  });
+
   const editingAgent = editingAgentId ? agents.find(a => a.id === editingAgentId) : null;
 
   return (
@@ -158,11 +193,18 @@ const AgentsProfilsTab = ({ exerciceId }: Props) => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {isAdmin && (
-                        <Button size="sm" variant="outline" onClick={() => openEdit(agent.id)}>
-                          <Pencil className="h-3.5 w-3.5 mr-1" /> Profil
-                        </Button>
-                      )}
+                      <div className="flex gap-1">
+                        {isAdmin && (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => openEdit(agent.id)}>
+                              <Pencil className="h-3.5 w-3.5 mr-1" /> Profil
+                            </Button>
+                            <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => { setDeleteAgent(agent); setConfirmMatricule(""); }}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -177,6 +219,7 @@ const AgentsProfilsTab = ({ exerciceId }: Props) => {
             </TableBody>
           </Table>
 
+          {/* Edit Sheet */}
           <Sheet open={!!editingAgentId} onOpenChange={(v) => { if (!v) setEditingAgentId(null); }}>
             <SheetContent className="overflow-y-auto">
               <SheetHeader>
@@ -246,6 +289,60 @@ const AgentsProfilsTab = ({ exerciceId }: Props) => {
               </div>
             </SheetContent>
           </Sheet>
+
+          {/* Delete Agent Dialog */}
+          <Dialog open={!!deleteAgent} onOpenChange={(v) => { if (!v) { setDeleteAgent(null); setConfirmMatricule(""); } }}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>🗑 Supprimer l'agent EFO</DialogTitle>
+                <DialogDescription>
+                  {deleteAgent?.nom} {deleteAgent?.prenom} — Matricule : {deleteAgent?.matricule ?? "—"}
+                  {deleteAgent?.direction ? ` — ${deleteAgent.direction}` : ""}
+                </DialogDescription>
+              </DialogHeader>
+
+              {deleteAgent?.user_id ? (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    ⚠️ Cet agent possède un compte de connexion à l'application. Cette suppression retirera l'agent de la liste du personnel EFO et supprimera ses contrats et évaluations, mais <strong>conservera son compte de connexion</strong>. Pour supprimer également son compte app, allez dans Administration → Utilisateurs.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert variant="destructive">
+                  <AlertDescription className="text-xs">
+                    ⚠️ Cette suppression entraînera : retrait de la liste du personnel EFO, suppression de ses assignations ST, contrats d'objectifs et fiches d'évaluation. IRRÉVERSIBLE.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div>
+                <Label className="text-sm">Saisissez le matricule pour confirmer :</Label>
+                <Input
+                  value={confirmMatricule}
+                  onChange={e => setConfirmMatricule(e.target.value)}
+                  placeholder={deleteAgent?.matricule ?? "matricule"}
+                  className="mt-1"
+                />
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setDeleteAgent(null); setConfirmMatricule(""); }}>Annuler</Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => deleteAgentMut.mutate()}
+                  disabled={
+                    deleteAgentMut.isPending ||
+                    !deleteAgent?.matricule ||
+                    confirmMatricule.trim() !== (deleteAgent?.matricule || "").trim()
+                  }
+                >
+                  {deleteAgentMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                  {deleteAgent?.user_id ? "Retirer du personnel EFO" : "Supprimer l'agent"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>
