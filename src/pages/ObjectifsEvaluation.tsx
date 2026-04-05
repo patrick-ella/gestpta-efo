@@ -8,7 +8,7 @@ import ContratsTab from "@/components/objectifs/ContratsTab";
 import EvaluationsTab from "@/components/objectifs/EvaluationsTab";
 
 const ObjectifsEvaluation = () => {
-  const [annee, setAnnee] = useState("2027");
+  const [annee, setAnnee] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("agents");
 
   const { data: exercices = [] } = useQuery({
@@ -19,7 +19,26 @@ const ObjectifsEvaluation = () => {
     },
   });
 
-  const selectedExercice = exercices.find((e) => e.annee === parseInt(annee));
+  // Fetch active exercice from app_settings
+  const { data: appSettings } = useQuery({
+    queryKey: ["app-settings-exercice"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("exercice_actif_id").single();
+      return data;
+    },
+  });
+
+  // Auto-select: active exercice first, then latest available
+  const resolvedAnnee = annee ?? (() => {
+    if (appSettings?.exercice_actif_id) {
+      const active = exercices.find(e => e.id === appSettings.exercice_actif_id);
+      if (active) return String(active.annee);
+    }
+    if (exercices.length > 0) return String(exercices[exercices.length - 1].annee);
+    return "2027";
+  })();
+
+  const selectedExercice = exercices.find((e) => e.annee === parseInt(resolvedAnnee));
 
   return (
     <div className="space-y-6">
