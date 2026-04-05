@@ -18,6 +18,7 @@ export interface SousTacheLigneBudgetaire {
   code_ligne: string;
   libelle_ligne: string;
   montant_prevu: number;
+  montant_engage: number;
   montant_execute: number;
   observations: string | null;
   created_at: string;

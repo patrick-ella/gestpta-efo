@@ -2,8 +2,7 @@ import { useState, useCallback, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, AlertTriangle, Lock, CheckCircle2 } from "lucide-react";
+import { Trash2, Plus, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSousTacheBudgetLines, useNomenclature, useAddBudgetLines, useUpdateBudgetLine, useDeleteBudgetLine } from "@/hooks/useBudgetLines";
 import type { SousTacheLigneBudgetaire } from "@/hooks/useBudgetLines";
@@ -14,7 +13,7 @@ import type { PtaActivite } from "@/hooks/usePtaData";
 interface Props {
   sousTacheId: string;
   exerciceId: string;
-  budgetPrevu: number; // tache budget_total (plafond)
+  budgetPrevu: number;
   canEdit: boolean;
   tacheId?: string;
   activites?: PtaActivite[];
@@ -22,6 +21,15 @@ interface Props {
 
 function formatFCFA(val: number): string {
   return val.toLocaleString("fr-FR") + " FCFA";
+}
+
+function getTauxEngColor(taux: number): string {
+  if (!taux || taux === 0) return "#9CA3AF";
+  if (taux < 50) return "#EF4444";
+  if (taux < 75) return "#F59E0B";
+  if (taux < 100) return "#3B82F6";
+  if (taux === 100) return "#1D4ED8";
+  return "#991B1B";
 }
 
 const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit, tacheId, activites = [] }: Props) => {
@@ -37,7 +45,11 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit, tacheId
   const existingCodes = useMemo(() => new Set(lines.map((l) => l.code_ligne)), [lines]);
 
   const totalPrevu = useMemo(() => lines.reduce((s, l) => s + l.montant_prevu, 0), [lines]);
+  const totalEngage = useMemo(() => lines.reduce((s, l) => s + (l.montant_engage ?? 0), 0), [lines]);
   const totalExecute = useMemo(() => lines.reduce((s, l) => s + l.montant_execute, 0), [lines]);
+
+  const tauxEngTotal = totalPrevu > 0 ? Math.round((totalEngage / totalPrevu) * 1000) / 10 : 0;
+  const tauxRealTotal = totalPrevu > 0 ? Math.round((totalExecute / totalPrevu) * 1000) / 10 : 0;
 
   const handleAddLines = useCallback(async (selected: { id: string; code: string; libelle: string }[]) => {
     const payload = selected.map((n) => ({
@@ -55,11 +67,12 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit, tacheId
     }
   }, [sousTacheId, exerciceId, addMutation, toast]);
 
-  const debouncedUpdate = useCallback((id: string, field: "montant_prevu" | "montant_execute", value: number) => {
-    if (debounceTimers.current[id]) clearTimeout(debounceTimers.current[id]);
-    debounceTimers.current[id] = setTimeout(() => {
+  const debouncedUpdate = useCallback((id: string, field: "montant_prevu" | "montant_execute" | "montant_engage", value: number) => {
+    const key = `${id}-${field}`;
+    if (debounceTimers.current[key]) clearTimeout(debounceTimers.current[key]);
+    debounceTimers.current[key] = setTimeout(() => {
       updateMutation.mutate({ id, [field]: Math.max(0, value) });
-      delete debounceTimers.current[id];
+      delete debounceTimers.current[key];
     }, 1500);
   }, [updateMutation]);
 
@@ -89,18 +102,18 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit, tacheId
         Répartissez le budget de la sous-tâche entre les lignes budgétaires officielles
       </div>
 
-      {/* Budget control banner */}
       {tacheId && (
         <BudgetControlBanner
           tacheId={tacheId}
           sousTacheId={sousTacheId}
           exerciceId={exerciceId}
           currentStTotal={totalPrevu}
+          currentStEngage={totalEngage}
+          currentStRealise={totalExecute}
           activites={activites}
         />
       )}
 
-      {/* Lines list */}
       {lines.length === 0 ? (
         <div className="text-center py-8 space-y-2">
           <p className="text-3xl">💰</p>
@@ -110,7 +123,8 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit, tacheId
       ) : (
         <div className="space-y-2">
           {lines.map((line) => {
-            const lineTaux = line.montant_prevu > 0 ? Math.round((line.montant_execute / line.montant_prevu) * 100 * 10) / 10 : 0;
+            const lineTauxReal = line.montant_prevu > 0 ? Math.round((line.montant_execute / line.montant_prevu) * 1000) / 10 : 0;
+            const lineTauxEng = line.montant_prevu > 0 ? Math.round(((line.montant_engage ?? 0) / line.montant_prevu) * 1000) / 10 : 0;
             const overExec = line.montant_execute > line.montant_prevu && line.montant_prevu > 0;
             return (
               <div key={line.id} className={`rounded-lg border p-3 space-y-2 ${overExec ? "border-destructive/50 bg-destructive/5" : ""}`}>
@@ -127,7 +141,9 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit, tacheId
                     </Button>
                   )}
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                {/* 4-column grid: Prévu | Engagé | Réalisé | Taux */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {/* Prévu */}
                   <div className="space-y-1">
                     <label className="text-[10px] text-muted-foreground">Montant prévu</label>
                     {canEdit ? (
@@ -142,6 +158,22 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit, tacheId
                       <p className="text-sm font-medium">{formatFCFA(line.montant_prevu)}</p>
                     )}
                   </div>
+                  {/* Engagé */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground">Montant engagé</label>
+                    {canEdit ? (
+                      <Input
+                        type="number"
+                        defaultValue={line.montant_engage ?? 0}
+                        min={0}
+                        onChange={(e) => debouncedUpdate(line.id, "montant_engage", Number(e.target.value))}
+                        className="h-8 text-xs"
+                      />
+                    ) : (
+                      <p className="text-sm font-medium" style={{ color: getTauxEngColor(lineTauxEng) }}>{formatFCFA(line.montant_engage ?? 0)}</p>
+                    )}
+                  </div>
+                  {/* Réalisé */}
                   <div className="space-y-1">
                     <label className="text-[10px] text-muted-foreground">Montant exécuté</label>
                     {canEdit ? (
@@ -156,12 +188,21 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit, tacheId
                       <p className="text-sm font-medium">{formatFCFA(line.montant_execute)}</p>
                     )}
                   </div>
+                  {/* Taux */}
                   <div className="space-y-1">
-                    <label className="text-[10px] text-muted-foreground">Taux exec.</label>
-                    <div className="flex items-center gap-1.5">
-                      <Progress value={Math.min(lineTaux, 100)} className="flex-1 h-2" />
-                      <span className="text-xs font-medium">{lineTaux}%</span>
-                      {overExec && <AlertTriangle className="h-3 w-3 text-destructive" />}
+                    <label className="text-[10px] text-muted-foreground">Taux</label>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-muted-foreground w-8">Eng.</span>
+                        <Progress value={Math.min(lineTauxEng, 100)} className="flex-1 h-1.5 [&>div]:bg-[#3B82F6]" />
+                        <span className="text-xs font-medium" style={{ color: getTauxEngColor(lineTauxEng) }}>{lineTauxEng}%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-muted-foreground w-8">Réal.</span>
+                        <Progress value={Math.min(lineTauxReal, 100)} className="flex-1 h-1.5 [&>div]:bg-[#22C55E]" />
+                        <span className="text-xs font-medium">{lineTauxReal}%</span>
+                        {overExec && <AlertTriangle className="h-3 w-3 text-destructive" />}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -171,25 +212,35 @@ const BudgetLinesTab = ({ sousTacheId, exerciceId, budgetPrevu, canEdit, tacheId
 
           {/* Totals row */}
           <div className="rounded-lg border-2 border-primary/20 p-3 bg-primary/5">
-            <div className="grid grid-cols-3 gap-3 text-sm font-semibold">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm font-semibold">
               <div>
                 <p className="text-[10px] text-muted-foreground">TOTAL PRÉVU</p>
                 <p>{formatFCFA(totalPrevu)}</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">TOTAL EXÉCUTÉ</p>
-                <p>{formatFCFA(totalExecute)}</p>
+                <p className="text-[10px] text-muted-foreground">TOTAL ENGAGÉ</p>
+                <p style={{ color: getTauxEngColor(tauxEngTotal) }}>{formatFCFA(totalEngage)}</p>
+                <p className="text-[10px] font-medium" style={{ color: getTauxEngColor(tauxEngTotal) }}>{tauxEngTotal}%</p>
               </div>
               <div>
-                <p className="text-[10px] text-muted-foreground">TAUX GLOBAL</p>
-                <p>{totalPrevu > 0 ? Math.round((totalExecute / totalPrevu) * 1000) / 10 : 0}%</p>
+                <p className="text-[10px] text-muted-foreground">TOTAL EXÉCUTÉ</p>
+                <p>{formatFCFA(totalExecute)}</p>
+                <p className="text-[10px] font-medium">{tauxRealTotal}%</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted-foreground">TAUX GLOBAUX</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px]">🔵</span>
+                  <span className="text-xs" style={{ color: getTauxEngColor(tauxEngTotal) }}>{tauxEngTotal}%</span>
+                  <span className="text-[10px]">🟢</span>
+                  <span className="text-xs">{tauxRealTotal}%</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add button */}
       {canEdit && (
         <Button variant="outline" className="w-full border-dashed" onClick={() => setSelectorOpen(true)}>
           <Plus className="h-4 w-4 mr-2" /> Ajouter une ligne budgétaire
