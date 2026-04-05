@@ -292,6 +292,7 @@ export async function exportBudgetLivrablesPdf(
     currentY = drawActiviteHeader(doc, currentY, act.code, act.libelle, act.budget_total || 0);
 
     let actTotalPrevu = 0;
+    let actTotalEngage = 0;
     let actTotalExecute = 0;
 
     for (const tache of actTaches) {
