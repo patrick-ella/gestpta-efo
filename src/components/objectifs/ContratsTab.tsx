@@ -140,7 +140,7 @@ const ContratsTab = ({ exerciceId, exercice }: Props) => {
                       {generating === row.agent.id ? (
                         <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> Génération...</>
                       ) : (
-                        <><Download className="h-3.5 w-3.5 mr-1" /> Générer .docx</>
+                        <><Download className="h-3.5 w-3.5 mr-1" /> Générer PDF</>
                       )}
                     </Button>
                   </TableCell>
