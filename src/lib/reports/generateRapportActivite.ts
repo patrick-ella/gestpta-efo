@@ -173,7 +173,7 @@ function drawCoverPage(doc: jsPDF, logo: string | null, period: ReportPeriod, sc
   doc.setTextColor(174, 214, 241);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text("ÉCOLE DE FORMATION EN AÉRONAUTIQUE (EFO)", 50, 22);
+  doc.text("ÉCOLE DE FORMATION DE LA CCAA (EFO)", 50, 22);
 
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");

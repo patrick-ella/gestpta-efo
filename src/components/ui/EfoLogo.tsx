@@ -37,7 +37,7 @@ export const EfoLogo = ({ size = "md", variant = "color", showText = false, clas
       <div className={cn(onDarkBg && "rounded-md bg-white/90 p-0.5")}>
         <img
           src={logoSrc}
-          alt="Logo de l'École de Formation en Aéronautique"
+          alt="Logo de l'École de Formation de la CCAA"
           className={cn(SIZES[size], "w-auto object-contain")}
           onError={() => setError(true)}
         />
