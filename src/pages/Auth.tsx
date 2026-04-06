@@ -58,7 +58,7 @@ const Auth = () => {
           <div>
             <h1 className="text-[22px] font-bold text-primary">GestPTA-EFO</h1>
             <p className="text-sm text-muted-foreground italic">
-              École de Formation en Aéronautique
+              École de Formation de la CCAA
             </p>
           </div>
         </CardHeader>

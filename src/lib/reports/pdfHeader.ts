@@ -47,7 +47,7 @@ export async function addReportHeader(
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
-  doc.text("ÉCOLE DE FORMATION EN AÉRONAUTIQUE (EFO)", textX, 15);
+  doc.text("ÉCOLE DE FORMATION DE LA CCAA (EFO)", textX, 15);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
