@@ -82,16 +82,7 @@ const ContratsTab = ({ exerciceId, exercice }: Props) => {
         };
       });
 
-      const buffer = await generateContratObjectifs(agentInfo, assignationData, exercice);
-      const blob = new Blob([buffer as BlobPart], {
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Contrat_Objectifs_${row.agent.matricule ?? row.agent.id}_${exercice}.docx`;
-      a.click();
-      URL.revokeObjectURL(url);
+      await generateContratObjectifs(agentInfo, assignationData, exercice);
       toast.success(`Contrat généré pour ${agentInfo.nom_complet}`);
     } catch (err: any) {
       toast.error(err.message || "Erreur de génération");
