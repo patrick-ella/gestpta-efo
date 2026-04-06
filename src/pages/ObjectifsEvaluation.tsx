@@ -35,7 +35,7 @@ const ObjectifsEvaluation = () => {
       if (active) return String(active.annee);
     }
     if (exercices.length > 0) return String(exercices[exercices.length - 1].annee);
-    return "2027";
+    return "2026";
   })();
 
   const selectedExercice = exercices.find((e) => e.annee === parseInt(resolvedAnnee));
