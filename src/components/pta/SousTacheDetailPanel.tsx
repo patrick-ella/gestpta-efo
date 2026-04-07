@@ -35,9 +35,12 @@ interface SousTacheDetailPanelProps {
 }
 
 // Removed "budget_prevu" and "lignes_budgetaires" from editable fields
-const detailFields: { key: keyof SousTache; label: string; type: "text" | "number" | "textarea" }[] = [
+const detailFieldsTop: { key: keyof SousTache; label: string; type: "text" | "number" | "textarea" }[] = [
   { key: "code", label: "Code", type: "text" },
   { key: "libelle", label: "Libellé", type: "text" },
+];
+
+const detailFieldsBottom: { key: keyof SousTache; label: string; type: "text" | "number" | "textarea" }[] = [
   { key: "mode_execution", label: "Mode d'exécution", type: "text" },
   { key: "sources_financement", label: "Sources de financement", type: "text" },
   { key: "responsable", label: "Responsable", type: "text" },
