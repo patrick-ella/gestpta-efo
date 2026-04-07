@@ -252,7 +252,31 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
               )}
             </div>
 
-            {detailFields.map(({ key, label, type }) => (
+            {/* Objectifs / Résultats attendus */}
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground flex items-center gap-1.5">
+                📝 Objectifs / Résultats attendus
+              </Label>
+              {isAdmin ? (
+                <>
+                  <Textarea
+                    value={localObjectifs}
+                    onChange={(e) => setLocalObjectifs(e.target.value)}
+                    onBlur={handleSaveObjectifs}
+                    placeholder="Ex : rapport produit et validé, convention signée, formation réalisée, équipement acquis et opérationnel"
+                    rows={3}
+                    className="text-sm resize-y min-h-[72px]"
+                  />
+                  <p className="text-xs text-muted-foreground italic">
+                    Décrivez les résultats concrets attendus. Sauvegardé automatiquement.
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-foreground whitespace-pre-wrap">
+                  {(sousTache as any).objectifs_resultats || "Aucun objectif renseigné."}
+                </p>
+              )}
+            </div>
               <div key={key} className="space-y-1">
                 <Label className="text-sm text-muted-foreground">{label}</Label>
                 {editing ? (
