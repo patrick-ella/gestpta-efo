@@ -35,9 +35,12 @@ interface SousTacheDetailPanelProps {
 }
 
 // Removed "budget_prevu" and "lignes_budgetaires" from editable fields
-const detailFields: { key: keyof SousTache; label: string; type: "text" | "number" | "textarea" }[] = [
+const detailFieldsTop: { key: keyof SousTache; label: string; type: "text" | "number" | "textarea" }[] = [
   { key: "code", label: "Code", type: "text" },
   { key: "libelle", label: "Libellé", type: "text" },
+];
+
+const detailFieldsBottom: { key: keyof SousTache; label: string; type: "text" | "number" | "textarea" }[] = [
   { key: "mode_execution", label: "Mode d'exécution", type: "text" },
   { key: "sources_financement", label: "Sources de financement", type: "text" },
   { key: "responsable", label: "Responsable", type: "text" },
@@ -252,7 +255,7 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
               )}
             </div>
 
-            {detailFields.map(({ key, label, type }) => (
+            {detailFieldsTop.map(({ key, label, type }) => (
               <div key={key} className="space-y-1">
                 <Label className="text-sm text-muted-foreground">{label}</Label>
                 {editing ? (
@@ -293,6 +296,22 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
                 </p>
               )}
             </div>
+
+            {detailFieldsBottom.map(({ key, label, type }) => (
+              <div key={key} className="space-y-1">
+                <Label className="text-sm text-muted-foreground">{label}</Label>
+                {editing ? (
+                  <Input
+                    type={type === "number" ? "number" : "text"}
+                    value={String(data[key] ?? "")}
+                    onChange={(e) => setFormData((p) => ({ ...p, [key]: type === "number" ? Number(e.target.value) : e.target.value }))}
+                    className="text-sm"
+                  />
+                ) : (
+                  <p className="text-sm font-medium text-foreground">{String(data[key] ?? "—")}</p>
+                )}
+              </div>
+            ))}
 
             {parentInfo && (
               <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
