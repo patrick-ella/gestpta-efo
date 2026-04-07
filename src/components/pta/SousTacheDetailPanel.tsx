@@ -255,7 +255,7 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
               )}
             </div>
 
-            {detailFields.map(({ key, label, type }) => (
+            {detailFieldsTop.map(({ key, label, type }) => (
               <div key={key} className="space-y-1">
                 <Label className="text-sm text-muted-foreground">{label}</Label>
                 {editing ? (
@@ -296,6 +296,22 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
                 </p>
               )}
             </div>
+
+            {detailFieldsBottom.map(({ key, label, type }) => (
+              <div key={key} className="space-y-1">
+                <Label className="text-sm text-muted-foreground">{label}</Label>
+                {editing ? (
+                  <Input
+                    type={type === "number" ? "number" : "text"}
+                    value={String(data[key] ?? "")}
+                    onChange={(e) => setFormData((p) => ({ ...p, [key]: type === "number" ? Number(e.target.value) : e.target.value }))}
+                    className="text-sm"
+                  />
+                ) : (
+                  <p className="text-sm font-medium text-foreground">{String(data[key] ?? "—")}</p>
+                )}
+              </div>
+            ))}
 
             {parentInfo && (
               <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
