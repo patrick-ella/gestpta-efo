@@ -65,6 +65,12 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
   const [showConfirm, setShowConfirm] = useState(false);
   const [formData, setFormData] = useState<Partial<SousTache>>({});
   const [activeTab, setActiveTab] = useState("details");
+  const [localObjectifs, setLocalObjectifs] = useState("");
+
+  // Sync objectifs when sous-tâche changes
+  useEffect(() => {
+    setLocalObjectifs((sousTache as any)?.objectifs_resultats ?? "");
+  }, [sousTache?.id, (sousTache as any)?.objectifs_resultats]);
 
   const { data: budgetLines = [] } = useSousTacheBudgetLines(
     sousTache?.id ?? null,
