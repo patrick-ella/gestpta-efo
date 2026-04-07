@@ -133,6 +133,23 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
     }
   };
 
+  const handleSaveObjectifs = async () => {
+    if (!sousTache || !user) return;
+    const current = (sousTache as any).objectifs_resultats ?? "";
+    if (localObjectifs.trim() === current.trim()) return;
+    try {
+      const { error } = await supabase.from("sous_taches")
+        .update({ objectifs_resultats: localObjectifs.trim() || null } as any)
+        .eq("id", sousTache.id);
+      if (error) throw error;
+      toast({ title: "✓ Objectifs mis à jour" });
+      onUpdate();
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+      setLocalObjectifs((sousTache as any).objectifs_resultats ?? "");
+    }
+  };
+
   const parentInfo = useMemo(() => {
     if (!sousTache || !activites.length) return null;
     for (const act of activites) {
