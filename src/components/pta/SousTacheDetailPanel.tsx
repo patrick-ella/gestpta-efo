@@ -277,6 +277,8 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
                 </p>
               )}
             </div>
+
+            {detailFields.map(({ key, label, type }) => (
               <div key={key} className="space-y-1">
                 <Label className="text-sm text-muted-foreground">{label}</Label>
                 {editing ? (
