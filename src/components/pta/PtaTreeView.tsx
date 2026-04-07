@@ -299,34 +299,50 @@ const PtaTreeView = ({ activites, isAdmin, onSelectSousTache, onRefresh }: PtaTr
                   {/* Sub-tasks */}
                   {tacheExpanded && tache.sous_taches.map((st, idx) => (
                     <div key={st.id}
-                      className={`flex items-center justify-between px-10 py-2 cursor-pointer hover:bg-accent/50 border-t transition-colors group/st ${idx % 2 === 0 ? "bg-light-blue" : "bg-light-blue-row"}`}
+                      className={`px-10 py-2 cursor-pointer hover:bg-accent/50 border-t transition-colors group/st ${idx % 2 === 0 ? "bg-light-blue" : "bg-light-blue-row"}`}
                       onClick={() => onSelectSousTache(st)}>
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-xs text-muted-foreground font-mono shrink-0">{st.code}</span>
-                        {isRecentlyEdited((st as any).updated_at) && (
-                          <Tooltip><TooltipTrigger asChild><span className="h-2 w-2 rounded-full bg-blue-400 shrink-0" /></TooltipTrigger>
-                            <TooltipContent>Modifié récemment</TooltipContent></Tooltip>
-                        )}
-                        <span className="text-sm text-foreground truncate">{st.libelle}</span>
-                      </div>
-                      <div className="flex items-center gap-4 shrink-0">
-                        {isAdmin && (
-                          <Tooltip><TooltipTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-destructive opacity-0 group-hover/st:opacity-100 transition-opacity"
-                              onClick={(e) => { e.stopPropagation(); handleDeleteStClick(st, tache); }}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </TooltipTrigger><TooltipContent>Supprimer cette sous-tâche</TooltipContent></Tooltip>
-                        )}
-                        <div className="flex gap-1">
-                          {(["trimestre_t1", "trimestre_t2", "trimestre_t3", "trimestre_t4"] as const).map((tKey, ti) => (
-                            <span key={tKey} className={`inline-flex items-center justify-center h-5 w-5 rounded text-[10px] font-bold ${
-                              st[tKey] ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
-                            }`}>T{ti + 1}</span>
-                          ))}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-xs text-muted-foreground font-mono shrink-0">{st.code}</span>
+                          {isRecentlyEdited((st as any).updated_at) && (
+                            <Tooltip><TooltipTrigger asChild><span className="h-2 w-2 rounded-full bg-blue-400 shrink-0" /></TooltipTrigger>
+                              <TooltipContent>Modifié récemment</TooltipContent></Tooltip>
+                          )}
+                          <span className="text-sm text-foreground truncate">{st.libelle}</span>
                         </div>
-                        {st.budget_prevu ? <span className="text-xs text-muted-foreground">{formatBudget(st.budget_prevu)}</span> : null}
+                        <div className="flex items-center gap-4 shrink-0">
+                          {isAdmin && (
+                            <Tooltip><TooltipTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-destructive opacity-0 group-hover/st:opacity-100 transition-opacity"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteStClick(st, tache); }}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger><TooltipContent>Supprimer cette sous-tâche</TooltipContent></Tooltip>
+                          )}
+                          <div className="flex gap-1">
+                            {(["trimestre_t1", "trimestre_t2", "trimestre_t3", "trimestre_t4"] as const).map((tKey, ti) => (
+                              <span key={tKey} className={`inline-flex items-center justify-center h-5 w-5 rounded text-[10px] font-bold ${
+                                st[tKey] ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
+                              }`}>T{ti + 1}</span>
+                            ))}
+                          </div>
+                          {st.budget_prevu ? <span className="text-xs text-muted-foreground">{formatBudget(st.budget_prevu)}</span> : null}
+                        </div>
                       </div>
+                      {/* Objectifs / Résultats attendus */}
+                      {(st as any).objectifs_resultats ? (
+                        <p className="mt-1 ml-6 text-xs text-muted-foreground italic flex items-start gap-1">
+                          <span>📝</span>
+                          <span className="line-clamp-2">{(st as any).objectifs_resultats}</span>
+                        </p>
+                      ) : isAdmin ? (
+                        <p className="mt-1 ml-6 text-xs text-muted-foreground/50 italic flex items-start gap-1 cursor-pointer"
+                          onClick={(e) => { e.stopPropagation(); onSelectSousTache(st); }}
+                          title="Cliquer pour ajouter les objectifs">
+                          <span>✏️</span>
+                          <span>Ajouter objectifs / résultats attendus…</span>
+                        </p>
+                      ) : null}
                     </div>
                   ))}
 

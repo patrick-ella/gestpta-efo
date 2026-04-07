@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -65,6 +65,12 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
   const [showConfirm, setShowConfirm] = useState(false);
   const [formData, setFormData] = useState<Partial<SousTache>>({});
   const [activeTab, setActiveTab] = useState("details");
+  const [localObjectifs, setLocalObjectifs] = useState("");
+
+  // Sync objectifs when sous-tâche changes
+  useEffect(() => {
+    setLocalObjectifs((sousTache as any)?.objectifs_resultats ?? "");
+  }, [sousTache?.id, (sousTache as any)?.objectifs_resultats]);
 
   const { data: budgetLines = [] } = useSousTacheBudgetLines(
     sousTache?.id ?? null,
@@ -124,6 +130,23 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
       toast({ title: "Succès", description: "Sous-tâche mise à jour." });
       onUpdate();
       setEditing(false);
+    }
+  };
+
+  const handleSaveObjectifs = async () => {
+    if (!sousTache || !user) return;
+    const current = (sousTache as any).objectifs_resultats ?? "";
+    if (localObjectifs.trim() === current.trim()) return;
+    try {
+      const { error } = await supabase.from("sous_taches")
+        .update({ objectifs_resultats: localObjectifs.trim() || null } as any)
+        .eq("id", sousTache.id);
+      if (error) throw error;
+      toast({ title: "✓ Objectifs mis à jour" });
+      onUpdate();
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+      setLocalObjectifs((sousTache as any).objectifs_resultats ?? "");
     }
   };
 
@@ -225,6 +248,32 @@ const SousTacheDetailPanel = ({ sousTache, open, onClose, isAdmin, onUpdate, tac
               ) : (
                 <p className="text-xs text-muted-foreground italic">
                   Calculé depuis {budgetLines.length} ligne(s) budgétaire(s)
+                </p>
+              )}
+            </div>
+
+            {/* Objectifs / Résultats attendus */}
+            <div className="space-y-1">
+              <Label className="text-sm text-muted-foreground flex items-center gap-1.5">
+                📝 Objectifs / Résultats attendus
+              </Label>
+              {isAdmin ? (
+                <>
+                  <Textarea
+                    value={localObjectifs}
+                    onChange={(e) => setLocalObjectifs(e.target.value)}
+                    onBlur={handleSaveObjectifs}
+                    placeholder="Ex : rapport produit et validé, convention signée, formation réalisée, équipement acquis et opérationnel"
+                    rows={3}
+                    className="text-sm resize-y min-h-[72px]"
+                  />
+                  <p className="text-xs text-muted-foreground italic">
+                    Décrivez les résultats concrets attendus. Sauvegardé automatiquement.
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-foreground whitespace-pre-wrap">
+                  {(sousTache as any).objectifs_resultats || "Aucun objectif renseigné."}
                 </p>
               )}
             </div>

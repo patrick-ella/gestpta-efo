@@ -977,6 +977,7 @@ export type Database = {
           lignes_budgetaires: string | null
           mesures_attenuation: string | null
           mode_execution: string | null
+          objectifs_resultats: string | null
           ordre: number | null
           responsable: string | null
           ressources_humaines: string | null
@@ -999,6 +1000,7 @@ export type Database = {
           lignes_budgetaires?: string | null
           mesures_attenuation?: string | null
           mode_execution?: string | null
+          objectifs_resultats?: string | null
           ordre?: number | null
           responsable?: string | null
           ressources_humaines?: string | null
@@ -1021,6 +1023,7 @@ export type Database = {
           lignes_budgetaires?: string | null
           mesures_attenuation?: string | null
           mode_execution?: string | null
+          objectifs_resultats?: string | null
           ordre?: number | null
           responsable?: string | null
           ressources_humaines?: string | null
