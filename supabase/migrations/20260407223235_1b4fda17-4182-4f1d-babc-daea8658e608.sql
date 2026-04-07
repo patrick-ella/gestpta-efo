@@ -1,0 +1,1 @@
+ALTER TABLE public.sous_taches ADD COLUMN IF NOT EXISTS objectifs_resultats TEXT DEFAULT NULL;
