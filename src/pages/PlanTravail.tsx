@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { usePtaData } from "@/hooks/usePtaData";
 import { useIsAdmin } from "@/hooks/useUserRoles";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PtaTreeView from "@/components/pta/PtaTreeView";
