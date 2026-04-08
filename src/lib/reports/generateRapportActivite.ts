@@ -703,6 +703,9 @@ export async function generateRapportActivite(period: ReportPeriod) {
         data.cell.styles.fontStyle = "bold";
       }
     },
+    showHead: "everyPage",
+    rowPageBreak: "avoid",
+    pageBreak: "auto",
   });
 
   sumY = (doc as any).lastAutoTable.finalY + 10;
