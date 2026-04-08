@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { usePtaData } from "@/hooks/usePtaData";
 import { useExecutionData, buildExecutionMap } from "@/hooks/useExecutionData";
 import { useIsAdmin, useUserRoles } from "@/hooks/useUserRoles";
@@ -27,6 +28,9 @@ const Execution = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  useRealtimeSync({ table: "executions", queryKeys: [["executions", exerciceId ?? ""]], enabled: !!exerciceId });
+  useRealtimeSync({ table: "sous_tache_lignes_budgetaires", queryKeys: [["pta-data", "2026"]], enabled: !!exerciceId });
 
   const [filters, setFilters] = useState<ExecutionFilters>(defaultFilters);
   const [pendingChanges, setPendingChanges] = useState<Record<string, PendingChange>>({});

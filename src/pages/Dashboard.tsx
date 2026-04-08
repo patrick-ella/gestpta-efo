@@ -16,6 +16,7 @@ import ActivityMatrix from "@/components/dashboard/ActivityMatrix";
 import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import AlertPanel, { type Alert } from "@/components/dashboard/AlertPanel";
 import { useExtrantStats } from "@/hooks/useExtrantsData";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import type { Database } from "@/integrations/supabase/types";
 
 type Execution = Database["public"]["Tables"]["executions"]["Row"];
@@ -25,6 +26,10 @@ const Dashboard = () => {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const { data: roles = [] } = useUserRoles();
   const queryClient = useQueryClient();
+
+  useRealtimeSync({ table: "executions", queryKeys: ["dashboard-data"] });
+  useRealtimeSync({ table: "sous_tache_lignes_budgetaires", queryKeys: ["dashboard-data"] });
+  useRealtimeSync({ table: "extrants", queryKeys: ["extrants-stats"] });
 
   const isDirection =
     roles.includes("super_admin") ||

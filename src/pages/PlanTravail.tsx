@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { usePtaData } from "@/hooks/usePtaData";
 import { useIsAdmin } from "@/hooks/useUserRoles";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PtaTreeView from "@/components/pta/PtaTreeView";
@@ -13,6 +14,10 @@ const PlanTravail = () => {
   const { data, isLoading, refetch } = usePtaData(2026);
   const isAdmin = useIsAdmin();
   const [selectedSt, setSelectedSt] = useState<SousTache | null>(null);
+
+  useRealtimeSync({ table: "sous_taches", queryKeys: [["pta-data", "2026"]] });
+  useRealtimeSync({ table: "taches", queryKeys: [["pta-data", "2026"]] });
+  useRealtimeSync({ table: "activites", queryKeys: [["pta-data", "2026"]] });
 
   // Find tache livrables text for selected sous-tache
   const tacheLivrables = useMemo(() => {

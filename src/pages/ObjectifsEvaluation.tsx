@@ -8,6 +8,7 @@ import AgentsProfilsTab from "@/components/objectifs/AgentsProfilsTab";
 import ContratsTab from "@/components/objectifs/ContratsTab";
 import EvaluationsTab from "@/components/objectifs/EvaluationsTab";
 import { Loader2 } from "lucide-react";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 const ObjectifsEvaluation = () => {
   const [selectedAnnee, setSelectedAnnee] = useState<string | null>(null);
@@ -32,6 +33,9 @@ const ObjectifsEvaluation = () => {
 
   const resolvedAnnee = selectedAnnee ?? (activeExercice ? String(activeExercice.annee) : null);
   const selectedExercice = resolvedAnnee ? exercices.find((e) => e.annee === parseInt(resolvedAnnee)) : null;
+
+  useRealtimeSync({ table: "assignations_sous_taches", queryKeys: ["contrats", "assignations"] });
+  useRealtimeSync({ table: "evaluations_agents", queryKeys: ["evaluations"] });
 
   if (exerciceLoading) {
     return (
