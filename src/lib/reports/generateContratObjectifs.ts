@@ -122,6 +122,9 @@ export async function generateContratObjectifs(
       lineColor: [150, 150, 150],
       lineWidth: 0.2,
     },
+    showHead: "everyPage",
+    rowPageBreak: "avoid",
+    pageBreak: "auto",
   });
 
   y = (doc as any).lastAutoTable.finalY + 6;

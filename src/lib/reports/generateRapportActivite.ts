@@ -384,6 +384,7 @@ function drawBudgetTable(
       willDrawCell: (data) => {
         if ([2, 3, 5].includes(data.column.index)) data.cell.styles.halign = "right";
       },
+      showHead: "everyPage",
       showFoot: "lastPage",
       pageBreak: "auto",
       rowPageBreak: "avoid",
@@ -497,6 +498,7 @@ function drawExtrantsSection(
         else data.cell.styles.textColor = [156, 163, 175];
       }
     },
+    showHead: "everyPage",
     pageBreak: "auto",
     rowPageBreak: "avoid",
   });
@@ -701,6 +703,9 @@ export async function generateRapportActivite(period: ReportPeriod) {
         data.cell.styles.fontStyle = "bold";
       }
     },
+    showHead: "everyPage",
+    rowPageBreak: "avoid",
+    pageBreak: "auto",
   });
 
   sumY = (doc as any).lastAutoTable.finalY + 10;
@@ -737,6 +742,9 @@ export async function generateRapportActivite(period: ReportPeriod) {
       if (data.column.index === 4 && data.section === "body" && data.row.index < extSummaryBody.length - 1) { const v = parseInt(String(data.cell.raw)); if (v > 0) data.cell.styles.textColor = [239, 68, 68]; }
       if (data.column.index === 5 && data.section === "body" && data.row.index < extSummaryBody.length - 1) { const v = parseInt(String(data.cell.raw)); if (v > 0) data.cell.styles.textColor = [153, 27, 27]; }
     },
+    showHead: "everyPage",
+    rowPageBreak: "avoid",
+    pageBreak: "auto",
   });
 
   // Apply headers/footers
