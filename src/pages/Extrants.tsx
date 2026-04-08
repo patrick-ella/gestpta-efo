@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useExtrantsData, type ActiviteWithExtrants, type Extrant } from "@/hooks/useExtrantsData";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import ExtrantDetailPanel from "@/components/extrants/ExtrantDetailPanel";
 import ExtrantWizard from "@/components/extrants/ExtrantWizard";
