@@ -26,6 +26,10 @@ function getStatut(s: string) {
 
 const Extrants = () => {
   const { data: activites = [], isLoading, invalidate } = useExtrantsData();
+
+  useRealtimeSync({ table: "extrants", queryKeys: ["extrants-data", "extrants-stats"] });
+  useRealtimeSync({ table: "extrants_criteres", queryKeys: ["extrants-data"] });
+  useRealtimeSync({ table: "extrants_preuves", queryKeys: ["extrants-data"] });
   const isAdmin = useIsAdmin();
   const [filter, setFilter] = useState("all");
   const [selectedExtrant, setSelectedExtrant] = useState<Extrant | null>(null);

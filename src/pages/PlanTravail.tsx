@@ -15,6 +15,10 @@ const PlanTravail = () => {
   const isAdmin = useIsAdmin();
   const [selectedSt, setSelectedSt] = useState<SousTache | null>(null);
 
+  useRealtimeSync({ table: "sous_taches", queryKeys: [["pta-data", 2026]] });
+  useRealtimeSync({ table: "taches", queryKeys: [["pta-data", 2026]] });
+  useRealtimeSync({ table: "activites", queryKeys: [["pta-data", 2026]] });
+
   // Find tache livrables text for selected sous-tache
   const tacheLivrables = useMemo(() => {
     if (!selectedSt || !data?.activites) return null;
