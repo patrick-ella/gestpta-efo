@@ -498,6 +498,7 @@ function drawExtrantsSection(
         else data.cell.styles.textColor = [156, 163, 175];
       }
     },
+    showHead: "everyPage",
     pageBreak: "auto",
     rowPageBreak: "avoid",
   });
