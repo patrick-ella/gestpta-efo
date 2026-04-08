@@ -8,6 +8,7 @@ import AgentsProfilsTab from "@/components/objectifs/AgentsProfilsTab";
 import ContratsTab from "@/components/objectifs/ContratsTab";
 import EvaluationsTab from "@/components/objectifs/EvaluationsTab";
 import { Loader2 } from "lucide-react";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 const ObjectifsEvaluation = () => {
   const [selectedAnnee, setSelectedAnnee] = useState<string | null>(null);
