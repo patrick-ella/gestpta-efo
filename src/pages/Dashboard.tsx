@@ -27,6 +27,10 @@ const Dashboard = () => {
   const { data: roles = [] } = useUserRoles();
   const queryClient = useQueryClient();
 
+  useRealtimeSync({ table: "executions", queryKeys: ["dashboard-data"] });
+  useRealtimeSync({ table: "sous_tache_lignes_budgetaires", queryKeys: ["dashboard-data"] });
+  useRealtimeSync({ table: "extrants", queryKeys: ["extrants-stats"] });
+
   const isDirection =
     roles.includes("super_admin") ||
     roles.includes("admin_pta") ||
