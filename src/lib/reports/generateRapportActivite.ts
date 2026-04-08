@@ -384,6 +384,7 @@ function drawBudgetTable(
       willDrawCell: (data) => {
         if ([2, 3, 5].includes(data.column.index)) data.cell.styles.halign = "right";
       },
+      showHead: "everyPage",
       showFoot: "lastPage",
       pageBreak: "auto",
       rowPageBreak: "avoid",
