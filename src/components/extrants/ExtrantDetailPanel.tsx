@@ -16,6 +16,7 @@ import { Pencil, Trash2, Unlink, Plus, AlertTriangle, Loader2 } from "lucide-rea
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { ExtrantCritere } from "@/hooks/useExtrantsData";
 import PreuvesTab from "./PreuvesTab";
+import DeleteExtrantDialog from "./DeleteExtrantDialog";
 
 interface Props {
   extrant: { id: string; activite_id: string } | null;
@@ -60,7 +61,6 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
 
   // Delete modal
   const [showDelete, setShowDelete] = useState(false);
-  const [deleteConfirmRef, setDeleteConfirmRef] = useState("");
 
   // Criteria editing
   const [editingCritereId, setEditingCritereId] = useState<string | null>(null);
@@ -180,7 +180,6 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
     setEditingLinkId(null);
     setUnlinkingId(null);
     setDeletingCritereId(null);
-    setDeleteConfirmRef("");
     setRejectMotif("");
   }, [extrantId, open]);
 
@@ -292,6 +291,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
       });
       toast.success(`🗑 Extrant ${extrant.reference} supprimé`);
       invalidateAll();
+      setShowDelete(false);
       onClose();
     } catch (err: any) {
       toast.error(`Erreur : ${err.message}`);
@@ -735,41 +735,14 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
         </SheetContent>
       </Sheet>
 
-      {/* Delete confirmation dialog */}
-      {showDelete && extrant && (
-        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg border shadow-lg max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">🗑 Supprimer l'extrant</h3>
-            <p className="text-sm text-muted-foreground">Vous êtes sur le point de supprimer :</p>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="font-mono">{extrant.reference}</Badge>
-              <span className="text-sm text-foreground">{extrant.libelle}</span>
-            </div>
-            <div className="p-3 border rounded-lg bg-destructive/5 space-y-1">
-              <p className="text-sm font-medium text-destructive flex items-center gap-1"><AlertTriangle className="h-4 w-4" /> Cette action supprimera également :</p>
-              <ul className="text-xs text-muted-foreground list-disc ml-5">
-                <li>{totalCrit} critère(s) de validation</li>
-                <li>{linkedSousTaches.length} lien(s) avec des sous-tâches</li>
-              </ul>
-              <p className="text-xs font-semibold text-destructive">Cette action est IRRÉVERSIBLE.</p>
-            </div>
-            {extrant.statut === "valide" && (
-              <div className="p-3 border-2 border-destructive rounded-lg bg-destructive/10 space-y-1">
-                <p className="text-sm font-bold text-destructive">🔴 ATTENTION — Extrant déjà validé</p>
-                <p className="text-xs text-muted-foreground">Cet extrant a été validé{extrant.date_validation ? ` le ${extrant.date_validation}` : ""}. Sa suppression est fortement déconseillée.</p>
-              </div>
-            )}
-            <div className="space-y-1">
-              <Label className="text-sm">Pour confirmer, saisissez <span className="font-mono font-bold">{extrant.reference}</span> :</Label>
-              <Input value={deleteConfirmRef} onChange={(e) => setDeleteConfirmRef(e.target.value)} placeholder={extrant.reference} />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => { setShowDelete(false); setDeleteConfirmRef(""); }}>Annuler</Button>
-              <Button variant="destructive" onClick={handleDelete} disabled={deleteConfirmRef !== extrant.reference}>🗑 Supprimer définitivement</Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteExtrantDialog
+        open={showDelete}
+        extrant={extrant}
+        totalCrit={totalCrit}
+        linkedCount={linkedSousTaches.length}
+        onCancel={() => setShowDelete(false)}
+        onConfirm={handleDelete}
+      />
 
       {/* Confirm delete critere */}
       <ConfirmDialog
