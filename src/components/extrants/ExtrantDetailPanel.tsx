@@ -737,8 +737,8 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
 
       {/* Delete confirmation dialog */}
       {showDelete && extrant && (
-        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4" onClick={() => setShowDelete(false)}>
-          <div className="bg-background rounded-lg border shadow-lg max-w-md w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-background rounded-lg border shadow-lg max-w-md w-full p-6 space-y-4">
             <h3 className="text-lg font-semibold text-foreground">🗑 Supprimer l'extrant</h3>
             <p className="text-sm text-muted-foreground">Vous êtes sur le point de supprimer :</p>
             <div className="flex items-center gap-2">
