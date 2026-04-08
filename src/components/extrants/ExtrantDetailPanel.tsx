@@ -419,7 +419,10 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
   return (
     <>
       <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto"
+          onPointerDownOutside={(e) => { if (showDelete) e.preventDefault(); }}
+          onInteractOutside={(e) => { if (showDelete) e.preventDefault(); }}
+        >
           <SheetHeader>
             <div className="flex items-center justify-between">
               <SheetTitle className="flex items-center gap-2">
