@@ -6,13 +6,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { Users, Plus, AlertTriangle } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSousTacheAssignations } from "@/hooks/useObjectifsData";
 import { useIsAdmin } from "@/hooks/useUserRoles";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import AssignationCard from "./AssignationCard";
 
 interface Props {
   sousTacheId: string;
@@ -30,7 +31,6 @@ const SousTacheAgentsTab = ({ sousTacheId, sousTacheCode, exerciceId }: Props) =
 
   const { data: assignations = [], refetch } = useSousTacheAssignations(sousTacheId);
 
-  // Search agents from agents_profils (EFO staff), NOT users_profiles
   const { data: agents = [] } = useQuery({
     queryKey: ["agents-for-assign"],
     queryFn: async () => {
@@ -43,7 +43,22 @@ const SousTacheAgentsTab = ({ sousTacheId, sousTacheCode, exerciceId }: Props) =
     },
   });
 
-  // Get total poids for selected agent across all their assignations
+  // Fetch all assignations for all assigned agents in this exercice (for poids validation)
+  const agentIds = [...new Set(assignations.map(a => a.agent_id))];
+  const { data: allAssignsByAgent = [] } = useQuery({
+    queryKey: ["all-agent-assigns", agentIds.join(","), exerciceId],
+    queryFn: async () => {
+      if (!exerciceId || agentIds.length === 0) return [];
+      const { data } = await supabase
+        .from("assignations_sous_taches")
+        .select("id, agent_id, poids_objectif")
+        .eq("exercice_id", exerciceId)
+        .in("agent_id", agentIds);
+      return data ?? [];
+    },
+    enabled: !!exerciceId && agentIds.length > 0,
+  });
+
   const { data: agentAllAssigns = [] } = useQuery({
     queryKey: ["agent-total-poids", assignForm.agent_id, exerciceId],
     queryFn: async () => {
@@ -81,6 +96,7 @@ const SousTacheAgentsTab = ({ sousTacheId, sousTacheCode, exerciceId }: Props) =
       setAssignForm({ agent_id: "", role_agent: "contributeur", poids_objectif: "", date_limite: "", observations: "" });
       refetch();
       qc.invalidateQueries({ queryKey: ["assignations"] });
+      qc.invalidateQueries({ queryKey: ["all-agent-assigns"] });
     }
   };
 
@@ -91,6 +107,7 @@ const SousTacheAgentsTab = ({ sousTacheId, sousTacheCode, exerciceId }: Props) =
     } else {
       toast({ title: "Agent retiré" });
       refetch();
+      qc.invalidateQueries({ queryKey: ["all-agent-assigns"] });
     }
   };
 
@@ -125,33 +142,16 @@ const SousTacheAgentsTab = ({ sousTacheId, sousTacheCode, exerciceId }: Props) =
         <div className="space-y-3">
           {assignations.map(a => {
             const agent = getAgent(a.agent_id);
+            const agentAssigns = allAssignsByAgent.filter(x => x.agent_id === a.agent_id);
             return (
-              <div key={a.id} className="border rounded-lg p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">👤 {agent?.nom} {agent?.prenom}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {agent?.matricule ? `Matricule: ${agent.matricule}` : ""} {agent?.poste_travail ? `| ${agent.poste_travail}` : ""}
-                      {agent?.user_id ? " 🟢" : " ⚪"}
-                    </p>
-                  </div>
-                  <Badge variant={a.role_agent === "responsable" ? "default" : "secondary"}>
-                    {a.role_agent === "responsable" ? "Responsable" : "Contributeur"}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span>Poids: <strong>{Number(a.poids_objectif)}%</strong></span>
-                  {a.date_limite && <span>Date limite: {a.date_limite}</span>}
-                </div>
-                {a.observations && <p className="text-xs text-muted-foreground italic">{a.observations}</p>}
-                {isAdmin && (
-                  <div className="flex justify-end">
-                    <Button size="sm" variant="ghost" className="text-destructive h-7 text-xs" onClick={() => handleRemove(a.id)}>
-                      <Trash2 className="h-3 w-3 mr-1" /> Retirer
-                    </Button>
-                  </div>
-                )}
-              </div>
+              <AssignationCard
+                key={a.id}
+                assignation={a}
+                agent={agent}
+                canEdit={isAdmin}
+                allAgentAssignations={agentAssigns}
+                onRemove={handleRemove}
+              />
             );
           })}
         </div>
