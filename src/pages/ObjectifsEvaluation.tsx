@@ -34,6 +34,9 @@ const ObjectifsEvaluation = () => {
   const resolvedAnnee = selectedAnnee ?? (activeExercice ? String(activeExercice.annee) : null);
   const selectedExercice = resolvedAnnee ? exercices.find((e) => e.annee === parseInt(resolvedAnnee)) : null;
 
+  useRealtimeSync({ table: "assignations_sous_taches", queryKeys: ["contrats", "assignations"] });
+  useRealtimeSync({ table: "evaluations_agents", queryKeys: ["evaluations"] });
+
   if (exerciceLoading) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
