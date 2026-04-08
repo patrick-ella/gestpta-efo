@@ -29,6 +29,9 @@ const Execution = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  useRealtimeSync({ table: "executions", queryKeys: [["executions", exerciceId ?? ""]], enabled: !!exerciceId });
+  useRealtimeSync({ table: "sous_tache_lignes_budgetaires", queryKeys: [["pta-data", "2026"]], enabled: !!exerciceId });
+
   const [filters, setFilters] = useState<ExecutionFilters>(defaultFilters);
   const [pendingChanges, setPendingChanges] = useState<Record<string, PendingChange>>({});
   const [selectedSt, setSelectedSt] = useState<SousTache | null>(null);
