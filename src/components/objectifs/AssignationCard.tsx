@@ -75,6 +75,8 @@ const AssignationCard = ({ assignation, agent, canEdit, allAgentAssignations, on
       qc.invalidateQueries({ queryKey: ["sous-tache-assignations"] });
       qc.invalidateQueries({ queryKey: ["assignations"] });
       qc.invalidateQueries({ queryKey: ["agent-total-poids"] });
+      qc.invalidateQueries({ queryKey: ["all-agent-assigns"] });
+      qc.invalidateQueries({ queryKey: ["st-assignations"] });
     }
   };
 
