@@ -742,6 +742,9 @@ export async function generateRapportActivite(period: ReportPeriod) {
       if (data.column.index === 4 && data.section === "body" && data.row.index < extSummaryBody.length - 1) { const v = parseInt(String(data.cell.raw)); if (v > 0) data.cell.styles.textColor = [239, 68, 68]; }
       if (data.column.index === 5 && data.section === "body" && data.row.index < extSummaryBody.length - 1) { const v = parseInt(String(data.cell.raw)); if (v > 0) data.cell.styles.textColor = [153, 27, 27]; }
     },
+    showHead: "everyPage",
+    rowPageBreak: "avoid",
+    pageBreak: "auto",
   });
 
   // Apply headers/footers
