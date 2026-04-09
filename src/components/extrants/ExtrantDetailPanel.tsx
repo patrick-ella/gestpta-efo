@@ -54,7 +54,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
 
   // Edit mode for Tab 1
   const [editMode, setEditMode] = useState(false);
-  const [editRef, setEditRef] = useState("");
+  
   const [editLibelle, setEditLibelle] = useState("");
   const [editIndicateur, setEditIndicateur] = useState("");
   const [saving, setSaving] = useState(false);
