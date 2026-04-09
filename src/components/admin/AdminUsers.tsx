@@ -14,6 +14,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserPlus, KeyRound, Ban, CheckCircle, Loader2, Info, Lock, Trash2, UserCheck, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { ResetPasswordModal } from "@/components/admin/ResetPasswordModal";
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: "Administrateur principal",
@@ -36,6 +38,11 @@ export const AdminUsers = () => {
   const { user: currentUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ nom: "", prenom: "", email: "", password: "", role: "consultant", centre: "Yaoundé" });
+  const { data: currentUserRoles = [] } = useUserRoles();
+  const isSuperAdmin = currentUserRoles.includes("super_admin");
+
+  // Reset password modal state
+  const [resetPwdUser, setResetPwdUser] = useState<any>(null);
 
   // Transfer state
   const [transferUser, setTransferUser] = useState<any>(null);
@@ -273,6 +280,17 @@ export const AdminUsers = () => {
                       <Button variant="outline" size="sm" title="Réinitialiser le mot de passe" onClick={() => resetPwd.mutate(u.email)}>
                         <KeyRound className="h-3 w-3" />
                       </Button>
+                      {isSuperAdmin && currentUser?.id !== u.id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-700 dark:hover:bg-amber-950/30"
+                          title="Réinitialiser le mot de passe (temporaire)"
+                          onClick={() => setResetPwdUser(u)}
+                        >
+                          <KeyRound className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Button
                         variant={u.actif !== false ? "destructive" : "default"}
                         size="sm"
@@ -435,6 +453,13 @@ export const AdminUsers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        isOpen={!!resetPwdUser}
+        user={resetPwdUser ? { id: resetPwdUser.id, email: resetPwdUser.email || "", nom: resetPwdUser.nom || "", prenom: resetPwdUser.prenom || "" } : null}
+        onSuccess={() => { setResetPwdUser(null); qc.invalidateQueries({ queryKey: ["admin-users"] }); }}
+        onCancel={() => setResetPwdUser(null)}
+      />
     </div>
   );
 };

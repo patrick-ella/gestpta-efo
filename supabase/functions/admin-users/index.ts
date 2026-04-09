@@ -170,6 +170,38 @@ serve(async (req) => {
       });
     }
 
+    if (action === "reset_password_direct") {
+      // Only super_admin can do this
+      if (roleCheck.role !== "super_admin") {
+        throw new Error("Seul l'administrateur principal peut réinitialiser les mots de passe");
+      }
+      const { user_id, new_password } = payload;
+      if (!user_id || !new_password) throw new Error("user_id et new_password requis");
+      if (new_password.length < 8) throw new Error("Le mot de passe doit contenir au moins 8 caractères");
+      if (user_id === caller.id) throw new Error("Vous ne pouvez pas réinitialiser votre propre mot de passe");
+
+      const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
+        password: new_password,
+      });
+      if (authErr) throw authErr;
+
+      await supabaseAdmin.from("users_profiles").update({
+        must_change_password: true,
+      }).eq("id", user_id);
+
+      // Audit log
+      await supabaseAdmin.from("journal_audit").insert({
+        action: "RESET_PASSWORD",
+        entite: "user",
+        user_id: caller.id,
+        nouvelle_valeur: { target_user_id: user_id, must_change_password: true },
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "delete_user") {
       const { user_id, delete_staff_too } = payload;
 
