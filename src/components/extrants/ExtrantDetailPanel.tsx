@@ -54,7 +54,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
 
   // Edit mode for Tab 1
   const [editMode, setEditMode] = useState(false);
-  const [editRef, setEditRef] = useState("");
+  
   const [editLibelle, setEditLibelle] = useState("");
   const [editIndicateur, setEditIndicateur] = useState("");
   const [saving, setSaving] = useState(false);
@@ -210,13 +210,12 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
 
   // === Tab 1 handlers ===
   const startEdit = () => {
-    setEditRef(extrant.reference);
     setEditLibelle(extrant.libelle);
     setEditIndicateur(extrant.indicateur_mesure);
     setEditMode(true);
   };
 
-  const hasChanges = editRef !== extrant.reference || editLibelle !== extrant.libelle || editIndicateur !== extrant.indicateur_mesure;
+  const hasChanges = editLibelle !== extrant.libelle || editIndicateur !== extrant.indicateur_mesure;
 
   const cancelEdit = () => {
     if (hasChanges && !confirm("Modifications non enregistrées. Quitter ?")) return;
@@ -224,14 +223,13 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
   };
 
   const saveEdit = async () => {
-    if (!editRef.trim() || editLibelle.trim().length < 5 || editIndicateur.trim().length < 10) {
-      toast.error("Vérifiez les champs : référence requise, libellé ≥ 5 car., indicateur ≥ 10 car.");
+    if (editLibelle.trim().length < 5 || editIndicateur.trim().length < 10) {
+      toast.error("Vérifiez les champs : libellé ≥ 5 car., indicateur ≥ 10 car.");
       return;
     }
     setSaving(true);
     try {
       const { error } = await supabase.from("extrants").update({
-        reference: editRef.trim(),
         libelle: editLibelle.trim(),
         indicateur_mesure: editIndicateur.trim(),
         updated_by: user?.id,
@@ -240,9 +238,9 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
       await supabase.from("journal_audit").insert({
         user_id: user?.id ?? null, action: "UPDATE", entite: "extrant",
         ancienne_valeur: { reference: extrant.reference, libelle: extrant.libelle, indicateur_mesure: extrant.indicateur_mesure } as any,
-        nouvelle_valeur: { reference: editRef.trim(), libelle: editLibelle.trim(), indicateur_mesure: editIndicateur.trim() } as any,
+        nouvelle_valeur: { reference: extrant.reference, libelle: editLibelle.trim(), indicateur_mesure: editIndicateur.trim() } as any,
       });
-      toast.success(`✅ Extrant ${editRef.trim()} mis à jour`);
+      toast.success(`✅ Extrant ${extrant.reference} mis à jour`);
       setEditMode(false);
       invalidateAll();
     } catch (err: any) {
@@ -289,7 +287,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
         user_id: user?.id ?? null, action: "DELETE", entite: "extrant",
         ancienne_valeur: { reference: extrant.reference, libelle: extrant.libelle, statut: extrant.statut, nb_criteres: totalCrit } as any,
       });
-      toast.success(`🗑 Extrant ${extrant.reference} supprimé`);
+      toast.success(`🗑 Extrant supprimé. Les références ont été réorganisées automatiquement.`);
       invalidateAll();
       setShowDelete(false);
       onClose();
@@ -454,9 +452,8 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-foreground">✏️ Modification — {extrant.reference}</p>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-sm">Référence *</Label>
-                    <Input value={editRef} onChange={(e) => setEditRef(e.target.value)} className="max-w-32" />
+                  <div className="rounded-lg border border-border bg-muted/30 p-2">
+                    <p className="text-xs text-muted-foreground">ℹ️ La référence <span className="font-mono font-semibold">{extrant.reference}</span> est attribuée automatiquement et ne peut pas être modifiée.</p>
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between"><Label className="text-sm">Libellé *</Label><span className="text-xs text-muted-foreground">{editLibelle.length}/300</span></div>

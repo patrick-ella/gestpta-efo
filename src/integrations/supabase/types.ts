@@ -1243,6 +1243,7 @@ export type Database = {
         Args: { p_extrant_id: string }
         Returns: undefined
       }
+      renumber_extrants: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role:
