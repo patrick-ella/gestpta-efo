@@ -453,6 +453,13 @@ export const AdminUsers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        isOpen={!!resetPwdUser}
+        user={resetPwdUser ? { id: resetPwdUser.id, email: resetPwdUser.email || "", nom: resetPwdUser.nom || "", prenom: resetPwdUser.prenom || "" } : null}
+        onSuccess={() => { setResetPwdUser(null); qc.invalidateQueries({ queryKey: ["admin-users"] }); }}
+        onCancel={() => setResetPwdUser(null)}
+      />
     </div>
   );
 };
