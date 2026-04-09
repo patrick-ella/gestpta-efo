@@ -111,11 +111,7 @@ export const AdminUsers = () => {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const resetPwd = useMutation({
-    mutationFn: (email: string) => callAdmin({ action: "reset_password", email }),
-    onSuccess: () => toast.success("Email de réinitialisation envoyé"),
-    onError: (e: Error) => toast.error(e.message),
-  });
+  // Old reset_password (email-based) removed — only ResetPasswordModal (direct) is used now
 
   const transferMut = useMutation({
     mutationFn: () => callAdmin({
@@ -277,9 +273,6 @@ export const AdminUsers = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="outline" size="sm" title="Réinitialiser le mot de passe" onClick={() => resetPwd.mutate(u.email)}>
-                        <KeyRound className="h-3 w-3" />
-                      </Button>
                       {isSuperAdmin && currentUser?.id !== u.id && (
                         <Button
                           variant="outline"
