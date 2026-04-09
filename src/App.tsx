@@ -42,9 +42,26 @@ const PageLoader = () => (
 );
 
 const ProtectedRoutes = () => {
-  const { session, loading } = useAuth();
+  const { session, user, loading } = useAuth();
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [checkingPassword, setCheckingPassword] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    const checkFlag = async () => {
+      if (!user) { setCheckingPassword(false); return; }
+      const { data } = await supabase
+        .from("users_profiles")
+        .select("must_change_password")
+        .eq("id", user.id)
+        .single();
+      setMustChangePassword((data as any)?.must_change_password ?? false);
+      setCheckingPassword(false);
+    };
+    if (!loading && user) checkFlag();
+    else if (!loading) setCheckingPassword(false);
+  }, [user, loading]);
+
+  if (loading || checkingPassword) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -54,6 +71,10 @@ const ProtectedRoutes = () => {
 
   if (!session) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (mustChangePassword) {
+    return <ForcePasswordChangeModal onPasswordChanged={() => setMustChangePassword(false)} />;
   }
 
   return (
