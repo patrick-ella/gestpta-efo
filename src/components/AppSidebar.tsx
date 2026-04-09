@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { EfoLogo } from "@/components/ui/EfoLogo";
 import {
   Sidebar,
@@ -25,7 +26,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const menuItems = [
+const baseMenuItems = [
   { title: "Tableau de bord", url: "/", icon: LayoutDashboard },
   { title: "Cadre Logique", url: "/cadre-logique", icon: GitBranch },
   { title: "Plan de Travail (PTA)", url: "/pta", icon: ClipboardList },
@@ -33,13 +34,17 @@ const menuItems = [
   { title: "Extrants", url: "/extrants", icon: FileCheck },
   { title: "Objectifs & Évaluation", url: "/objectifs-evaluation", icon: Users },
   { title: "Rapports", url: "/rapports", icon: BarChart3 },
-  { title: "Administration", url: "/administration", icon: Settings },
 ];
+
+const adminMenuItem = { title: "Administration", url: "/administration", icon: Settings };
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
+  const { data: userRoles = [] } = useUserRoles();
+  const isSuperAdmin = userRoles.includes("super_admin");
+  const menuItems = isSuperAdmin ? [...baseMenuItems, adminMenuItem] : baseMenuItems;
 
   return (
     <Sidebar collapsible="icon">
