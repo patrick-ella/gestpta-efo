@@ -14,6 +14,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserPlus, KeyRound, Ban, CheckCircle, Loader2, Info, Lock, Trash2, UserCheck, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { ResetPasswordModal } from "@/components/admin/ResetPasswordModal";
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: "Administrateur principal",
@@ -36,6 +38,11 @@ export const AdminUsers = () => {
   const { user: currentUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ nom: "", prenom: "", email: "", password: "", role: "consultant", centre: "Yaoundé" });
+  const { data: currentUserRoles = [] } = useUserRoles();
+  const isSuperAdmin = currentUserRoles.includes("super_admin");
+
+  // Reset password modal state
+  const [resetPwdUser, setResetPwdUser] = useState<any>(null);
 
   // Transfer state
   const [transferUser, setTransferUser] = useState<any>(null);
