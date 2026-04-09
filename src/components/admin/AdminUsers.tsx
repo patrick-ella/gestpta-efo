@@ -280,6 +280,17 @@ export const AdminUsers = () => {
                       <Button variant="outline" size="sm" title="Réinitialiser le mot de passe" onClick={() => resetPwd.mutate(u.email)}>
                         <KeyRound className="h-3 w-3" />
                       </Button>
+                      {isSuperAdmin && currentUser?.id !== u.id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-700 dark:hover:bg-amber-950/30"
+                          title="Réinitialiser le mot de passe (temporaire)"
+                          onClick={() => setResetPwdUser(u)}
+                        >
+                          <KeyRound className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Button
                         variant={u.actif !== false ? "destructive" : "default"}
                         size="sm"
