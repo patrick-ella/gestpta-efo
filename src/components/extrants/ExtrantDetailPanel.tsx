@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -345,10 +345,6 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
     toast.success("🗑 Critère supprimé");
   };
 
-  const handleToggleCritereManuel = async (critereId: string, checked: boolean) => {
-    await supabase.from("extrants_criteres").update({ valide_manuellement: checked }).eq("id", critereId);
-    await recalculate();
-  };
 
   // === Link handlers ===
   const addLink = async () => {
