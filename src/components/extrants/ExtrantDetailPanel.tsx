@@ -210,7 +210,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
 
   const st = statutConfig[extrant.statut] || statutConfig.non_produit;
   const totalCrit = criteres.length;
-  const validCrit = criteres.filter((c) => c.valide_final).length;
+  const validCrit = criteres.filter((c) => (c as any).statut_critere === "produit_conforme").length;
 
   // === Tab 1 handlers ===
   const startEdit = () => {
