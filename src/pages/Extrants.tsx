@@ -83,7 +83,7 @@ const Extrants = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Extrants (GAR) — Action 302</h1>
+        <h1 className="text-2xl font-bold text-foreground">Extrants — Action 302</h1>
         <p className="text-sm text-muted-foreground">{totals.total} extrants officiels répartis sur 5 activités</p>
       </div>
 
