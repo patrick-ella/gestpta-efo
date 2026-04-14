@@ -16,6 +16,10 @@ import { Pencil, Trash2, Unlink, Plus, AlertTriangle, Loader2 } from "lucide-rea
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { ExtrantCritere } from "@/hooks/useExtrantsData";
 import PreuvesTab from "./PreuvesTab";
+import { CritereStatusBadge } from "./CritereStatusBadge";
+import CritereQuantitatif from "./CritereQuantitatif";
+import CritereBinaire from "./CritereBinaire";
+import CritereDate from "./CritereDate";
 import DeleteExtrantDialog from "./DeleteExtrantDialog";
 
 interface Props {
