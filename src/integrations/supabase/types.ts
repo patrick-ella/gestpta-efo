@@ -588,13 +588,18 @@ export type Database = {
         Row: {
           created_at: string | null
           date_echeance: string | null
+          date_production_effective: string | null
           extrant_id: string
           id: string
           libelle: string
+          observation_ecart: string | null
           ordre: number | null
+          produit_avec_ecart: boolean | null
           seuil_unite: string | null
           seuil_valeur: number | null
+          statut_critere: string
           type_critere: string
+          valeur_realisee: number | null
           valide_auto: boolean | null
           valide_final: boolean | null
           valide_manuellement: boolean | null
@@ -602,13 +607,18 @@ export type Database = {
         Insert: {
           created_at?: string | null
           date_echeance?: string | null
+          date_production_effective?: string | null
           extrant_id: string
           id?: string
           libelle: string
+          observation_ecart?: string | null
           ordre?: number | null
+          produit_avec_ecart?: boolean | null
           seuil_unite?: string | null
           seuil_valeur?: number | null
+          statut_critere?: string
           type_critere: string
+          valeur_realisee?: number | null
           valide_auto?: boolean | null
           valide_final?: boolean | null
           valide_manuellement?: boolean | null
@@ -616,13 +626,18 @@ export type Database = {
         Update: {
           created_at?: string | null
           date_echeance?: string | null
+          date_production_effective?: string | null
           extrant_id?: string
           id?: string
           libelle?: string
+          observation_ecart?: string | null
           ordre?: number | null
+          produit_avec_ecart?: boolean | null
           seuil_unite?: string | null
           seuil_valeur?: number | null
+          statut_critere?: string
           type_critere?: string
+          valeur_realisee?: number | null
           valide_auto?: boolean | null
           valide_final?: boolean | null
           valide_manuellement?: boolean | null
