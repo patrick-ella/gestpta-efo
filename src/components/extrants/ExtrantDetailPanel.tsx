@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,10 @@ import { Pencil, Trash2, Unlink, Plus, AlertTriangle, Loader2 } from "lucide-rea
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { ExtrantCritere } from "@/hooks/useExtrantsData";
 import PreuvesTab from "./PreuvesTab";
+import { CritereStatusBadge } from "./CritereStatusBadge";
+import CritereQuantitatif from "./CritereQuantitatif";
+import CritereBinaire from "./CritereBinaire";
+import CritereDate from "./CritereDate";
 import DeleteExtrantDialog from "./DeleteExtrantDialog";
 
 interface Props {
@@ -206,7 +210,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
 
   const st = statutConfig[extrant.statut] || statutConfig.non_produit;
   const totalCrit = criteres.length;
-  const validCrit = criteres.filter((c) => c.valide_final).length;
+  const validCrit = criteres.filter((c) => (c as any).statut_critere === "produit_conforme").length;
 
   // === Tab 1 handlers ===
   const startEdit = () => {
@@ -341,10 +345,6 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
     toast.success("🗑 Critère supprimé");
   };
 
-  const handleToggleCritereManuel = async (critereId: string, checked: boolean) => {
-    await supabase.from("extrants_criteres").update({ valide_manuellement: checked }).eq("id", critereId);
-    await recalculate();
-  };
 
   // === Link handlers ===
   const addLink = async () => {
@@ -564,30 +564,40 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
                 <>
                   {criteres.map((c) => {
                     const typeLabel = c.type_critere === "binaire" ? "Binaire" : c.type_critere === "date" ? "Date" : "Quantitatif";
+                    const typeIcon = c.type_critere === "binaire" ? "☑" : c.type_critere === "date" ? "📅" : "📊";
                     if (editingCritereId === c.id) return <div key={c.id}>{renderCritereForm(c.id)}</div>;
                     return (
-                      <div key={c.id} className="p-3 border rounded-lg space-y-1">
+                      <div key={c.id} className="p-3 border rounded-lg space-y-2">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-lg ${c.valide_final ? "text-success-foreground" : "text-muted-foreground"}`}>{c.valide_final ? "✅" : "❌"}</span>
-                            <span className="text-sm font-medium text-foreground">{c.libelle}</span>
-                            <Badge variant="outline" className="text-xs">{typeLabel}</Badge>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="text-base">{typeIcon}</span>
+                            <span className="text-sm font-medium text-foreground truncate">{c.libelle}</span>
+                            <Badge variant="outline" className="text-xs shrink-0">{typeLabel}</Badge>
                           </div>
                           {isAdmin && (
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 shrink-0">
                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditCritere(c as any)}><Pencil className="h-3 w-3" /></Button>
                               <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeletingCritereId(c.id)}><Trash2 className="h-3 w-3" /></Button>
                             </div>
                           )}
                         </div>
-                        {c.type_critere === "date" && c.date_echeance && <p className="text-xs text-muted-foreground">Échéance : {c.date_echeance}</p>}
-                        {c.type_critere === "quantitatif" && c.seuil_valeur != null && <p className="text-xs text-muted-foreground">Seuil : {c.seuil_valeur} {c.seuil_unite ?? ""}</p>}
-                        <p className="text-xs text-muted-foreground">{c.valide_auto ? "✅ Validé auto" : c.valide_manuellement ? "✅ Validé manuellement" : "⏳ En attente"}</p>
-                        {!c.valide_auto && (
-                          <div className="flex items-center gap-2 pt-1">
-                            <Checkbox checked={c.valide_manuellement ?? false} onCheckedChange={(checked) => handleToggleCritereManuel(c.id, !!checked)} disabled={!isAdmin} />
-                            <span className="text-xs text-muted-foreground">Critère validé manuellement</span>
-                          </div>
+
+                        <CritereStatusBadge statut={(c as any).statut_critere ?? "non_produit"} />
+
+                        {/* Rich criteria editors by type */}
+                        {c.type_critere === "quantitatif" && (
+                          <CritereQuantitatif critere={c} canEdit={isAdmin} onSave={recalculate} />
+                        )}
+                        {c.type_critere === "binaire" && (
+                          <CritereBinaire critere={c} canEdit={isAdmin} onSave={recalculate} />
+                        )}
+                        {c.type_critere === "date" && (
+                          <CritereDate critere={c} canEdit={isAdmin} onSave={recalculate} />
+                        )}
+
+                        {/* Observation display in list summary */}
+                        {(c as any).observation_ecart && (
+                          <p className="text-xs text-muted-foreground italic">💬 {(c as any).observation_ecart}</p>
                         )}
                       </div>
                     );

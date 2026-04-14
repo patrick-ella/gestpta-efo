@@ -13,6 +13,11 @@ export interface ExtrantCritere {
   valide_auto: boolean;
   valide_final: boolean;
   ordre: number;
+  valeur_realisee: number | null;
+  produit_avec_ecart: boolean;
+  date_production_effective: string | null;
+  observation_ecart: string | null;
+  statut_critere: string;
   sous_taches_liees?: CritereSousTache[];
 }
 
