@@ -84,6 +84,7 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLibelle, setEditLibelle] = useState("");
   const [editUrl, setEditUrl] = useState("");
+  const [editObservations, setEditObservations] = useState("");
   const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -271,12 +272,14 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
     setEditingId(preuve.id);
     setEditLibelle(preuve.libelle);
     setEditUrl(preuve.url_lien ?? "");
+    setEditObservations(preuve.observations ?? "");
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditLibelle("");
     setEditUrl("");
+    setEditObservations("");
   };
 
   const handleSaveEdit = async (preuve: Preuve) => {
@@ -284,7 +287,7 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
     if (preuve.type_preuve === "url" && !isValidUrl(editUrl)) return;
     setSaving(true);
     try {
-      const baseUpdate = { libelle: editLibelle.trim() };
+      const baseUpdate: Record<string, any> = { libelle: editLibelle.trim(), observations: editObservations.trim() || null };
       const fullUpdate = preuve.type_preuve === "url"
         ? { ...baseUpdate, url_lien: editUrl.trim(), plateforme: detectPlatform(editUrl).key }
         : baseUpdate;
@@ -430,6 +433,18 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
                           <p className="text-[11px] italic mt-0.5">Le fichier ne peut pas être modifié. Supprimez et re-déposez si nécessaire.</p>
                         </div>
                       )}
+
+                      <div className="space-y-1">
+                        <Label className="text-xs">Observations</Label>
+                        <Textarea
+                          value={editObservations}
+                          onChange={(e) => setEditObservations(e.target.value)}
+                          disabled={saving}
+                          rows={3}
+                          placeholder="Notes complémentaires sur cette preuve..."
+                          className="text-sm min-h-[72px] resize-y"
+                        />
+                      </div>
 
                       <div className="flex justify-end gap-2">
                         <Button variant="outline" size="sm" className="text-xs" onClick={handleCancelEdit} disabled={saving}>✕ Annuler</Button>
