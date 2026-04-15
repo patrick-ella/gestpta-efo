@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Download, Trash2, Paperclip, FileText, FileSpreadsheet, Image as ImageIcon, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { Loader2, Download, Trash2, Paperclip, FileText, FileSpreadsheet, Image as ImageIcon, Link as LinkIcon, ExternalLink, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { detectPlatform, isValidUrl } from "@/lib/platformDetector";
 
@@ -81,6 +81,10 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
   const [fileError, setFileError] = useState("");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editLibelle, setEditLibelle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -263,6 +267,39 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
     }
   };
 
+  const handleStartEdit = (preuve: Preuve) => {
+    setEditingId(preuve.id);
+    setEditLibelle(preuve.libelle);
+    setEditUrl(preuve.url_lien ?? "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditLibelle("");
+    setEditUrl("");
+  };
+
+  const handleSaveEdit = async (preuve: Preuve) => {
+    if (!editLibelle.trim()) return;
+    if (preuve.type_preuve === "url" && !isValidUrl(editUrl)) return;
+    setSaving(true);
+    try {
+      const baseUpdate = { libelle: editLibelle.trim() };
+      const fullUpdate = preuve.type_preuve === "url"
+        ? { ...baseUpdate, url_lien: editUrl.trim(), plateforme: detectPlatform(editUrl).key }
+        : baseUpdate;
+      const { error } = await supabase.from("extrants_preuves").update(fullUpdate).eq("id", preuve.id);
+      if (error) throw error;
+      toast.success("✅ Preuve mise à jour");
+      setEditingId(null);
+      invalidate();
+    } catch (err: any) {
+      toast.error(`❌ Erreur : ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const fichierCount = preuves.filter((p) => p.type_preuve === "fichier").length;
   const urlCount = preuves.filter((p) => p.type_preuve === "url").length;
 
@@ -335,76 +372,143 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
               return (
                 <div
                   key={p.id}
-                  className={`p-3 rounded-lg border border-border bg-card transition-colors ${isUrl ? platform?.bgClass ?? "" : ""}`}
-                  style={{ borderLeftWidth: "3px", borderLeftColor: isUrl ? platform?.color : "hsl(var(--primary))" }}
+                  className={`rounded-lg border transition-colors ${editingId === p.id ? "border-primary bg-primary/5 border-2" : `p-3 border-border bg-card ${isUrl ? platform?.bgClass ?? "" : ""}`}`}
+                  style={editingId !== p.id ? { borderLeftWidth: "3px", borderLeftColor: isUrl ? platform?.color : "hsl(var(--primary))" } : undefined}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="pt-0.5 shrink-0 text-lg">
-                      {isUrl ? (platform?.icon ?? "🔗") : getFileIcon(p.fichier_type)}
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <p className="text-sm font-medium text-foreground">{p.libelle}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {isUrl ? (
-                          <>
-                            <Badge variant="outline" className="text-xs mr-1 py-0">{platform?.label}</Badge>
-                            <span className="font-mono text-[11px]">
-                              {(() => { try { return new URL(p.url_lien ?? "").hostname.replace("www.", ""); } catch { return ""; } })()}
-                            </span>
-                          </>
-                        ) : (
-                          <>{p.fichier_nom} — {formatFileSize(p.fichier_taille)}</>
-                        )}
+                  {editingId === p.id ? (
+                    /* ── EDIT MODE ── */
+                    <div className="p-4 space-y-3">
+                      <p className="text-sm font-semibold text-primary">
+                        <Pencil className="h-3.5 w-3.5 inline mr-1" />
+                        Modifier {isUrl ? "ce lien" : "le libellé"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        👤 {p.depose_par_profile ? `${p.depose_par_profile.prenom ?? ""} ${p.depose_par_profile.nom ?? ""}`.trim() || "Utilisateur" : "Utilisateur"}
-                        {" · "}📅 {formatDate(p.depose_le)}
-                      </p>
-                      {p.observations && (
-                        <p className="text-xs text-muted-foreground italic">💬 {p.observations}</p>
+
+                      <div className="space-y-1">
+                        <Label className="text-xs">Libellé *</Label>
+                        <Input
+                          value={editLibelle}
+                          onChange={(e) => setEditLibelle(e.target.value)}
+                          autoFocus
+                          disabled={saving}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") handleCancelEdit();
+                            if (e.key === "Enter" && !isUrl) handleSaveEdit(p);
+                          }}
+                          className={!editLibelle.trim() ? "border-destructive" : ""}
+                        />
+                        {!editLibelle.trim() && <p className="text-xs text-destructive">Le libellé est obligatoire</p>}
+                      </div>
+
+                      {isUrl && (
+                        <div className="space-y-1">
+                          <Label className="text-xs">URL du lien *</Label>
+                          <Input
+                            type="url"
+                            value={editUrl}
+                            onChange={(e) => setEditUrl(e.target.value)}
+                            disabled={saving}
+                            onKeyDown={(e) => { if (e.key === "Escape") handleCancelEdit(); }}
+                            className={editUrl ? (isValidUrl(editUrl) ? "border-green-500 focus-visible:ring-green-500" : "border-destructive focus-visible:ring-destructive") : ""}
+                          />
+                          {editUrl && isValidUrl(editUrl) && (() => {
+                            const ep = detectPlatform(editUrl);
+                            return (
+                              <div className={`flex items-center gap-2 p-2 rounded-lg border ${ep.bgClass}`}>
+                                <span className="text-lg">{ep.icon}</span>
+                                <span className="text-xs font-semibold" style={{ color: ep.color }}>{ep.label}</span>
+                                <span className="text-xs text-green-600 ml-auto font-medium">✓ Lien valide</span>
+                              </div>
+                            );
+                          })()}
+                          {editUrl && !isValidUrl(editUrl) && <p className="text-xs text-destructive">URL invalide</p>}
+                        </div>
                       )}
+
+                      {!isUrl && p.fichier_nom && (
+                        <div className="p-2 rounded bg-muted/40 border text-xs text-muted-foreground">
+                          📎 Fichier : {p.fichier_nom}
+                          <p className="text-[11px] italic mt-0.5">Le fichier ne peut pas être modifié. Supprimez et re-déposez si nécessaire.</p>
+                        </div>
+                      )}
+
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" className="text-xs" onClick={handleCancelEdit} disabled={saving}>✕ Annuler</Button>
+                        <Button
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => handleSaveEdit(p)}
+                          disabled={saving || !editLibelle.trim() || (isUrl && !isValidUrl(editUrl))}
+                        >
+                          {saving ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Enregistrement...</> : "💾 Enregistrer"}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    /* ── DISPLAY MODE ── */
+                    <>
+                      <div className="flex items-start gap-3">
+                        <div className="pt-0.5 shrink-0 text-lg">
+                          {isUrl ? (platform?.icon ?? "🔗") : getFileIcon(p.fichier_type)}
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <p className="text-sm font-medium text-foreground">{p.libelle}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {isUrl ? (
+                              <>
+                                <Badge variant="outline" className="text-xs mr-1 py-0">{platform?.label}</Badge>
+                                <span className="font-mono text-[11px]">
+                                  {(() => { try { return new URL(p.url_lien ?? "").hostname.replace("www.", ""); } catch { return ""; } })()}
+                                </span>
+                              </>
+                            ) : (
+                              <>{p.fichier_nom} — {formatFileSize(p.fichier_taille)}</>
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            👤 {p.depose_par_profile ? `${p.depose_par_profile.prenom ?? ""} ${p.depose_par_profile.nom ?? ""}`.trim() || "Utilisateur" : "Utilisateur"}
+                            {" · "}📅 {formatDate(p.depose_le)}
+                          </p>
+                          {p.observations && (
+                            <p className="text-xs text-muted-foreground italic">💬 {p.observations}</p>
+                          )}
+                        </div>
+                      </div>
 
-                  <div className="flex items-center gap-2 mt-2 pt-2 border-t">
-                    {isUrl ? (
-                      <Button variant="outline" size="sm" className="text-xs" asChild>
-                        <a href={p.url_lien ?? "#"} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir le lien
-                        </a>
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => handleDownload(p)}
-                        disabled={downloadingId === p.id}
-                      >
-                        {downloadingId === p.id ? (
-                          <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Téléchargement...</>
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t">
+                        {isUrl ? (
+                          <Button variant="outline" size="sm" className="text-xs" asChild>
+                            <a href={p.url_lien ?? "#"} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-3 w-3 mr-1" /> Ouvrir le lien
+                            </a>
+                          </Button>
                         ) : (
-                          <><Download className="h-3 w-3 mr-1" /> Télécharger</>
-                        )}
-                      </Button>
-                    )}
-
-                    {isAdmin && (
-                      <>
-                        {deletingId === p.id ? (
-                          <div className="flex items-center gap-1 text-xs">
-                            <span className="text-muted-foreground">Supprimer ?</span>
-                            <Button variant="destructive" size="sm" className="h-6 text-xs" onClick={() => handleDelete(p)}>Confirmer</Button>
-                            <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setDeletingId(null)}>Annuler</Button>
-                          </div>
-                        ) : (
-                          <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => setDeletingId(p.id)}>
-                            <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                          <Button variant="outline" size="sm" className="text-xs" onClick={() => handleDownload(p)} disabled={downloadingId === p.id}>
+                            {downloadingId === p.id ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Téléchargement...</> : <><Download className="h-3 w-3 mr-1" /> Télécharger</>}
                           </Button>
                         )}
-                      </>
-                    )}
-                  </div>
+
+                        {isAdmin && (
+                          <>
+                            <Button variant="outline" size="sm" className="text-xs" onClick={() => handleStartEdit(p)}>
+                              <Pencil className="h-3 w-3 mr-1" /> Modifier
+                            </Button>
+
+                            {deletingId === p.id ? (
+                              <div className="flex items-center gap-1 text-xs">
+                                <span className="text-muted-foreground">Supprimer ?</span>
+                                <Button variant="destructive" size="sm" className="h-6 text-xs" onClick={() => handleDelete(p)}>Confirmer</Button>
+                                <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setDeletingId(null)}>Annuler</Button>
+                              </div>
+                            ) : (
+                              <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => setDeletingId(p.id)}>
+                                <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             })}
