@@ -658,39 +658,48 @@ export type Database = {
           depose_le: string
           depose_par: string
           extrant_id: string
-          fichier_nom: string
+          fichier_nom: string | null
           fichier_taille: number | null
           fichier_type: string | null
-          fichier_url: string
+          fichier_url: string | null
           id: string
           libelle: string
           observations: string | null
+          plateforme: string | null
+          type_preuve: string
+          url_lien: string | null
         }
         Insert: {
           created_at?: string
           depose_le?: string
           depose_par: string
           extrant_id: string
-          fichier_nom: string
+          fichier_nom?: string | null
           fichier_taille?: number | null
           fichier_type?: string | null
-          fichier_url: string
+          fichier_url?: string | null
           id?: string
           libelle: string
           observations?: string | null
+          plateforme?: string | null
+          type_preuve?: string
+          url_lien?: string | null
         }
         Update: {
           created_at?: string
           depose_le?: string
           depose_par?: string
           extrant_id?: string
-          fichier_nom?: string
+          fichier_nom?: string | null
           fichier_taille?: number | null
           fichier_type?: string | null
-          fichier_url?: string
+          fichier_url?: string | null
           id?: string
           libelle?: string
           observations?: string | null
+          plateforme?: string | null
+          type_preuve?: string
+          url_lien?: string | null
         }
         Relationships: [
           {
