@@ -284,12 +284,11 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
     if (preuve.type_preuve === "url" && !isValidUrl(editUrl)) return;
     setSaving(true);
     try {
-      const updates: Record<string, any> = { libelle: editLibelle.trim() };
-      if (preuve.type_preuve === "url") {
-        updates.url_lien = editUrl.trim();
-        updates.plateforme = detectPlatform(editUrl).key;
-      }
-      const { error } = await supabase.from("extrants_preuves").update(updates).eq("id", preuve.id);
+      const baseUpdate = { libelle: editLibelle.trim() };
+      const fullUpdate = preuve.type_preuve === "url"
+        ? { ...baseUpdate, url_lien: editUrl.trim(), plateforme: detectPlatform(editUrl).key }
+        : baseUpdate;
+      const { error } = await supabase.from("extrants_preuves").update(fullUpdate).eq("id", preuve.id);
       if (error) throw error;
       toast.success("✅ Preuve mise à jour");
       setEditingId(null);
