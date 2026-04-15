@@ -81,6 +81,10 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
   const [fileError, setFileError] = useState("");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editLibelle, setEditLibelle] = useState("");
+  const [editUrl, setEditUrl] = useState("");
+  const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
