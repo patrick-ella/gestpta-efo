@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Download, Trash2, Paperclip, FileText, FileSpreadsheet, Image as ImageIcon, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { Loader2, Download, Trash2, Paperclip, FileText, FileSpreadsheet, Image as ImageIcon, Link as LinkIcon, ExternalLink, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { detectPlatform, isValidUrl } from "@/lib/platformDetector";
 
