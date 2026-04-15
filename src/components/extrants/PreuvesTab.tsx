@@ -267,7 +267,40 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
     }
   };
 
-  const fichierCount = preuves.filter((p) => p.type_preuve === "fichier").length;
+  const handleStartEdit = (preuve: Preuve) => {
+    setEditingId(preuve.id);
+    setEditLibelle(preuve.libelle);
+    setEditUrl(preuve.url_lien ?? "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditLibelle("");
+    setEditUrl("");
+  };
+
+  const handleSaveEdit = async (preuve: Preuve) => {
+    if (!editLibelle.trim()) return;
+    if (preuve.type_preuve === "url" && !isValidUrl(editUrl)) return;
+    setSaving(true);
+    try {
+      const updates: Record<string, any> = { libelle: editLibelle.trim() };
+      if (preuve.type_preuve === "url") {
+        updates.url_lien = editUrl.trim();
+        updates.plateforme = detectPlatform(editUrl).key;
+      }
+      const { error } = await supabase.from("extrants_preuves").update(updates).eq("id", preuve.id);
+      if (error) throw error;
+      toast.success("✅ Preuve mise à jour");
+      setEditingId(null);
+      invalidate();
+    } catch (err: any) {
+      toast.error(`❌ Erreur : ${err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const urlCount = preuves.filter((p) => p.type_preuve === "url").length;
 
   if (isLoading) {
