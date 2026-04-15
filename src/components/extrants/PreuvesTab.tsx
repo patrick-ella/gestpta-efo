@@ -300,6 +300,7 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
     }
   };
 
+  const fichierCount = preuves.filter((p) => p.type_preuve === "fichier").length;
   const urlCount = preuves.filter((p) => p.type_preuve === "url").length;
 
   if (isLoading) {
