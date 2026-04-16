@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import logoSrc from "@/assets/logo-efo.png";
+import { getExtrantProgression, getProgressionColorRgb, type CritereForProgression } from "@/lib/extrantProgression";
 
 // ── Types ───────────────────────────────────────────────────
 export type ReportPeriod = {
@@ -274,7 +275,7 @@ interface ExtrantForReport {
   date_production: string | null;
   activite_id: string;
   ordre: number | null;
-  criteres: { id: string; valide_final: boolean | null }[];
+  criteres: { id: string; valide_final: boolean | null; type_critere: string; statut_critere: string; valeur_realisee: number | null; seuil_valeur: number | null }[];
   preuvesCount: number;
 }
 
@@ -436,7 +437,8 @@ function drawExtrantsSection(
     const validC = e.criteres.filter(c => c.valide_final).length;
     const criteresLabel = totalC > 0 ? `${validC}/${totalC}` : "—";
     const preuvesLabel = e.preuvesCount > 0 ? String(e.preuvesCount) : "—";
-    return [e.reference, e.libelle.substring(0, 55), e.indicateur_mesure.substring(0, 50), statutLabel(e.statut), formatDateFr(e.date_production), criteresLabel, preuvesLabel];
+    const progression = getExtrantProgression(e.criteres as CritereForProgression[]);
+    return [e.reference, e.libelle.substring(0, 50), e.indicateur_mesure.substring(0, 45), statutLabel(e.statut), `${progression}%`, formatDateFr(e.date_production), criteresLabel, preuvesLabel];
   });
 
   autoTable(doc, {
@@ -448,6 +450,7 @@ function drawExtrantsSection(
       { content: "Libellé de l'extrant", styles: { halign: "left" as const } },
       { content: "Indicateur de mesure", styles: { halign: "left" as const } },
       { content: "Statut", styles: { halign: "center" as const } },
+      { content: "Progression", styles: { halign: "center" as const } },
       { content: "Date prod.", styles: { halign: "center" as const } },
       { content: "Critères", styles: { halign: "center" as const } },
       { content: "Preuves", styles: { halign: "center" as const } },
@@ -464,12 +467,13 @@ function drawExtrantsSection(
     alternateRowStyles: { fillColor: [240, 253, 244] },
     columnStyles: {
       0: { halign: "center", cellWidth: 14, fontStyle: "bold" },
-      1: { halign: "left", cellWidth: 78, overflow: "ellipsize" },
-      2: { halign: "left", cellWidth: 70, fontSize: 7, fontStyle: "italic", textColor: [80, 80, 80], overflow: "ellipsize" },
-      3: { halign: "center", cellWidth: 34 },
-      4: { halign: "center", cellWidth: 27 },
+      1: { halign: "left", cellWidth: 68, overflow: "ellipsize" },
+      2: { halign: "left", cellWidth: 58, fontSize: 7, fontStyle: "italic", textColor: [80, 80, 80], overflow: "ellipsize" },
+      3: { halign: "center", cellWidth: 30 },
+      4: { halign: "center", cellWidth: 24 },
       5: { halign: "center", cellWidth: 25 },
-      6: { halign: "center", cellWidth: 25 },
+      6: { halign: "center", cellWidth: 22 },
+      7: { halign: "center", cellWidth: 22 },
     },
     didParseCell: (data) => {
       if (data.column.index === 3 && data.section === "body") {
@@ -480,7 +484,14 @@ function drawExtrantsSection(
         else if (s === "Validé") { data.cell.styles.textColor = [59, 130, 246]; data.cell.styles.fontStyle = "bold"; }
         else if (s === "Rejeté") { data.cell.styles.textColor = [153, 27, 27]; data.cell.styles.fontStyle = "italic"; }
       }
-      if (data.column.index === 5 && data.section === "body") {
+      // Progression column
+      if (data.column.index === 4 && data.section === "body") {
+        const pct = parseInt(String(data.cell.raw)) || 0;
+        const rgb = getProgressionColorRgb(pct);
+        data.cell.styles.textColor = rgb;
+        data.cell.styles.fontStyle = "bold";
+      }
+      if (data.column.index === 6 && data.section === "body") {
         const val = String(data.cell.raw);
         if (val === "—") { data.cell.styles.textColor = [156, 163, 175]; }
         else {
@@ -492,7 +503,7 @@ function drawExtrantsSection(
           }
         }
       }
-      if (data.column.index === 6 && data.section === "body") {
+      if (data.column.index === 7 && data.section === "body") {
         const val = String(data.cell.raw);
         if (val !== "—") { data.cell.styles.textColor = [59, 130, 246]; data.cell.styles.fontStyle = "bold"; }
         else data.cell.styles.textColor = [156, 163, 175];
@@ -553,7 +564,7 @@ export async function generateRapportActivite(period: ReportPeriod) {
     supabase.from("sous_taches").select("id, tache_id"),
     supabase.from("sous_tache_lignes_budgetaires").select("*").eq("exercice_id", exerciceId),
     supabase.from("extrants").select("id, reference, libelle, indicateur_mesure, statut, date_production, activite_id, ordre").order("ordre"),
-    supabase.from("extrants_criteres").select("id, extrant_id, valide_final"),
+    supabase.from("extrants_criteres").select("id, extrant_id, valide_final, type_critere, statut_critere, valeur_realisee, seuil_valeur"),
     supabase.from("extrants_preuves").select("id, extrant_id"),
   ]);
 
@@ -575,7 +586,7 @@ export async function generateRapportActivite(period: ReportPeriod) {
     const ext: ExtrantForReport = {
       ...e,
       ordre: e.ordre ?? 0,
-      criteres: allCriteres.filter(c => c.extrant_id === e.id).map(c => ({ id: c.id, valide_final: c.valide_final })),
+      criteres: allCriteres.filter(c => c.extrant_id === e.id).map(c => ({ id: c.id, valide_final: c.valide_final, type_critere: c.type_critere, statut_critere: c.statut_critere, valeur_realisee: c.valeur_realisee, seuil_valeur: c.seuil_valeur })),
       preuvesCount: allPreuves.filter(p => p.extrant_id === e.id).length,
     };
     const arr = extrantsMap.get(e.activite_id) ?? [];

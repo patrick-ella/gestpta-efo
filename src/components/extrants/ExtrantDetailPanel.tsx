@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { getExtrantProgression, getProgressionColor, type CritereForProgression } from "@/lib/extrantProgression";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -434,6 +435,21 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, i
               )}
             </div>
           </SheetHeader>
+
+          {/* Progression badge */}
+          {(() => {
+            const critForProg = (criteres ?? []) as CritereForProgression[];
+            const pct = getExtrantProgression(critForProg);
+            const colors = getProgressionColor(pct);
+            return (
+              <div className="flex items-center gap-2 mt-2 px-1">
+                <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: colors.bar }} />
+                </div>
+                <span className={`text-xs font-bold ${colors.text}`}>📊 {pct}%</span>
+              </div>
+            );
+          })()}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
             <TabsList className="w-full grid grid-cols-4">

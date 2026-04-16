@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Loader2, ChevronDown, ChevronRight, Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { getExtrantProgression, getProgressionColor, type CritereForProgression } from "@/lib/extrantProgression";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -159,6 +160,9 @@ const Extrants = () => {
                       const totalCrit = ext.criteres?.length ?? 0;
                       const validCrit = ext.criteres?.filter((c) => c.valide_final).length ?? 0;
                       const noCriteres = totalCrit === 0;
+                      const critForProg = (ext.criteres ?? []) as CritereForProgression[];
+                      const progression = getExtrantProgression(critForProg);
+                      const progColors = getProgressionColor(progression);
 
                       return (
                         <div
@@ -172,6 +176,16 @@ const Extrants = () => {
                               <span className="text-sm font-medium text-foreground truncate">{ext.libelle}</span>
                             </div>
                             <p className="text-xs text-muted-foreground truncate">Indicateur : {ext.indicateur_mesure}</p>
+                            {/* Progression bar */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all duration-500"
+                                  style={{ width: `${progression}%`, backgroundColor: progColors.bar }}
+                                />
+                              </div>
+                              <span className={`text-xs font-semibold ${progColors.text}`}>{progression}%</span>
+                            </div>
                             {totalCrit > 0 ? (
                               <p className="text-xs text-muted-foreground">
                                 Critères : <span className={validCrit === totalCrit ? "text-success-foreground font-semibold" : validCrit > 0 ? "text-warning-foreground" : "text-destructive"}>{validCrit}/{totalCrit}</span> validés
