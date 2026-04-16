@@ -450,6 +450,7 @@ function drawExtrantsSection(
       { content: "Libellé de l'extrant", styles: { halign: "left" as const } },
       { content: "Indicateur de mesure", styles: { halign: "left" as const } },
       { content: "Statut", styles: { halign: "center" as const } },
+      { content: "Progression", styles: { halign: "center" as const } },
       { content: "Date prod.", styles: { halign: "center" as const } },
       { content: "Critères", styles: { halign: "center" as const } },
       { content: "Preuves", styles: { halign: "center" as const } },
@@ -466,12 +467,13 @@ function drawExtrantsSection(
     alternateRowStyles: { fillColor: [240, 253, 244] },
     columnStyles: {
       0: { halign: "center", cellWidth: 14, fontStyle: "bold" },
-      1: { halign: "left", cellWidth: 78, overflow: "ellipsize" },
-      2: { halign: "left", cellWidth: 70, fontSize: 7, fontStyle: "italic", textColor: [80, 80, 80], overflow: "ellipsize" },
-      3: { halign: "center", cellWidth: 34 },
-      4: { halign: "center", cellWidth: 27 },
+      1: { halign: "left", cellWidth: 68, overflow: "ellipsize" },
+      2: { halign: "left", cellWidth: 58, fontSize: 7, fontStyle: "italic", textColor: [80, 80, 80], overflow: "ellipsize" },
+      3: { halign: "center", cellWidth: 30 },
+      4: { halign: "center", cellWidth: 24 },
       5: { halign: "center", cellWidth: 25 },
-      6: { halign: "center", cellWidth: 25 },
+      6: { halign: "center", cellWidth: 22 },
+      7: { halign: "center", cellWidth: 22 },
     },
     didParseCell: (data) => {
       if (data.column.index === 3 && data.section === "body") {
