@@ -434,7 +434,7 @@ function drawExtrantsSection(
 
   const extBody = actExtrants.map((e) => {
     const totalC = e.criteres.length;
-    const validC = e.criteres.filter(c => c.valide_final).length;
+    const validC = e.criteres.filter(c => c.statut_critere === "produit_conforme" || c.statut_critere === "produit_avec_ecart").length;
     const criteresLabel = totalC > 0 ? `${validC}/${totalC}` : "—";
     const preuvesLabel = e.preuvesCount > 0 ? String(e.preuvesCount) : "—";
     const progression = getExtrantProgression(e.criteres as CritereForProgression[]);
