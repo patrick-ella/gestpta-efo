@@ -275,7 +275,7 @@ interface ExtrantForReport {
   date_production: string | null;
   activite_id: string;
   ordre: number | null;
-  criteres: { id: string; valide_final: boolean | null }[];
+  criteres: { id: string; valide_final: boolean | null; type_critere: string; statut_critere: string; valeur_realisee: number | null; seuil_valeur: number | null }[];
   preuvesCount: number;
 }
 
@@ -437,7 +437,8 @@ function drawExtrantsSection(
     const validC = e.criteres.filter(c => c.valide_final).length;
     const criteresLabel = totalC > 0 ? `${validC}/${totalC}` : "—";
     const preuvesLabel = e.preuvesCount > 0 ? String(e.preuvesCount) : "—";
-    return [e.reference, e.libelle.substring(0, 55), e.indicateur_mesure.substring(0, 50), statutLabel(e.statut), formatDateFr(e.date_production), criteresLabel, preuvesLabel];
+    const progression = getExtrantProgression(e.criteres as CritereForProgression[]);
+    return [e.reference, e.libelle.substring(0, 50), e.indicateur_mesure.substring(0, 45), statutLabel(e.statut), `${progression}%`, formatDateFr(e.date_production), criteresLabel, preuvesLabel];
   });
 
   autoTable(doc, {
