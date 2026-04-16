@@ -484,7 +484,14 @@ function drawExtrantsSection(
         else if (s === "Validé") { data.cell.styles.textColor = [59, 130, 246]; data.cell.styles.fontStyle = "bold"; }
         else if (s === "Rejeté") { data.cell.styles.textColor = [153, 27, 27]; data.cell.styles.fontStyle = "italic"; }
       }
-      if (data.column.index === 5 && data.section === "body") {
+      // Progression column
+      if (data.column.index === 4 && data.section === "body") {
+        const pct = parseInt(String(data.cell.raw)) || 0;
+        const rgb = getProgressionColorRgb(pct);
+        data.cell.styles.textColor = rgb;
+        data.cell.styles.fontStyle = "bold";
+      }
+      if (data.column.index === 6 && data.section === "body") {
         const val = String(data.cell.raw);
         if (val === "—") { data.cell.styles.textColor = [156, 163, 175]; }
         else {
@@ -496,7 +503,7 @@ function drawExtrantsSection(
           }
         }
       }
-      if (data.column.index === 6 && data.section === "body") {
+      if (data.column.index === 7 && data.section === "body") {
         const val = String(data.cell.raw);
         if (val !== "—") { data.cell.styles.textColor = [59, 130, 246]; data.cell.styles.fontStyle = "bold"; }
         else data.cell.styles.textColor = [156, 163, 175];
