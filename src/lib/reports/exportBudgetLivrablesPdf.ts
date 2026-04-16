@@ -206,7 +206,7 @@ interface ExtrantForReport {
   date_production: string | null;
   activite_id: string;
   ordre: number | null;
-  criteres: { id: string; valide_final: boolean | null }[];
+  criteres: { id: string; statut_critere: string }[];
   preuvesCount: number;
 }
 
@@ -236,7 +236,7 @@ export async function exportBudgetLivrablesPdf(
     supabase.from("sous_taches").select("id, tache_id"),
     supabase.from("sous_tache_lignes_budgetaires").select("*").eq("exercice_id", exerciceId),
     supabase.from("extrants").select("id, reference, libelle, indicateur_mesure, statut, date_production, activite_id, ordre").order("ordre"),
-    supabase.from("extrants_criteres").select("id, extrant_id, valide_final"),
+    supabase.from("extrants_criteres").select("id, extrant_id, statut_critere"),
     supabase.from("extrants_preuves").select("id, extrant_id"),
   ]);
 
@@ -258,7 +258,7 @@ export async function exportBudgetLivrablesPdf(
     const ext: ExtrantForReport = {
       ...e,
       ordre: e.ordre ?? 0,
-      criteres: allCriteres.filter(c => c.extrant_id === e.id).map(c => ({ id: c.id, valide_final: c.valide_final })),
+      criteres: allCriteres.filter(c => c.extrant_id === e.id).map(c => ({ id: c.id, statut_critere: c.statut_critere })),
       preuvesCount: allPreuves.filter(p => p.extrant_id === e.id).length,
     };
     const arr = extrantsMap.get(e.activite_id) ?? [];
@@ -482,7 +482,7 @@ export async function exportBudgetLivrablesPdf(
       // Build table rows
       const extBody = actExtrants.map((e) => {
         const totalC = e.criteres.length;
-        const validC = e.criteres.filter(c => c.valide_final).length;
+        const validC = e.criteres.filter(c => c.statut_critere === "produit_conforme" || c.statut_critere === "produit_avec_ecart").length;
         const criteresLabel = totalC > 0 ? `${validC}/${totalC}` : "—";
         const preuvesLabel = e.preuvesCount > 0 ? String(e.preuvesCount) : "—";
         return [

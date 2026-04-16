@@ -158,7 +158,7 @@ const Extrants = () => {
                     {act.extrants.map((ext) => {
                       const st = getStatut(ext.statut);
                       const totalCrit = ext.criteres?.length ?? 0;
-                      const validCrit = ext.criteres?.filter((c) => c.valide_final).length ?? 0;
+                      const validCrit = ext.criteres?.filter((c) => c.statut_critere === "produit_conforme" || c.statut_critere === "produit_avec_ecart").length ?? 0;
                       const noCriteres = totalCrit === 0;
                       const critForProg = (ext.criteres ?? []) as CritereForProgression[];
                       const progression = getExtrantProgression(critForProg);
