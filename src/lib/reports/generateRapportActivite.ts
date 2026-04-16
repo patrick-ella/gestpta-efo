@@ -577,7 +577,7 @@ export async function generateRapportActivite(period: ReportPeriod) {
     const ext: ExtrantForReport = {
       ...e,
       ordre: e.ordre ?? 0,
-      criteres: allCriteres.filter(c => c.extrant_id === e.id).map(c => ({ id: c.id, valide_final: c.valide_final })),
+      criteres: allCriteres.filter(c => c.extrant_id === e.id).map(c => ({ id: c.id, valide_final: c.valide_final, type_critere: c.type_critere, statut_critere: c.statut_critere, valeur_realisee: c.valeur_realisee, seuil_valeur: c.seuil_valeur })),
       preuvesCount: allPreuves.filter(p => p.extrant_id === e.id).length,
     };
     const arr = extrantsMap.get(e.activite_id) ?? [];
