@@ -555,7 +555,7 @@ export async function generateRapportActivite(period: ReportPeriod) {
     supabase.from("sous_taches").select("id, tache_id"),
     supabase.from("sous_tache_lignes_budgetaires").select("*").eq("exercice_id", exerciceId),
     supabase.from("extrants").select("id, reference, libelle, indicateur_mesure, statut, date_production, activite_id, ordre").order("ordre"),
-    supabase.from("extrants_criteres").select("id, extrant_id, valide_final"),
+    supabase.from("extrants_criteres").select("id, extrant_id, valide_final, type_critere, statut_critere, valeur_realisee, seuil_valeur"),
     supabase.from("extrants_preuves").select("id, extrant_id"),
   ]);
 
