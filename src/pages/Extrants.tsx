@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Loader2, ChevronDown, ChevronRight, Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { getExtrantProgression, getProgressionColor, type CritereForProgression } from "@/lib/extrantProgression";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
