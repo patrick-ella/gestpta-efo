@@ -56,9 +56,9 @@ const Auth = () => {
             <EfoLogo size="lg" variant="color" />
           </div>
           <div>
-            <h1 className="text-[22px] font-bold text-primary">GestPTA-EFO</h1>
+            <h1 className="text-[22px] font-bold text-primary">GPerf-EFO</h1>
             <p className="text-sm text-muted-foreground italic">
-              École de Formation de la CCAA
+              Gestion de la Performance de l'EFO
             </p>
           </div>
         </CardHeader>

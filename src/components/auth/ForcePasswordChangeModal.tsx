@@ -42,7 +42,7 @@ export const ForcePasswordChangeModal = ({ onPasswordChanged }: ForcePasswordCha
         });
       }
 
-      toast.success("Mot de passe mis à jour avec succès. Bienvenue dans GestPTA-EFO !");
+      toast.success("Mot de passe mis à jour avec succès. Bienvenue dans GPerf-EFO !");
       onPasswordChanged();
     } catch (err: any) {
       setError(err.message || "Erreur lors du changement de mot de passe.");

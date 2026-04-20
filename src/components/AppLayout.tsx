@@ -33,7 +33,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
               <SidebarTrigger />
               <button onClick={() => navigate("/")} className="flex items-center gap-1.5 hover:opacity-80 transition">
                 <EfoLogo size="xs" variant="color" />
-                <span className="text-xs font-semibold text-primary hidden sm:inline">GestPTA-EFO</span>
+                <span className="text-xs font-semibold text-primary hidden sm:inline">GPerf-EFO</span>
               </button>
               <span className="text-xs text-muted-foreground hidden md:inline ml-2">
                 Exercice {new Date().getFullYear()}
