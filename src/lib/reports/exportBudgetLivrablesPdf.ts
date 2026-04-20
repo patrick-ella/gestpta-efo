@@ -90,7 +90,7 @@ function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalP
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
-  doc.text("GestPTA-EFO", 22, 201);
+  doc.text("GPerf-EFO", 22, 201);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(107, 114, 128);
   doc.text("Montants en FCFA", PAGE_W / 2, 201, { align: "center" });

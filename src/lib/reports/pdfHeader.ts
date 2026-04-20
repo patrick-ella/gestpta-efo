@@ -91,7 +91,7 @@ export function addPageFooters(doc: jsPDF, orientation: "landscape" | "portrait"
     doc.setFontSize(7);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(31, 78, 121);
-    doc.text("GestPTA-EFO", 15, footerY);
+    doc.text("GPerf-EFO", 15, footerY);
 
     // Center: page number
     doc.setFont("helvetica", "normal");

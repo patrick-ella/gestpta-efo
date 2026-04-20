@@ -48,7 +48,7 @@ export const EfoLogo = ({ size = "md", variant = "color", showText = false, clas
           size === "xs" ? "text-xs" : size === "sm" ? "text-sm" : "text-base",
           variant === "white" ? "text-white" : "text-primary"
         )}>
-          GestPTA-EFO
+          GPerf-EFO
         </span>
       )}
     </div>
