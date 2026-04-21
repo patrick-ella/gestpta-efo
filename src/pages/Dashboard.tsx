@@ -309,10 +309,9 @@ const Dashboard = () => {
         <div>
           {/* Application full name - dashboard only */}
           <p
-            className="text-2xl font-extrabold tracking-tight mb-2"
+            className="text-2xl font-extrabold tracking-tight mb-2 text-[#1F4E79] dark:text-[#38BDF8]"
             style={{
-              color: '#38BDF8',
-              filter: 'drop-shadow(0 1px 4px rgba(56,189,248,0.4))',
+              filter: 'drop-shadow(0 1px 4px rgba(56,189,248,0.2))',
             }}
           >
             Gestion de la Performance de l'EFO
