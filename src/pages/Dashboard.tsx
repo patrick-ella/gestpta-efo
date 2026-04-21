@@ -311,11 +311,8 @@ const Dashboard = () => {
           <p
             className="text-2xl font-extrabold tracking-tight mb-2"
             style={{
-              background: 'linear-gradient(135deg, #1F4E79 0%, #2E75B6 40%, #38BDF8 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              filter: 'drop-shadow(0 1px 2px rgba(56,189,248,0.3))',
+              color: '#38BDF8',
+              filter: 'drop-shadow(0 1px 4px rgba(56,189,248,0.4))',
             }}
           >
             Gestion de la Performance de l'EFO
