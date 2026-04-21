@@ -1,6 +1,6 @@
 # GPerf-EFO
 
-**Système de Gestion de la Performance de l'École de Formation en Aéronautique (EFO) — Cameroon Civil Aviation Authority (CCAA)**
+**Système de Gestion de la Performance de l'École de Formation (EFO) — Cameroon Civil Aviation Authority (CCAA)**
 
 Sous-programme 3 · Action 302
 
