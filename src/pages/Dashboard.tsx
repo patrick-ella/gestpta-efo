@@ -307,6 +307,10 @@ const Dashboard = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
+          {/* Application full name - dashboard only */}
+          <p className="text-sm font-semibold tracking-wide uppercase text-[#2E75B6] dark:text-[#93C5FD] mb-1">
+            Gestion de la Performance de l'EFO
+          </p>
           <h1 className="text-2xl font-bold text-foreground">Tableau de bord</h1>
           <p className="text-xs text-muted-foreground">
             {isDirection ? "Vue Direction" : "Vue Opérationnelle"} · Dernière actualisation :{" "}
