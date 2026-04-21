@@ -308,7 +308,16 @@ const Dashboard = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           {/* Application full name - dashboard only */}
-          <p className="text-sm font-semibold tracking-wide uppercase text-[#2E75B6] dark:text-[#93C5FD] mb-1">
+          <p
+            className="text-2xl font-extrabold tracking-tight mb-2"
+            style={{
+              background: 'linear-gradient(135deg, #1F4E79 0%, #2E75B6 40%, #38BDF8 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              filter: 'drop-shadow(0 1px 2px rgba(56,189,248,0.3))',
+            }}
+          >
             Gestion de la Performance de l'EFO
           </p>
           <h1 className="text-2xl font-bold text-foreground">Tableau de bord</h1>
