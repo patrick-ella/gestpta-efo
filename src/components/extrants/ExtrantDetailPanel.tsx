@@ -430,7 +430,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
                 <Badge variant="outline" className="font-mono">{extrant.reference}</Badge>
                 <span className="text-foreground truncate">{extrant.libelle}</span>
               </SheetTitle>
-              {isAdmin && (
+              {canDelete && (
                 <Button variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => setShowDelete(true)} title="Supprimer">
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -505,7 +505,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
                         <p className="text-sm text-foreground italic">{extrant.indicateur_mesure}</p>
                       </div>
                     </div>
-                    {isAdmin && (
+                    {canUpdate && (
                       <Button variant="ghost" size="sm" onClick={startEdit}><Pencil className="h-3.5 w-3.5 mr-1" /> Modifier</Button>
                     )}
                   </div>
@@ -534,13 +534,13 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
                       <p className="text-sm text-destructive">{extrant.rejete_motif}</p>
                     </div>
                   )}
-                  {isAdmin && extrant.statut === "produit" && (
+                  {canUpdate && extrant.statut === "produit" && (
                     <div className="flex gap-2 pt-4 border-t">
                       <Button size="sm" onClick={handleValidate}>✔️ Valider</Button>
                       <Button size="sm" variant="destructive" onClick={() => setShowReject(true)}>🔄 Rejeter</Button>
                     </div>
                   )}
-                  {isAdmin && showReject && (
+                  {canUpdate && showReject && (
                     <div className="space-y-2 p-3 border rounded-lg">
                       <Label className="text-sm">Motif de rejet *</Label>
                       <Textarea value={rejectMotif} onChange={(e) => setRejectMotif(e.target.value)} placeholder="Expliquez le motif..." />
@@ -550,7 +550,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
                       </div>
                     </div>
                   )}
-                  {isAdmin && (extrant.statut === "valide" || extrant.statut === "rejete") && (
+                  {canUpdate && (extrant.statut === "valide" || extrant.statut === "rejete") && (
                     <Button size="sm" variant="outline" onClick={handleResetAuto} className="mt-2">↩️ Calcul automatique</Button>
                   )}
                 </>
@@ -572,7 +572,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
                   <div className="p-2 bg-muted/50 rounded text-xs text-muted-foreground italic">
                     Indicateur : « {extrant.indicateur_mesure} »
                   </div>
-                  {isAdmin && (
+                  {canCreate && (
                     <Button variant="outline" size="sm" onClick={startAddCritere}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> Définir les critères de validation
                     </Button>
@@ -592,10 +592,14 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
                             <span className="text-sm font-medium text-foreground truncate">{c.libelle}</span>
                             <Badge variant="outline" className="text-xs shrink-0">{typeLabel}</Badge>
                           </div>
-                          {isAdmin && (
+                          {(canUpdate || canDelete) && (
                             <div className="flex gap-1 shrink-0">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditCritere(c as any)}><Pencil className="h-3 w-3" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeletingCritereId(c.id)}><Trash2 className="h-3 w-3" /></Button>
+                              {canUpdate && (
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditCritere(c as any)}><Pencil className="h-3 w-3" /></Button>
+                              )}
+                              {canDelete && (
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeletingCritereId(c.id)}><Trash2 className="h-3 w-3" /></Button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -604,13 +608,13 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
 
                         {/* Rich criteria editors by type */}
                         {c.type_critere === "quantitatif" && (
-                          <CritereQuantitatif critere={c} canEdit={isAdmin} onSave={recalculate} />
+                          <CritereQuantitatif critere={c} canEdit={canUpdate} onSave={recalculate} />
                         )}
                         {c.type_critere === "binaire" && (
-                          <CritereBinaire critere={c} canEdit={isAdmin} onSave={recalculate} />
+                          <CritereBinaire critere={c} canEdit={canUpdate} onSave={recalculate} />
                         )}
                         {c.type_critere === "date" && (
-                          <CritereDate critere={c} canEdit={isAdmin} onSave={recalculate} />
+                          <CritereDate critere={c} canEdit={canUpdate} onSave={recalculate} />
                         )}
 
                         {/* Observation display in list summary */}
@@ -621,7 +625,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
                     );
                   })}
                   {addingCritere && renderCritereForm()}
-                  {isAdmin && !addingCritere && (
+                  {canCreate && !addingCritere && (
                     <Button variant="outline" size="sm" onClick={startAddCritere} className="w-full">
                       <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter un critère
                     </Button>
@@ -676,7 +680,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
                                 <Badge className={link.avancement === 100 ? "bg-success/20 text-success-foreground" : "bg-muted text-muted-foreground"}>{link.avancement}%</Badge>
                               </div>
                               <p className="text-xs text-muted-foreground">Condition : {conditionLabels[link.condition_type] || link.condition_type}{link.condition_seuil ? ` (${link.condition_seuil})` : ""}</p>
-                              {isAdmin && (
+                              {canUpdate && (
                                 <div className="flex gap-2 pt-1">
                                   <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setEditingLinkId(link.id); setEditLinkCondition(link.condition_type); setEditLinkSeuil(link.condition_seuil?.toString() ?? ""); }}>
                                     <Pencil className="h-3 w-3 mr-1" /> Condition
@@ -700,7 +704,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
                       ))}
 
                       {/* Add link UI */}
-                      {isAdmin && addingLinkCritereId === c.id ? (
+                      {canUpdate && addingLinkCritereId === c.id ? (
                         <div className="p-2 border rounded-lg space-y-2 bg-accent/10">
                           <Input value={linkSearch} onChange={(e) => setLinkSearch(e.target.value)} placeholder="🔍 Rechercher une sous-tâche..." />
                           {linkSearch && (
@@ -736,7 +740,7 @@ const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, c
                             <Button size="sm" variant="outline" onClick={() => { setAddingLinkCritereId(null); setLinkSearch(""); setSelectedLinkSt(null); }}>Annuler</Button>
                           </div>
                         </div>
-                      ) : isAdmin ? (
+                      ) : canUpdate ? (
                         <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setAddingLinkCritereId(c.id); setLinkSearch(""); setSelectedLinkSt(null); setLinkCondition("avancement_100"); setLinkSeuil(""); }}>
                           <Plus className="h-3 w-3 mr-1" /> Lier une sous-tâche
                         </Button>
