@@ -8,10 +8,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchReportData } from "@/lib/reportUtils";
 import { toast } from "sonner";
+import RequirePermission from "@/components/auth/RequirePermission";
+import { MODULES } from "@/lib/constants/modules";
 
 type GeneratingState = Record<string, boolean>;
 
-const Rapports = () => {
+const RapportsContent = () => {
   const [annee, setAnnee] = useState("2026");
   const [mois, setMois] = useState("1");
   const [trimestre, setTrimestre] = useState("1");
@@ -300,5 +302,11 @@ const Rapports = () => {
     </div>
   );
 };
+
+const Rapports = () => (
+  <RequirePermission module={MODULES.RAPPORTS}>
+    <RapportsContent />
+  </RequirePermission>
+);
 
 export default Rapports;

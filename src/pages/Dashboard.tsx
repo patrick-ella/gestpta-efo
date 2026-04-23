@@ -17,6 +17,8 @@ import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import AlertPanel, { type Alert } from "@/components/dashboard/AlertPanel";
 import { useExtrantStats } from "@/hooks/useExtrantsData";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import RequirePermission from "@/components/auth/RequirePermission";
+import { MODULES } from "@/lib/constants/modules";
 import type { Database } from "@/integrations/supabase/types";
 
 type Execution = Database["public"]["Tables"]["executions"]["Row"];
@@ -376,4 +378,10 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+const DashboardPage = () => (
+  <RequirePermission module={MODULES.DASHBOARD}>
+    <Dashboard />
+  </RequirePermission>
+);
+
+export default DashboardPage;

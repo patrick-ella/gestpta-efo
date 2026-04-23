@@ -1,18 +1,26 @@
 import { useState, useMemo } from "react";
 import { usePtaData } from "@/hooks/usePtaData";
-import { useIsAdmin } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import PtaTreeView from "@/components/pta/PtaTreeView";
 import SousTacheDetailPanel from "@/components/pta/SousTacheDetailPanel";
+import RequirePermission from "@/components/auth/RequirePermission";
+import { MODULES } from "@/lib/constants/modules";
 import type { Database } from "@/integrations/supabase/types";
 
 type SousTache = Database["public"]["Tables"]["sous_taches"]["Row"];
 
-const PlanTravail = () => {
+const PlanTravailContent = () => {
   const { data, isLoading, refetch } = usePtaData(2026);
-  const isAdmin = useIsAdmin();
+  const { can } = usePermissions();
+  // PTA edit/create/delete permissions drive the existing `isAdmin` prop
+  const canEditPta =
+    can(MODULES.PTA, "update") ||
+    can(MODULES.PTA, "create") ||
+    can(MODULES.PTA, "delete");
+  const isAdmin = canEditPta;
   const [selectedSt, setSelectedSt] = useState<SousTache | null>(null);
 
   useRealtimeSync({ table: "sous_taches", queryKeys: [["pta-data", "2026"]] });
@@ -116,5 +124,11 @@ const PlanTravail = () => {
     </div>
   );
 };
+
+const PlanTravail = () => (
+  <RequirePermission module={MODULES.PTA}>
+    <PlanTravailContent />
+  </RequirePermission>
+);
 
 export default PlanTravail;
