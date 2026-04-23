@@ -204,24 +204,28 @@ const Extrants = () => {
                           </div>
                           <div className="flex items-center gap-1 ml-2 shrink-0">
                             <Badge className={`text-xs ${st.color}`}>{st.emoji} {st.label}</Badge>
-                            {isAdmin && (
+                            {(canUpdate || canDelete) && (
                               <>
-                                <Button
-                                  variant="ghost" size="icon"
-                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={(e) => { e.stopPropagation(); openDetail(ext, act.id, "info"); }}
-                                  title="Modifier"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost" size="icon"
-                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                                  onClick={(e) => { e.stopPropagation(); openDetail(ext, act.id); }}
-                                  title="Supprimer"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
+                                {canUpdate && (
+                                  <Button
+                                    variant="ghost" size="icon"
+                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => { e.stopPropagation(); openDetail(ext, act.id, "info"); }}
+                                    title="Modifier"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                                {canDelete && (
+                                  <Button
+                                    variant="ghost" size="icon"
+                                    className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                                    onClick={(e) => { e.stopPropagation(); openDetail(ext, act.id); }}
+                                    title="Supprimer"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
                               </>
                             )}
                           </div>
@@ -229,7 +233,7 @@ const Extrants = () => {
                       );
                     })}
 
-                    {isAdmin && (
+                    {canCreate && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -253,7 +257,9 @@ const Extrants = () => {
         activiteId={selectedActiviteId}
         open={!!selectedExtrant}
         onClose={() => { setSelectedExtrant(null); setInitialTab(undefined); }}
-        isAdmin={isAdmin}
+        canUpdate={canUpdate}
+        canCreate={canCreate}
+        canDelete={canDelete}
         onUpdate={invalidate}
         initialTab={initialTab}
       />
