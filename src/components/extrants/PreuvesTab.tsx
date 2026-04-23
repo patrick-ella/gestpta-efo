@@ -71,7 +71,7 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
   const canUpload = can("extrants", "create");
   const canEdit = can("extrants", "update");
   const canDeletePerm = can("extrants", "delete");
-  const isAdmin = canEdit || canDeletePerm;
+  
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadMode, setUploadMode] = useState<"fichier" | "url">("fichier");
