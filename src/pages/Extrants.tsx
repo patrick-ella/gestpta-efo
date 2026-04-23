@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useExtrantsData, type ActiviteWithExtrants, type Extrant } from "@/hooks/useExtrantsData";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
-import { useIsAdmin } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
 import ExtrantDetailPanel from "@/components/extrants/ExtrantDetailPanel";
 import ExtrantWizard from "@/components/extrants/ExtrantWizard";
 
@@ -31,7 +31,10 @@ const Extrants = () => {
   useRealtimeSync({ table: "extrants", queryKeys: ["extrants-data", "extrants-stats"] });
   useRealtimeSync({ table: "extrants_criteres", queryKeys: ["extrants-data"] });
   useRealtimeSync({ table: "extrants_preuves", queryKeys: ["extrants-data"] });
-  const isAdmin = useIsAdmin();
+  const { can } = usePermissions();
+  const canCreate = can("extrants", "create");
+  const canUpdate = can("extrants", "update");
+  const canDelete = can("extrants", "delete");
   const [filter, setFilter] = useState("all");
   const [selectedExtrant, setSelectedExtrant] = useState<Extrant | null>(null);
   const [selectedActiviteId, setSelectedActiviteId] = useState<string | null>(null);
