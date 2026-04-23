@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { useLivrablesData } from "@/hooks/useLivrablesData";
-import { useUserRoles } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
+import { MODULES } from "@/lib/constants/modules";
 import { LivrablesSummaryCards } from "@/components/livrables/LivrablesSummaryCards";
 import { LivrablesFilterBar } from "@/components/livrables/LivrablesFilterBar";
 import { LivrablesTable } from "@/components/livrables/LivrablesTable";
@@ -12,14 +13,12 @@ const defaultFilters = { activite: "all", statut: "all", search: "" };
 
 const Livrables = () => {
   const { data: rawData = [], isLoading, updateLivrable } = useLivrablesData();
-  const { data: roles = [] } = useUserRoles();
+  const { can } = usePermissions();
   const [filters, setFilters] = useState(defaultFilters);
 
-  const isAdmin = roles.includes("super_admin") || roles.includes("admin_pta");
-  const canMarkProduit =
-    isAdmin || roles.includes("responsable_activite");
-  const canUpload =
-    canMarkProduit || roles.includes("agent_saisie");
+  const isAdmin = can(MODULES.PTA, "update") || can(MODULES.PTA, "delete");
+  const canMarkProduit = can(MODULES.PTA, "update");
+  const canUpload = can(MODULES.PTA, "create") || can(MODULES.PTA, "update");
 
   // Deduplicate activities to official 5 codes only
   const OFFICIAL_CODES = ["30201", "30202", "30203", "30204", "30205"];

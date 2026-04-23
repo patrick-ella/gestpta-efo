@@ -12,7 +12,8 @@ import { Search, Pencil, Info, Trash2, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAssignations } from "@/hooks/useObjectifsData";
-import { useIsAdmin } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
+import { MODULES } from "@/lib/constants/modules";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import ImportPersonnelSection from "./ImportPersonnelSection";
@@ -25,7 +26,11 @@ interface Props {
 const AgentsProfilsTab = ({ exerciceId }: Props) => {
   const { toast } = useToast();
   const qc = useQueryClient();
-  const isAdmin = useIsAdmin();
+  const { can } = usePermissions();
+  const isAdmin =
+    can(MODULES.OBJECTIFS_EVALUATION, "create") ||
+    can(MODULES.OBJECTIFS_EVALUATION, "update") ||
+    can(MODULES.OBJECTIFS_EVALUATION, "delete");
   const [search, setSearch] = useState("");
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});

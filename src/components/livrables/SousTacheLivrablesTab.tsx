@@ -11,7 +11,8 @@ import {
   BarChart3, Handshake, Wrench, GraduationCap, PackageOpen, Loader2,
 } from "lucide-react";
 import { useSousTacheLivrables, type SousTacheLivrable } from "@/hooks/useSousTacheLivrables";
-import { useUserRoles } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
+import { MODULES } from "@/lib/constants/modules";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -40,12 +41,11 @@ interface Props {
 
 export const SousTacheLivrablesTab = ({ sousTacheId, tacheId, tacheLivrables }: Props) => {
   const { data: livrables = [], isLoading, createLivrable, updateLivrable, deleteLivrable, uploadFile } = useSousTacheLivrables(sousTacheId);
-  const { data: roles = [] } = useUserRoles();
+  const { can } = usePermissions();
 
-  const isAdmin = roles.includes("super_admin") || roles.includes("admin_pta");
-  const canEdit = isAdmin || roles.includes("responsable_activite") || roles.includes("agent_saisie");
-  const canValidate = isAdmin;
-  const canDelete = isAdmin;
+  const canEdit = can(MODULES.PTA, "update") || can(MODULES.PTA, "create");
+  const canValidate = can(MODULES.PTA, "update");
+  const canDelete = can(MODULES.PTA, "delete");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLivrable, setEditingLivrable] = useState<SousTacheLivrable | null>(null);
