@@ -7,7 +7,8 @@ import { Star, Download, Loader2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAssignations, useEvaluations } from "@/hooks/useObjectifsData";
-import { useIsAdmin } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
+import { MODULES } from "@/lib/constants/modules";
 import EvaluationFormPanel from "@/components/objectifs/EvaluationFormPanel";
 import { generateFicheEvaluation } from "@/lib/reports/generateFicheEvaluation";
 import { toast } from "sonner";
@@ -18,7 +19,10 @@ interface Props {
 }
 
 const EvaluationsTab = ({ exerciceId, exercice }: Props) => {
-  const isAdmin = useIsAdmin();
+  const { can } = usePermissions();
+  const isAdmin =
+    can(MODULES.OBJECTIFS_EVALUATION, "create") ||
+    can(MODULES.OBJECTIFS_EVALUATION, "update");
   const qc = useQueryClient();
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [generatingXlsx, setGeneratingXlsx] = useState<string | null>(null);

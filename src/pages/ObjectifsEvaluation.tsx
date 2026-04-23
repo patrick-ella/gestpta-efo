@@ -9,8 +9,10 @@ import ContratsTab from "@/components/objectifs/ContratsTab";
 import EvaluationsTab from "@/components/objectifs/EvaluationsTab";
 import { Loader2 } from "lucide-react";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import RequirePermission from "@/components/auth/RequirePermission";
+import { MODULES } from "@/lib/constants/modules";
 
-const ObjectifsEvaluation = () => {
+const ObjectifsEvaluationContent = () => {
   const [selectedAnnee, setSelectedAnnee] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("agents");
 
@@ -89,5 +91,11 @@ const ObjectifsEvaluation = () => {
     </div>
   );
 };
+
+const ObjectifsEvaluation = () => (
+  <RequirePermission module={MODULES.OBJECTIFS_EVALUATION}>
+    <ObjectifsEvaluationContent />
+  </RequirePermission>
+);
 
 export default ObjectifsEvaluation;

@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { usePtaData } from "@/hooks/usePtaData";
 import { useExecutionData, buildExecutionMap } from "@/hooks/useExecutionData";
-import { useIsAdmin, useUserRoles } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,17 +14,18 @@ import ExecutionTreeView, { type PendingChange } from "@/components/execution/Ex
 import ExecutionDetailPanel from "@/components/execution/ExecutionDetailPanel";
 import { AvancementBlockDialog, AvancementWarningDialog } from "@/components/execution/AvancementWarningDialog";
 import { useAllLivrables, type AvancementBlockResult } from "@/hooks/useAvancementRules";
+import RequirePermission from "@/components/auth/RequirePermission";
+import { MODULES } from "@/lib/constants/modules";
 import type { PtaActivite, PtaTache } from "@/hooks/usePtaData";
 import type { Database } from "@/integrations/supabase/types";
 
 type SousTache = Database["public"]["Tables"]["sous_taches"]["Row"];
 
-const Execution = () => {
+const ExecutionContent = () => {
   const { data: ptaData, isLoading: ptaLoading } = usePtaData(2026);
   const exerciceId = ptaData?.exercice?.id ?? null;
   const { data: executions = [], isLoading: exLoading } = useExecutionData(exerciceId);
-  const isAdmin = useIsAdmin();
-  const { data: roles = [] } = useUserRoles();
+  const { can } = usePermissions();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -98,12 +99,8 @@ const Execution = () => {
   }, [ptaData?.activites, filters, executionMap, pendingChanges]);
 
   const canEditSt = useCallback(
-    (_st: SousTache) => {
-      if (isAdmin) return true;
-      if (roles.includes("agent_saisie") || roles.includes("responsable_activite")) return true;
-      return false;
-    },
-    [isAdmin, roles]
+    (_st: SousTache) => can(MODULES.EXECUTION, "update"),
+    [can]
   );
 
   const onChangePending = useCallback(
@@ -324,5 +321,11 @@ const Execution = () => {
     </div>
   );
 };
+
+const Execution = () => (
+  <RequirePermission module={MODULES.EXECUTION}>
+    <ExecutionContent />
+  </RequirePermission>
+);
 
 export default Execution;

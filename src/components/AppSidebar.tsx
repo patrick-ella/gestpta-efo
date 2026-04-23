@@ -12,6 +12,8 @@ import {
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
+import { MODULES } from "@/lib/constants/modules";
 import { EfoLogo } from "@/components/ui/EfoLogo";
 import {
   Sidebar,
@@ -27,13 +29,13 @@ import {
 } from "@/components/ui/sidebar";
 
 const baseMenuItems = [
-  { title: "Tableau de bord", url: "/", icon: LayoutDashboard },
-  { title: "Cadre Logique", url: "/cadre-logique", icon: GitBranch },
-  { title: "Plan de Travail (PTA)", url: "/pta", icon: ClipboardList },
-  { title: "Exécution", url: "/execution", icon: PlayCircle },
-  { title: "Extrants", url: "/extrants", icon: FileCheck },
-  { title: "Objectifs & Évaluation", url: "/objectifs-evaluation", icon: Users },
-  { title: "Rapports", url: "/rapports", icon: BarChart3 },
+  { title: "Tableau de bord", url: "/", icon: LayoutDashboard, module: MODULES.DASHBOARD },
+  { title: "Cadre Logique", url: "/cadre-logique", icon: GitBranch, module: MODULES.CADRE_LOGIQUE },
+  { title: "Plan de Travail (PTA)", url: "/pta", icon: ClipboardList, module: MODULES.PTA },
+  { title: "Exécution", url: "/execution", icon: PlayCircle, module: MODULES.EXECUTION },
+  { title: "Extrants", url: "/extrants", icon: FileCheck, module: MODULES.EXTRANTS },
+  { title: "Objectifs & Évaluation", url: "/objectifs-evaluation", icon: Users, module: MODULES.OBJECTIFS_EVALUATION },
+  { title: "Rapports", url: "/rapports", icon: BarChart3, module: MODULES.RAPPORTS },
 ];
 
 const adminMenuItem = { title: "Administration", url: "/administration", icon: Settings };
@@ -43,8 +45,10 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const { data: userRoles = [] } = useUserRoles();
+  const { can } = usePermissions();
   const isSuperAdmin = userRoles.includes("super_admin");
-  const menuItems = isSuperAdmin ? [...baseMenuItems, adminMenuItem] : baseMenuItems;
+  const visibleBaseItems = baseMenuItems.filter((item) => can(item.module, "read"));
+  const menuItems = isSuperAdmin ? [...visibleBaseItems, adminMenuItem] : visibleBaseItems;
 
   return (
     <Sidebar collapsible="icon">

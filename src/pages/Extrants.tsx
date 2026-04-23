@@ -10,6 +10,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useExtrantsData, type ActiviteWithExtrants, type Extrant } from "@/hooks/useExtrantsData";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { usePermissions } from "@/hooks/usePermissions";
+import RequirePermission from "@/components/auth/RequirePermission";
+import { MODULES } from "@/lib/constants/modules";
 import ExtrantDetailPanel from "@/components/extrants/ExtrantDetailPanel";
 import ExtrantWizard from "@/components/extrants/ExtrantWizard";
 
@@ -278,4 +280,10 @@ const Extrants = () => {
   );
 };
 
-export default Extrants;
+const ExtrantsPage = () => (
+  <RequirePermission module={MODULES.EXTRANTS}>
+    <Extrants />
+  </RequirePermission>
+);
+
+export default ExtrantsPage;

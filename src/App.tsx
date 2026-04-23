@@ -9,6 +9,7 @@ import AppLayout from "@/components/AppLayout";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ForcePasswordChangeModal } from "@/components/auth/ForcePasswordChangeModal";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 // Lazy-loaded routes
 const Auth = lazy(() => import("@/pages/Auth"));
@@ -45,6 +46,14 @@ const ProtectedRoutes = () => {
   const { session, user, loading } = useAuth();
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [checkingPassword, setCheckingPassword] = useState(true);
+
+  // When permissions change in the admin console, every connected
+  // client refetches its `permissions` query — UI updates instantly.
+  useRealtimeSync({
+    table: "roles_permissions",
+    queryKeys: [["permissions"]],
+    enabled: !!session,
+  });
 
   useEffect(() => {
     const checkFlag = async () => {

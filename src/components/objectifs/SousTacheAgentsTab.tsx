@@ -10,7 +10,8 @@ import { Users, Plus, AlertTriangle } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSousTacheAssignations } from "@/hooks/useObjectifsData";
-import { useIsAdmin } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
+import { MODULES } from "@/lib/constants/modules";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import AssignationCard from "./AssignationCard";
@@ -25,7 +26,10 @@ const SousTacheAgentsTab = ({ sousTacheId, sousTacheCode, exerciceId }: Props) =
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const isAdmin = useIsAdmin();
+  const { can } = usePermissions();
+  const isAdmin =
+    can(MODULES.OBJECTIFS_EVALUATION, "create") ||
+    can(MODULES.OBJECTIFS_EVALUATION, "update");
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignForm, setAssignForm] = useState({ agent_id: "", role_agent: "contributeur", poids_objectif: "", date_limite: "", observations: "" });
 

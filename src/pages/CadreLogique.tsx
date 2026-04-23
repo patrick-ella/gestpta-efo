@@ -1,13 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Loader2 } from "lucide-react";
 import KpiCards from "@/components/cadre-logique/KpiCards";
 import TriennalTable from "@/components/cadre-logique/TriennalTable";
 import ActivitiesSummary from "@/components/cadre-logique/ActivitiesSummary";
+import RequirePermission from "@/components/auth/RequirePermission";
+import { MODULES } from "@/lib/constants/modules";
 
-const CadreLogique = () => {
-  const isAdmin = useIsAdmin();
+const CadreLogiqueContent = () => {
+  const { can } = usePermissions();
+  const canEditKpi = can(MODULES.CADRE_LOGIQUE, "update");
 
   const { data: kpis = [], isLoading, refetch } = useQuery({
     queryKey: ["indicateurs-kpi"],
@@ -33,11 +36,17 @@ const CadreLogique = () => {
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold text-foreground">Cadre Logique</h1>
-      <KpiCards kpis={kpis} isAdmin={isAdmin} onUpdate={() => refetch()} />
+      <KpiCards kpis={kpis} isAdmin={canEditKpi} onUpdate={() => refetch()} />
       <TriennalTable kpis={kpis} />
       <ActivitiesSummary />
     </div>
   );
 };
+
+const CadreLogique = () => (
+  <RequirePermission module={MODULES.CADRE_LOGIQUE}>
+    <CadreLogiqueContent />
+  </RequirePermission>
+);
 
 export default CadreLogique;
