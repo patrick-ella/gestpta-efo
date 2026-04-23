@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRoles } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,11 +65,13 @@ function formatDate(iso: string): string {
 
 const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Props) => {
   const { user } = useAuth();
-  const { data: roles = [] } = useUserRoles();
+  const { can } = usePermissions();
   const queryClient = useQueryClient();
 
-  const isAdmin = roles.includes("super_admin") || roles.includes("admin_pta");
-  const canUpload = roles.some((r) => ["super_admin", "admin_pta", "responsable_activite", "agent_saisie"].includes(r));
+  const canUpload = can("extrants", "create");
+  const canEdit = can("extrants", "update");
+  const canDeletePerm = can("extrants", "delete");
+  const isAdmin = canEdit || canDeletePerm;
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadMode, setUploadMode] = useState<"fichier" | "url">("fichier");
