@@ -47,6 +47,14 @@ const ProtectedRoutes = () => {
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [checkingPassword, setCheckingPassword] = useState(true);
 
+  // When permissions change in the admin console, every connected
+  // client refetches its `permissions` query — UI updates instantly.
+  useRealtimeSync({
+    table: "roles_permissions",
+    queryKeys: [["permissions"]],
+    enabled: !!session,
+  });
+
   useEffect(() => {
     const checkFlag = async () => {
       if (!user) { setCheckingPassword(false); return; }
