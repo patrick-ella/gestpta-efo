@@ -504,22 +504,26 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
                           </Button>
                         )}
 
-                        {isAdmin && (
+                        {(canEdit || canDeletePerm) && (
                           <>
-                            <Button variant="outline" size="sm" className="text-xs" onClick={() => handleStartEdit(p)}>
-                              <Pencil className="h-3 w-3 mr-1" /> Modifier
-                            </Button>
-
-                            {deletingId === p.id ? (
-                              <div className="flex items-center gap-1 text-xs">
-                                <span className="text-muted-foreground">Supprimer ?</span>
-                                <Button variant="destructive" size="sm" className="h-6 text-xs" onClick={() => handleDelete(p)}>Confirmer</Button>
-                                <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setDeletingId(null)}>Annuler</Button>
-                              </div>
-                            ) : (
-                              <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => setDeletingId(p.id)}>
-                                <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                            {canEdit && (
+                              <Button variant="outline" size="sm" className="text-xs" onClick={() => handleStartEdit(p)}>
+                                <Pencil className="h-3 w-3 mr-1" /> Modifier
                               </Button>
+                            )}
+
+                            {canDeletePerm && (
+                              deletingId === p.id ? (
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span className="text-muted-foreground">Supprimer ?</span>
+                                  <Button variant="destructive" size="sm" className="h-6 text-xs" onClick={() => handleDelete(p)}>Confirmer</Button>
+                                  <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setDeletingId(null)}>Annuler</Button>
+                                </div>
+                              ) : (
+                                <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => setDeletingId(p.id)}>
+                                  <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                                </Button>
+                              )
                             )}
                           </>
                         )}
