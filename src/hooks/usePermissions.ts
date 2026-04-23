@@ -18,7 +18,8 @@ export const usePermissions = () => {
       return data ?? [];
     },
     enabled: !!primaryRole,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   function can(module: string, action: "read" | "create" | "update" | "delete"): boolean {

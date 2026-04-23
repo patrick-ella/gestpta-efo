@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRoles } from "@/hooks/useUserRoles";
+import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,11 +65,13 @@ function formatDate(iso: string): string {
 
 const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Props) => {
   const { user } = useAuth();
-  const { data: roles = [] } = useUserRoles();
+  const { can } = usePermissions();
   const queryClient = useQueryClient();
 
-  const isAdmin = roles.includes("super_admin") || roles.includes("admin_pta");
-  const canUpload = roles.some((r) => ["super_admin", "admin_pta", "responsable_activite", "agent_saisie"].includes(r));
+  const canUpload = can("extrants", "create");
+  const canEdit = can("extrants", "update");
+  const canDeletePerm = can("extrants", "delete");
+  
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadMode, setUploadMode] = useState<"fichier" | "url">("fichier");
@@ -502,22 +504,26 @@ const PreuvesTab = ({ extrantId, extrantRef, activiteCode, onCountChange }: Prop
                           </Button>
                         )}
 
-                        {isAdmin && (
+                        {(canEdit || canDeletePerm) && (
                           <>
-                            <Button variant="outline" size="sm" className="text-xs" onClick={() => handleStartEdit(p)}>
-                              <Pencil className="h-3 w-3 mr-1" /> Modifier
-                            </Button>
-
-                            {deletingId === p.id ? (
-                              <div className="flex items-center gap-1 text-xs">
-                                <span className="text-muted-foreground">Supprimer ?</span>
-                                <Button variant="destructive" size="sm" className="h-6 text-xs" onClick={() => handleDelete(p)}>Confirmer</Button>
-                                <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setDeletingId(null)}>Annuler</Button>
-                              </div>
-                            ) : (
-                              <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => setDeletingId(p.id)}>
-                                <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                            {canEdit && (
+                              <Button variant="outline" size="sm" className="text-xs" onClick={() => handleStartEdit(p)}>
+                                <Pencil className="h-3 w-3 mr-1" /> Modifier
                               </Button>
+                            )}
+
+                            {canDeletePerm && (
+                              deletingId === p.id ? (
+                                <div className="flex items-center gap-1 text-xs">
+                                  <span className="text-muted-foreground">Supprimer ?</span>
+                                  <Button variant="destructive" size="sm" className="h-6 text-xs" onClick={() => handleDelete(p)}>Confirmer</Button>
+                                  <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setDeletingId(null)}>Annuler</Button>
+                                </div>
+                              ) : (
+                                <Button variant="ghost" size="sm" className="text-xs text-destructive" onClick={() => setDeletingId(p.id)}>
+                                  <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                                </Button>
+                              )
                             )}
                           </>
                         )}
