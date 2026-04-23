@@ -28,7 +28,9 @@ interface Props {
   activiteId: string | null;
   open: boolean;
   onClose: () => void;
-  isAdmin: boolean;
+  canUpdate: boolean;
+  canCreate: boolean;
+  canDelete: boolean;
   onUpdate: () => void;
   initialTab?: string;
 }
@@ -48,7 +50,7 @@ const conditionLabels: Record<string, string> = {
   taux_budget: "Taux budget ≥ seuil",
 };
 
-const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, isAdmin, onUpdate, initialTab }: Props) => {
+const ExtrantDetailPanel = ({ extrant: extrantProp, activiteId, open, onClose, canUpdate, canCreate, canDelete, onUpdate, initialTab }: Props) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const extrantId = extrantProp?.id ?? null;
