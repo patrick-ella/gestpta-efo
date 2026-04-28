@@ -386,11 +386,17 @@ const Dashboard = () => {
         isoConformity={isoConformity}
         budgetKpis={budgetKpis}
         trainairPlus={{
-          realized: trainairKpi?.valeur_realisee ?? null,
+          realized:
+            trainairBadge?.activeSeuil
+              ? `${trainairBadge.activeSeuil.icon_statut ?? ""} ${trainairBadge.activeSeuil.label_statut}`.trim()
+              : trainairKpi?.valeur_realisee ?? null,
           target: trainairKpi?.cible_2027 ?? "Gold Member",
         }}
         centreAvsec={{
-          realized: avsecKpi?.valeur_realisee ?? null,
+          realized:
+            avsecBadge?.activeSeuil
+              ? `${avsecBadge.activeSeuil.icon_statut ?? ""} ${avsecBadge.activeSeuil.label_statut}`.trim()
+              : avsecKpi?.valeur_realisee ?? null,
           target: avsecKpi?.cible_2027 ?? "Centre AVSEC",
         }}
         extrantStats={extrantStats ?? undefined}
