@@ -166,7 +166,7 @@ function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalP
 function drawCoverPage(doc: jsPDF, logo: string | null, period: ReportPeriod, scope: string) {
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 30, "F");
-  if (logo) doc.addImage(logo, "PNG", 14, 5, 0, 20);
+  if (logo) doc.addImage(logo, "PNG", 14, 5, 20, 20);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
