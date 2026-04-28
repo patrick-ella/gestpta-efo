@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import logoSrc from "@/assets/logo-efo.png";
 import { getExtrantProgression, getProgressionColorRgb, type CritereForProgression } from "@/lib/extrantProgression";
+import { computeLogoHeight } from "./pdfHeader";
 
 // ── Types ───────────────────────────────────────────────────
 export type ReportPeriod = {
@@ -131,10 +132,10 @@ const MARGIN_R = 12;
 const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R;
 const MAX_Y = 175;
 
-function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, period: ReportPeriod) {
+function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, period: ReportPeriod, logoH8: number) {
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 12, "F");
-  if (logo) doc.addImage(logo, "PNG", 3, 2, 8, 8);
+  if (logo) doc.addImage(logo, "PNG", 3, 2, 8, logoH8);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
@@ -148,11 +149,11 @@ function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, peri
   doc.text(`Exercice ${period.exercice}`, PAGE_W - MARGIN_R, 7, { align: "right" });
 }
 
-function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalPages: number) {
+function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalPages: number, logoH6: number) {
   doc.setDrawColor(174, 214, 241);
   doc.setLineWidth(0.3);
   doc.line(MARGIN_L, 195, PAGE_W - MARGIN_R, 195);
-  if (logo) doc.addImage(logo, "PNG", MARGIN_L, 197, 6, 6);
+  if (logo) doc.addImage(logo, "PNG", MARGIN_L, 197, 6, logoH6);
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
@@ -163,10 +164,10 @@ function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalP
   doc.text(`Page ${pageNum} / ${totalPages}`, PAGE_W - MARGIN_R, 201, { align: "right" });
 }
 
-function drawCoverPage(doc: jsPDF, logo: string | null, period: ReportPeriod, scope: string) {
+function drawCoverPage(doc: jsPDF, logo: string | null, period: ReportPeriod, scope: string, logoH20: number) {
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 30, "F");
-  if (logo) doc.addImage(logo, "PNG", 14, 5, 20, 20);
+  if (logo) doc.addImage(logo, "PNG", 14, 5, 20, logoH20);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
@@ -550,6 +551,10 @@ function drawExtrantsSection(
 export async function generateRapportActivite(period: ReportPeriod) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const logo = await loadLogo();
+  // Compute logo heights from natural aspect ratio for each target width
+  const logoH8 = await computeLogoHeight(8);
+  const logoH6 = await computeLogoHeight(6);
+  const logoH20 = await computeLogoHeight(20);
 
   // Fetch exercice
   const { data: exercices } = await supabase.from("exercices").select("*").eq("annee", period.exercice);
@@ -601,7 +606,7 @@ export async function generateRapportActivite(period: ReportPeriod) {
   const pageSections: Record<number, string> = {};
 
   // Cover page
-  drawCoverPage(doc, logo, period, scope);
+  drawCoverPage(doc, logo, period, scope, logoH20);
 
   let grandTotalPrevu = 0;
   let grandTotalEngage = 0;
@@ -795,8 +800,8 @@ export async function generateRapportActivite(period: ReportPeriod) {
   for (let i = 2; i <= totalPages; i++) {
     doc.setPage(i);
     const sectionTitle = pageSections[i] || getReportTitleShort(period);
-    drawPageHeader(doc, logo, sectionTitle, period);
-    drawPageFooter(doc, logo, i, totalPages);
+    drawPageHeader(doc, logo, sectionTitle, period, logoH8);
+    drawPageFooter(doc, logo, i, totalPages, logoH6);
   }
 
   doc.save(getFilename(period));

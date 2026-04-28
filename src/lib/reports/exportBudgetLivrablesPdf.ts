@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import logoSrc from "@/assets/logo-efo.png";
+import { computeLogoHeight } from "./pdfHeader";
 
 // ── Formatting helpers ──────────────────────────────────────
 function formatFCFA(amount: number | null | undefined): string {
@@ -65,28 +66,28 @@ const MARGIN_R = 12;
 const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R; // 273
 const MAX_Y = 175;
 
-function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, annee: number) {
+function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, annee: number, logoH8: number) {
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 12, "F");
-  if (logo) doc.addImage(logo, "PNG", 3, 2, 0, 8);
+  if (logo) doc.addImage(logo, "PNG", 3, 2, 8, logoH8);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text("Rapport d'activité de l'EFO", 14, 6);
+  doc.text("Rapport d'activité de l'EFO", 22, 6);
   doc.setTextColor(174, 214, 241);
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.text(pageTitle, 14, 10);
+  doc.text(pageTitle, 22, 10);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.text(`Exercice ${annee}`, PAGE_W - MARGIN_R, 7, { align: "right" });
 }
 
-function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalPages: number) {
+function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalPages: number, logoH6: number) {
   doc.setDrawColor(174, 214, 241);
   doc.setLineWidth(0.3);
   doc.line(MARGIN_L, 195, PAGE_W - MARGIN_R, 195);
-  if (logo) doc.addImage(logo, "PNG", MARGIN_L, 197, 0, 6);
+  if (logo) doc.addImage(logo, "PNG", MARGIN_L, 197, 6, logoH6);
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
@@ -97,10 +98,10 @@ function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalP
   doc.text(`Page ${pageNum} / ${totalPages}`, PAGE_W - MARGIN_R, 201, { align: "right" });
 }
 
-function drawCoverPage(doc: jsPDF, logo: string | null, annee: number, scope: string) {
+function drawCoverPage(doc: jsPDF, logo: string | null, annee: number, scope: string, logoH20: number) {
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 30, "F");
-  if (logo) doc.addImage(logo, "PNG", 14, 5, 0, 20);
+  if (logo) doc.addImage(logo, "PNG", 14, 5, 20, logoH20);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
@@ -228,6 +229,9 @@ export async function exportBudgetLivrablesPdf(
 ) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const logo = await loadLogo();
+  const logoH8 = await computeLogoHeight(8);
+  const logoH6 = await computeLogoHeight(6);
+  const logoH20 = await computeLogoHeight(20);
 
   // Fetch data
   const [actRes, tachRes, stRes, linesRes, extRes, critRes, preuvRes] = await Promise.all([
@@ -273,7 +277,7 @@ export async function exportBudgetLivrablesPdf(
   const pageSections: Record<number, string> = {};
 
   // ── PAGE 1: Cover ────────────────────────────────────────
-  drawCoverPage(doc, logo, annee, scope);
+  drawCoverPage(doc, logo, annee, scope, logoH20);
 
   let grandTotalPrevu = 0;
   let grandTotalExecute = 0;
@@ -742,8 +746,8 @@ export async function exportBudgetLivrablesPdf(
   for (let i = 2; i <= totalPages; i++) {
     doc.setPage(i);
     const sectionTitle = pageSections[i] || "Rapport d'activité de l'EFO";
-    drawPageHeader(doc, logo, sectionTitle, annee);
-    drawPageFooter(doc, logo, i, totalPages);
+    drawPageHeader(doc, logo, sectionTitle, annee, logoH8);
+    drawPageFooter(doc, logo, i, totalPages, logoH6);
   }
 
   // ── Save ─────────────────────────────────────────────────

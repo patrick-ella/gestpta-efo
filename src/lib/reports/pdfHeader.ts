@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import logoSrc from "@/assets/logo-efo.png";
 
 let cachedLogoBase64: string | null = null;
+let cachedLogoDims: { width: number; height: number } | null = null;
 
 async function loadLogoBase64(): Promise<string | null> {
   if (cachedLogoBase64) return cachedLogoBase64;
@@ -22,6 +23,50 @@ async function loadLogoBase64(): Promise<string | null> {
   }
 }
 
+/**
+ * Reads the natural pixel dimensions of an image (base64 or URL).
+ * Falls back to a reasonable default (200x80) if the image cannot load.
+ */
+export function getImageNaturalDimensions(
+  imgData: string
+): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({
+        width: img.naturalWidth || 200,
+        height: img.naturalHeight || 80,
+      });
+    };
+    img.onerror = () => {
+      console.warn("[PDF] Logo failed to load — using default ratio 200x80");
+      resolve({ width: 200, height: 80 });
+    };
+    img.src = imgData;
+  });
+}
+
+/** Cached natural dimensions of the EFO logo. */
+export async function getLogoDimensions(): Promise<{ width: number; height: number }> {
+  if (cachedLogoDims) return cachedLogoDims;
+  const data = await loadLogoBase64();
+  if (!data) {
+    cachedLogoDims = { width: 200, height: 80 };
+    return cachedLogoDims;
+  }
+  cachedLogoDims = await getImageNaturalDimensions(data);
+  return cachedLogoDims;
+}
+
+/**
+ * Compute height (mm) preserving the logo's natural aspect ratio
+ * for a target width (mm).
+ */
+export async function computeLogoHeight(targetWidthMm: number): Promise<number> {
+  const { width, height } = await getLogoDimensions();
+  return targetWidthMm * (height / width);
+}
+
 export async function addReportHeader(
   doc: jsPDF,
   titre: string,
@@ -32,11 +77,11 @@ export async function addReportHeader(
   const centerX = pageW / 2;
   const logo = await loadLogoBase64();
 
-  // Logo on left
+  // Logo on left — height computed from natural aspect ratio
   const logoW = 28;
-  const logoH = 20;
   const logoX = 15;
   const logoY = 8;
+  const logoH = await computeLogoHeight(logoW);
 
   if (logo) {
     doc.addImage(logo, "PNG", logoX, logoY, logoW, logoH);
