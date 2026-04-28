@@ -149,11 +149,11 @@ function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, peri
   doc.text(`Exercice ${period.exercice}`, PAGE_W - MARGIN_R, 7, { align: "right" });
 }
 
-function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalPages: number) {
+function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalPages: number, logoH6: number) {
   doc.setDrawColor(174, 214, 241);
   doc.setLineWidth(0.3);
   doc.line(MARGIN_L, 195, PAGE_W - MARGIN_R, 195);
-  if (logo) doc.addImage(logo, "PNG", MARGIN_L, 197, 6, 6);
+  if (logo) doc.addImage(logo, "PNG", MARGIN_L, 197, 6, logoH6);
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
@@ -164,10 +164,10 @@ function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalP
   doc.text(`Page ${pageNum} / ${totalPages}`, PAGE_W - MARGIN_R, 201, { align: "right" });
 }
 
-function drawCoverPage(doc: jsPDF, logo: string | null, period: ReportPeriod, scope: string) {
+function drawCoverPage(doc: jsPDF, logo: string | null, period: ReportPeriod, scope: string, logoH20: number) {
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 30, "F");
-  if (logo) doc.addImage(logo, "PNG", 14, 5, 20, 20);
+  if (logo) doc.addImage(logo, "PNG", 14, 5, 20, logoH20);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
