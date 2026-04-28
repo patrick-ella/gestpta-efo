@@ -42,8 +42,8 @@ export async function addReportHeader(
     doc.addImage(logo, "PNG", logoX, logoY, logoW, logoH);
   }
 
-  // Text next to logo
-  const textX = logoX + logoW + 4;
+  // Text next to logo — gap of 8mm to avoid overlap
+  const textX = logoX + logoW + 8;
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
