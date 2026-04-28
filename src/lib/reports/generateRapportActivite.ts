@@ -604,6 +604,7 @@ export async function generateRapportActivite(period: ReportPeriod) {
   drawCoverPage(doc, logo, period, scope);
 
   let grandTotalPrevu = 0;
+  let grandTotalEngage = 0;
   let grandTotalExecute = 0;
 
   // Content pages
@@ -658,6 +659,7 @@ export async function generateRapportActivite(period: ReportPeriod) {
     currentY = drawActiviteTotalBar(doc, currentY, act.code, actTotalPrevu, actTotalEngage, actTotalExecute);
 
     grandTotalPrevu += actTotalPrevu;
+    grandTotalEngage += actTotalEngage;
     grandTotalExecute += actTotalExecute;
 
     // Volet B
@@ -683,35 +685,65 @@ export async function generateRapportActivite(period: ReportPeriod) {
     const actStIds = new Set(sousTaches.filter((st) => actTaches.some((t) => t.id === st.tache_id)).map((st) => st.id));
     const actLines = allLines.filter((l) => actStIds.has(l.sous_tache_id));
     const prevu = actLines.reduce((s, l) => s + l.montant_prevu, 0);
+    const engage = actLines.reduce((s, l) => s + ((l as any).montant_engage ?? 0), 0);
     const execute = actLines.reduce((s, l) => s + l.montant_execute, 0);
-    const taux = prevu > 0 ? Math.round((execute / prevu) * 1000) / 10 : 0;
-    return [act.code, act.libelle.substring(0, 40), formatFCFA(act.budget_total || 0), formatFCFA(prevu), formatFCFA(execute), formatTaux(taux)];
+    const tauxEng = prevu > 0 ? Math.round((engage / prevu) * 1000) / 10 : 0;
+    const tauxReal = prevu > 0 ? Math.round((execute / prevu) * 1000) / 10 : 0;
+    return [act.code, act.libelle.substring(0, 40), formatFCFA(prevu), formatFCFA(engage), formatTaux(tauxEng), formatFCFA(execute), formatTaux(tauxReal)];
   });
 
-  const grandTaux = grandTotalPrevu > 0 ? Math.round((grandTotalExecute / grandTotalPrevu) * 1000) / 10 : 0;
-  const grandTotalRow = ["TOTAL", "", formatFCFA(grandTotalPrevu), formatFCFA(grandTotalPrevu), formatFCFA(grandTotalExecute), formatTaux(grandTaux)];
+  const grandTauxEng = grandTotalPrevu > 0 ? Math.round((grandTotalEngage / grandTotalPrevu) * 1000) / 10 : 0;
+  const grandTauxReal = grandTotalPrevu > 0 ? Math.round((grandTotalExecute / grandTotalPrevu) * 1000) / 10 : 0;
+  const grandTotalRow = ["TOTAL", "TOTAL GÉNÉRAL", formatFCFA(grandTotalPrevu), formatFCFA(grandTotalEngage), formatTaux(grandTauxEng), formatFCFA(grandTotalExecute), formatTaux(grandTauxReal)];
 
   autoTable(doc, {
     startY: sumY,
     margin: { left: MARGIN_L, right: MARGIN_R },
     tableWidth: CONTENT_W,
-    head: [["Activité", "Libellé", "Plafond", "Total prévu", "Total réalisé", "Taux %"]],
+    head: [[
+      { content: "Activité", styles: { halign: "center" as const } },
+      { content: "Libellé", styles: { halign: "left" as const } },
+      { content: "Prévu", styles: { halign: "right" as const } },
+      { content: "Engagé", styles: { halign: "right" as const } },
+      { content: "Taux eng.", styles: { halign: "center" as const } },
+      { content: "Réalisé", styles: { halign: "right" as const } },
+      { content: "Taux réal.", styles: { halign: "center" as const } },
+    ]],
     body: [...summaryBody, grandTotalRow],
-    headStyles: { fillColor: [31, 78, 121], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8 },
-    bodyStyles: { fontSize: 8, cellPadding: 2, textColor: [30, 30, 30] },
+    headStyles: { fillColor: [31, 78, 121], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8, cellPadding: { top: 3, bottom: 3, left: 2, right: 2 } },
+    bodyStyles: { fontSize: 8, cellPadding: { top: 3, bottom: 3, left: 2, right: 2 }, textColor: [30, 30, 30] },
     columnStyles: {
-      0: { cellWidth: 40 }, 1: { cellWidth: 73 },
-      2: { halign: "right", cellWidth: 45, cellPadding: { top: 2, bottom: 2, left: 1, right: 3 } },
-      3: { halign: "right", cellWidth: 43, cellPadding: { top: 2, bottom: 2, left: 1, right: 3 } },
-      4: { halign: "right", cellWidth: 43, cellPadding: { top: 2, bottom: 2, left: 1, right: 3 } },
-      5: { halign: "center", cellWidth: 29 },
+      0: { halign: "center", cellWidth: 22 },
+      1: { halign: "left", cellWidth: 73 },
+      2: { halign: "right", cellWidth: 38, cellPadding: { top: 3, bottom: 3, left: 1, right: 3 } },
+      3: { halign: "right", cellWidth: 38, cellPadding: { top: 3, bottom: 3, left: 1, right: 3 } },
+      4: { halign: "center", cellWidth: 20 },
+      5: { halign: "right", cellWidth: 38, cellPadding: { top: 3, bottom: 3, left: 1, right: 3 } },
+      6: { halign: "center", cellWidth: 20 },
     },
-    willDrawCell: (data) => { if ([2, 3, 4].includes(data.column.index)) data.cell.styles.halign = "right"; },
     didParseCell: (data) => {
-      if (data.row.index === summaryBody.length && data.section === "body") {
-        data.cell.styles.fillColor = [0, 0, 0];
-        data.cell.styles.textColor = [255, 215, 0];
+      const lastIdx = summaryBody.length;
+      // TOTAL row — navy background
+      if (data.row.index === lastIdx && data.section === "body") {
+        data.cell.styles.fillColor = [31, 78, 121];
+        data.cell.styles.textColor = [255, 255, 255];
         data.cell.styles.fontStyle = "bold";
+        return;
+      }
+      // Color taux columns (4 = eng, 6 = real) on data rows
+      if (data.section === "body" && data.row.index < lastIdx && (data.column.index === 4 || data.column.index === 6)) {
+        const raw = String(data.cell.raw ?? "");
+        const pct = parseFloat(raw.replace(",", ".")) || 0;
+        data.cell.styles.textColor = pct >= 80 ? [21, 128, 61] : pct >= 50 ? [180, 83, 9] : [220, 38, 38];
+        data.cell.styles.fontStyle = "bold";
+      }
+      // Alternating row background
+      if (data.section === "body" && data.row.index < lastIdx && data.row.index % 2 === 1) {
+        if (data.column.index !== 4 && data.column.index !== 6) {
+          data.cell.styles.fillColor = [245, 249, 253];
+        } else if (!data.cell.styles.fillColor) {
+          data.cell.styles.fillColor = [245, 249, 253];
+        }
       }
     },
     showHead: "everyPage",
