@@ -604,6 +604,7 @@ export async function generateRapportActivite(period: ReportPeriod) {
   drawCoverPage(doc, logo, period, scope);
 
   let grandTotalPrevu = 0;
+  let grandTotalEngage = 0;
   let grandTotalExecute = 0;
 
   // Content pages
