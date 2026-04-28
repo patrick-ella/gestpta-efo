@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import logoSrc from "@/assets/logo-efo.png";
 import { getExtrantProgression, getProgressionColorRgb, type CritereForProgression } from "@/lib/extrantProgression";
+import { computeLogoHeight } from "./pdfHeader";
 
 // ── Types ───────────────────────────────────────────────────
 export type ReportPeriod = {
