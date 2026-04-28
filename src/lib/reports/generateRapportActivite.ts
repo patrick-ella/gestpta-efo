@@ -551,6 +551,10 @@ function drawExtrantsSection(
 export async function generateRapportActivite(period: ReportPeriod) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const logo = await loadLogo();
+  // Compute logo heights from natural aspect ratio for each target width
+  const logoH8 = await computeLogoHeight(8);
+  const logoH6 = await computeLogoHeight(6);
+  const logoH20 = await computeLogoHeight(20);
 
   // Fetch exercice
   const { data: exercices } = await supabase.from("exercices").select("*").eq("annee", period.exercice);
