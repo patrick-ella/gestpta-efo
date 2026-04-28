@@ -17,6 +17,7 @@ import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import AlertPanel, { type Alert } from "@/components/dashboard/AlertPanel";
 import { useExtrantStats } from "@/hooks/useExtrantsData";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { useKpiBadgeValue } from "@/hooks/useKpiBadgeValue";
 import RequirePermission from "@/components/auth/RequirePermission";
 import { MODULES } from "@/lib/constants/modules";
 import type { Database } from "@/integrations/supabase/types";
@@ -32,6 +33,25 @@ const Dashboard = () => {
   useRealtimeSync({ table: "executions", queryKeys: ["dashboard-data"] });
   useRealtimeSync({ table: "sous_tache_lignes_budgetaires", queryKeys: ["dashboard-data"] });
   useRealtimeSync({ table: "extrants", queryKeys: ["extrants-stats"] });
+
+  // Realtime sync for KPI badge connections — instant updates when admin changes config
+  // or when underlying criteria values change.
+  const kpiQueryKeys = [
+    ["kpi_connexion", "trainair_plus"],
+    ["kpi_connexion", "avsec"],
+    ["kpi_connexion", "iso"],
+    ["kpi_connexion", "apprenants"],
+  ];
+  useRealtimeSync({ table: "extrants_criteres", queryKeys: kpiQueryKeys });
+  useRealtimeSync({ table: "kpi_seuils", queryKeys: kpiQueryKeys });
+  useRealtimeSync({ table: "kpi_variables", queryKeys: kpiQueryKeys });
+  useRealtimeSync({ table: "kpi_badges", queryKeys: kpiQueryKeys });
+
+  // Configurable KPI badges (override hardcoded indicateurs_kpi values when configured)
+  const trainairBadge = useKpiBadgeValue("trainair_plus").data;
+  const avsecBadge = useKpiBadgeValue("avsec").data;
+  const isoBadge = useKpiBadgeValue("iso").data;
+  const apprenantsBadge = useKpiBadgeValue("apprenants").data;
 
   const isDirection =
     roles.includes("super_admin") ||
@@ -160,11 +180,26 @@ const Dashboard = () => {
   const trainairKpi = kpis.find((k) => k.code === "OS2-IND1");
   const avsecKpi = kpis.find((k) => k.code === "OS2-IND2");
 
+  // Apprenants — prefer configured KPI badge value (somme) when set, otherwise fall back
+  const apprenantsConfigured =
+    apprenantsBadge && apprenantsBadge.variableValues.length > 0
+      ? Math.round(apprenantsBadge.computed ?? 0)
+      : null;
   const apprenants = {
-    realized: os1Kpi?.valeur_realisee ? parseInt(os1Kpi.valeur_realisee.replace(/\s/g, "")) || 0 : 0,
+    realized:
+      apprenantsConfigured ??
+      (os1Kpi?.valeur_realisee ? parseInt(os1Kpi.valeur_realisee.replace(/\s/g, "")) || 0 : 0),
     target: 1200,
   };
-  const isoConformity = isoKpi?.valeur_realisee ? parseFloat(isoKpi.valeur_realisee.replace(",", ".").replace("%", "")) || 0 : 0;
+
+  // ISO — prefer configured KPI badge value (single value) when set
+  const isoConfigured =
+    isoBadge && isoBadge.variableValues.length > 0 ? Number(isoBadge.computed ?? 0) : null;
+  const isoConformity =
+    isoConfigured ??
+    (isoKpi?.valeur_realisee
+      ? parseFloat(isoKpi.valeur_realisee.replace(",", ".").replace("%", "")) || 0
+      : 0);
 
   const activityRows = useMemo(() => {
     return activites.map((act) => {
@@ -351,11 +386,17 @@ const Dashboard = () => {
         isoConformity={isoConformity}
         budgetKpis={budgetKpis}
         trainairPlus={{
-          realized: trainairKpi?.valeur_realisee ?? null,
+          realized:
+            trainairBadge?.activeSeuil
+              ? `${trainairBadge.activeSeuil.icon_statut ?? ""} ${trainairBadge.activeSeuil.label_statut}`.trim()
+              : trainairKpi?.valeur_realisee ?? null,
           target: trainairKpi?.cible_2027 ?? "Gold Member",
         }}
         centreAvsec={{
-          realized: avsecKpi?.valeur_realisee ?? null,
+          realized:
+            avsecBadge?.activeSeuil
+              ? `${avsecBadge.activeSeuil.icon_statut ?? ""} ${avsecBadge.activeSeuil.label_statut}`.trim()
+              : avsecKpi?.valeur_realisee ?? null,
           target: avsecKpi?.cible_2027 ?? "Centre AVSEC",
         }}
         extrantStats={extrantStats ?? undefined}
