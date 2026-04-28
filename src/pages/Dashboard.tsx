@@ -180,11 +180,26 @@ const Dashboard = () => {
   const trainairKpi = kpis.find((k) => k.code === "OS2-IND1");
   const avsecKpi = kpis.find((k) => k.code === "OS2-IND2");
 
+  // Apprenants — prefer configured KPI badge value (somme) when set, otherwise fall back
+  const apprenantsConfigured =
+    apprenantsBadge && apprenantsBadge.variableValues.length > 0
+      ? Math.round(apprenantsBadge.computed ?? 0)
+      : null;
   const apprenants = {
-    realized: os1Kpi?.valeur_realisee ? parseInt(os1Kpi.valeur_realisee.replace(/\s/g, "")) || 0 : 0,
+    realized:
+      apprenantsConfigured ??
+      (os1Kpi?.valeur_realisee ? parseInt(os1Kpi.valeur_realisee.replace(/\s/g, "")) || 0 : 0),
     target: 1200,
   };
-  const isoConformity = isoKpi?.valeur_realisee ? parseFloat(isoKpi.valeur_realisee.replace(",", ".").replace("%", "")) || 0 : 0;
+
+  // ISO — prefer configured KPI badge value (single value) when set
+  const isoConfigured =
+    isoBadge && isoBadge.variableValues.length > 0 ? Number(isoBadge.computed ?? 0) : null;
+  const isoConformity =
+    isoConfigured ??
+    (isoKpi?.valeur_realisee
+      ? parseFloat(isoKpi.valeur_realisee.replace(",", ".").replace("%", "")) || 0
+      : 0);
 
   const activityRows = useMemo(() => {
     return activites.map((act) => {
