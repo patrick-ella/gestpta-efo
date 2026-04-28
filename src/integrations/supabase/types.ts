@@ -792,6 +792,144 @@ export type Database = {
         }
         Relationships: []
       }
+      kpi_badges: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          label: string
+          ordre: number | null
+          type_calcul: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          ordre?: number | null
+          type_calcul?: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          ordre?: number | null
+          type_calcul?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      kpi_seuils: {
+        Row: {
+          bg_couleur: string | null
+          conditions: Json
+          couleur: string | null
+          created_at: string | null
+          icon_statut: string | null
+          id: string
+          kpi_badge_id: string
+          label_statut: string
+          ordre: number
+          updated_at: string | null
+        }
+        Insert: {
+          bg_couleur?: string | null
+          conditions?: Json
+          couleur?: string | null
+          created_at?: string | null
+          icon_statut?: string | null
+          id?: string
+          kpi_badge_id: string
+          label_statut: string
+          ordre?: number
+          updated_at?: string | null
+        }
+        Update: {
+          bg_couleur?: string | null
+          conditions?: Json
+          couleur?: string | null
+          created_at?: string | null
+          icon_statut?: string | null
+          id?: string
+          kpi_badge_id?: string
+          label_statut?: string
+          ordre?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_seuils_kpi_badge_id_fkey"
+            columns: ["kpi_badge_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpi_variables: {
+        Row: {
+          created_at: string | null
+          critere_id: string
+          extrant_id: string
+          id: string
+          kpi_badge_id: string
+          label_variable: string | null
+          variable_index: number
+        }
+        Insert: {
+          created_at?: string | null
+          critere_id: string
+          extrant_id: string
+          id?: string
+          kpi_badge_id: string
+          label_variable?: string | null
+          variable_index?: number
+        }
+        Update: {
+          created_at?: string | null
+          critere_id?: string
+          extrant_id?: string
+          id?: string
+          kpi_badge_id?: string
+          label_variable?: string | null
+          variable_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_variables_critere_id_fkey"
+            columns: ["critere_id"]
+            isOneToOne: false
+            referencedRelation: "extrants_criteres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_variables_extrant_id_fkey"
+            columns: ["extrant_id"]
+            isOneToOne: false
+            referencedRelation: "extrants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_variables_kpi_badge_id_fkey"
+            columns: ["kpi_badge_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       livrables: {
         Row: {
           commentaire: string | null
