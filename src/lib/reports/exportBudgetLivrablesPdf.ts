@@ -277,7 +277,7 @@ export async function exportBudgetLivrablesPdf(
   const pageSections: Record<number, string> = {};
 
   // ── PAGE 1: Cover ────────────────────────────────────────
-  drawCoverPage(doc, logo, annee, scope);
+  drawCoverPage(doc, logo, annee, scope, logoH20);
 
   let grandTotalPrevu = 0;
   let grandTotalExecute = 0;
