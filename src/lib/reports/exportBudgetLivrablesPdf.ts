@@ -746,8 +746,8 @@ export async function exportBudgetLivrablesPdf(
   for (let i = 2; i <= totalPages; i++) {
     doc.setPage(i);
     const sectionTitle = pageSections[i] || "Rapport d'activité de l'EFO";
-    drawPageHeader(doc, logo, sectionTitle, annee);
-    drawPageFooter(doc, logo, i, totalPages);
+    drawPageHeader(doc, logo, sectionTitle, annee, logoH8);
+    drawPageFooter(doc, logo, i, totalPages, logoH6);
   }
 
   // ── Save ─────────────────────────────────────────────────
