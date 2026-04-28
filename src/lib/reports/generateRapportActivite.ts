@@ -800,8 +800,8 @@ export async function generateRapportActivite(period: ReportPeriod) {
   for (let i = 2; i <= totalPages; i++) {
     doc.setPage(i);
     const sectionTitle = pageSections[i] || getReportTitleShort(period);
-    drawPageHeader(doc, logo, sectionTitle, period);
-    drawPageFooter(doc, logo, i, totalPages);
+    drawPageHeader(doc, logo, sectionTitle, period, logoH8);
+    drawPageFooter(doc, logo, i, totalPages, logoH6);
   }
 
   doc.save(getFilename(period));
