@@ -659,6 +659,7 @@ export async function generateRapportActivite(period: ReportPeriod) {
     currentY = drawActiviteTotalBar(doc, currentY, act.code, actTotalPrevu, actTotalEngage, actTotalExecute);
 
     grandTotalPrevu += actTotalPrevu;
+    grandTotalEngage += actTotalEngage;
     grandTotalExecute += actTotalExecute;
 
     // Volet B
