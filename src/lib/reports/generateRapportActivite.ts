@@ -606,7 +606,7 @@ export async function generateRapportActivite(period: ReportPeriod) {
   const pageSections: Record<number, string> = {};
 
   // Cover page
-  drawCoverPage(doc, logo, period, scope);
+  drawCoverPage(doc, logo, period, scope, logoH20);
 
   let grandTotalPrevu = 0;
   let grandTotalEngage = 0;
