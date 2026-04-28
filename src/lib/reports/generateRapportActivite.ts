@@ -132,10 +132,10 @@ const MARGIN_R = 12;
 const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R;
 const MAX_Y = 175;
 
-function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, period: ReportPeriod) {
+function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, period: ReportPeriod, logoH8: number) {
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 12, "F");
-  if (logo) doc.addImage(logo, "PNG", 3, 2, 8, 8);
+  if (logo) doc.addImage(logo, "PNG", 3, 2, 8, logoH8);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
