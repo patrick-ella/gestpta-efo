@@ -152,7 +152,7 @@ function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalP
   doc.setDrawColor(174, 214, 241);
   doc.setLineWidth(0.3);
   doc.line(MARGIN_L, 195, PAGE_W - MARGIN_R, 195);
-  if (logo) doc.addImage(logo, "PNG", MARGIN_L, 197, 0, 6);
+  if (logo) doc.addImage(logo, "PNG", MARGIN_L, 197, 6, 6);
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
