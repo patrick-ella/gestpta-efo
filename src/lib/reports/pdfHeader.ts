@@ -77,11 +77,11 @@ export async function addReportHeader(
   const centerX = pageW / 2;
   const logo = await loadLogoBase64();
 
-  // Logo on left
+  // Logo on left — height computed from natural aspect ratio
   const logoW = 28;
-  const logoH = 20;
   const logoX = 15;
   const logoY = 8;
+  const logoH = await computeLogoHeight(logoW);
 
   if (logo) {
     doc.addImage(logo, "PNG", logoX, logoY, logoW, logoH);
