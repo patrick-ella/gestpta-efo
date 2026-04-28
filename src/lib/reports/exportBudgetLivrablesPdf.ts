@@ -229,6 +229,9 @@ export async function exportBudgetLivrablesPdf(
 ) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const logo = await loadLogo();
+  const logoH8 = await computeLogoHeight(8);
+  const logoH6 = await computeLogoHeight(6);
+  const logoH20 = await computeLogoHeight(20);
 
   // Fetch data
   const [actRes, tachRes, stRes, linesRes, extRes, critRes, preuvRes] = await Promise.all([
