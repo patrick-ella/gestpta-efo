@@ -77,11 +77,14 @@ export async function addReportHeader(
   const centerX = pageW / 2;
   const logo = await loadLogoBase64();
 
-  // Logo on left — height computed from natural aspect ratio
+  // Logo top = text cap top (no vertical offset).
   const logoW = 28;
   const logoX = 15;
   const logoY = 8;
   const logoH = await computeLogoHeight(logoW);
+  const lineH = 6;
+  const titleY = logoY + 3;        // 12pt cap top ≈ logoY ✓
+  const line2Y = titleY + lineH;   // subtitle baseline
 
   if (logo) {
     doc.addImage(logo, "PNG", logoX, logoY, logoW, logoH);
@@ -92,30 +95,31 @@ export async function addReportHeader(
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
-  doc.text("ÉCOLE DE FORMATION DE LA CCAA (EFO)", textX, 15);
+  doc.text("ÉCOLE DE FORMATION DE LA CCAA (EFO)", textX, titleY);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(120, 120, 120);
-  doc.text("CAMEROON CIVIL AVIATION AUTHORITY (CCAA)", textX, 21);
+  doc.text("CAMEROON CIVIL AVIATION AUTHORITY (CCAA)", textX, line2Y);
 
-  // Separator line
+  // Separator line — placed below logo bottom
+  const sepY = Math.max(30, logoY + logoH + 2);
   doc.setDrawColor(46, 117, 182);
   doc.setLineWidth(0.4);
-  doc.line(15, 30, pageW - 15, 30);
+  doc.line(15, sepY, pageW - 15, sepY);
 
   // Report title
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
-  doc.text(titre, centerX, 38, { align: "center" });
+  doc.text(titre, centerX, sepY + 8, { align: "center" });
 
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
-  doc.text(sousTitre, centerX, 44, { align: "center" });
+  doc.text(sousTitre, centerX, sepY + 14, { align: "center" });
 
-  return 50; // yPos after header
+  return sepY + 20; // yPos after header
 }
 
 export function addPageFooters(doc: jsPDF, orientation: "landscape" | "portrait" = "landscape") {

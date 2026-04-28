@@ -133,20 +133,24 @@ const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R;
 const MAX_Y = 175;
 
 function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, period: ReportPeriod, logoH8: number) {
+  // Logo top aligned with title cap top.
+  const logoY = 2;
+  const titleY = logoY + 2;       // 8pt cap top ≈ logoY ✓
+  const line2Y = titleY + 4;      // 7pt subtitle
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 12, "F");
-  if (logo) doc.addImage(logo, "PNG", 3, 2, 8, logoH8);
+  if (logo) doc.addImage(logo, "PNG", 3, logoY, 8, logoH8);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text(getReportTitleShort(period), 22, 6);
+  doc.text(getReportTitleShort(period), 22, titleY);
   doc.setTextColor(174, 214, 241);
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.text(pageTitle, 22, 10);
+  doc.text(pageTitle, 22, line2Y);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
-  doc.text(`Exercice ${period.exercice}`, PAGE_W - MARGIN_R, 7, { align: "right" });
+  doc.text(`Exercice ${period.exercice}`, PAGE_W - MARGIN_R, titleY, { align: "right" });
 }
 
 function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalPages: number, logoH6: number) {
@@ -165,17 +169,21 @@ function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalP
 }
 
 function drawCoverPage(doc: jsPDF, logo: string | null, period: ReportPeriod, scope: string, logoH20: number) {
+  // Logo top = title cap top (no vertical offset).
+  const logoY = 5;
+  const titleY = logoY + 2.5;     // 10pt cap top ≈ logoY ✓
+  const line2Y = titleY + 5.5;    // subtitle baseline
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 30, "F");
-  if (logo) doc.addImage(logo, "PNG", 14, 5, 20, logoH20);
+  if (logo) doc.addImage(logo, "PNG", 14, logoY, 20, logoH20);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("CAMEROON CIVIL AVIATION AUTHORITY", 50, 14);
+  doc.text("CAMEROON CIVIL AVIATION AUTHORITY", 50, titleY);
   doc.setTextColor(174, 214, 241);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text("ÉCOLE DE FORMATION DE LA CCAA (EFO)", 50, 22);
+  doc.text("ÉCOLE DE FORMATION DE LA CCAA (EFO)", 50, line2Y);
 
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
