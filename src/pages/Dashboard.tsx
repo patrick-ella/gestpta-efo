@@ -17,6 +17,7 @@ import DashboardCharts from "@/components/dashboard/DashboardCharts";
 import AlertPanel, { type Alert } from "@/components/dashboard/AlertPanel";
 import { useExtrantStats } from "@/hooks/useExtrantsData";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { useKpiBadgeValue } from "@/hooks/useKpiBadgeValue";
 import RequirePermission from "@/components/auth/RequirePermission";
 import { MODULES } from "@/lib/constants/modules";
 import type { Database } from "@/integrations/supabase/types";
@@ -32,6 +33,25 @@ const Dashboard = () => {
   useRealtimeSync({ table: "executions", queryKeys: ["dashboard-data"] });
   useRealtimeSync({ table: "sous_tache_lignes_budgetaires", queryKeys: ["dashboard-data"] });
   useRealtimeSync({ table: "extrants", queryKeys: ["extrants-stats"] });
+
+  // Realtime sync for KPI badge connections — instant updates when admin changes config
+  // or when underlying criteria values change.
+  const kpiQueryKeys = [
+    ["kpi_connexion", "trainair_plus"],
+    ["kpi_connexion", "avsec"],
+    ["kpi_connexion", "iso"],
+    ["kpi_connexion", "apprenants"],
+  ];
+  useRealtimeSync({ table: "extrants_criteres", queryKeys: kpiQueryKeys });
+  useRealtimeSync({ table: "kpi_seuils", queryKeys: kpiQueryKeys });
+  useRealtimeSync({ table: "kpi_variables", queryKeys: kpiQueryKeys });
+  useRealtimeSync({ table: "kpi_badges", queryKeys: kpiQueryKeys });
+
+  // Configurable KPI badges (override hardcoded indicateurs_kpi values when configured)
+  const trainairBadge = useKpiBadgeValue("trainair_plus").data;
+  const avsecBadge = useKpiBadgeValue("avsec").data;
+  const isoBadge = useKpiBadgeValue("iso").data;
+  const apprenantsBadge = useKpiBadgeValue("apprenants").data;
 
   const isDirection =
     roles.includes("super_admin") ||
