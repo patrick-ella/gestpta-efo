@@ -134,15 +134,15 @@ const MAX_Y = 175;
 function drawPageHeader(doc: jsPDF, logo: string | null, pageTitle: string, period: ReportPeriod) {
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 12, "F");
-  if (logo) doc.addImage(logo, "PNG", 3, 2, 0, 8);
+  if (logo) doc.addImage(logo, "PNG", 3, 2, 8, 8);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text(getReportTitleShort(period), 14, 6);
+  doc.text(getReportTitleShort(period), 22, 6);
   doc.setTextColor(174, 214, 241);
   doc.setFontSize(7);
   doc.setFont("helvetica", "normal");
-  doc.text(pageTitle, 14, 10);
+  doc.text(pageTitle, 22, 10);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(8);
   doc.text(`Exercice ${period.exercice}`, PAGE_W - MARGIN_R, 7, { align: "right" });
@@ -152,7 +152,7 @@ function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalP
   doc.setDrawColor(174, 214, 241);
   doc.setLineWidth(0.3);
   doc.line(MARGIN_L, 195, PAGE_W - MARGIN_R, 195);
-  if (logo) doc.addImage(logo, "PNG", MARGIN_L, 197, 0, 6);
+  if (logo) doc.addImage(logo, "PNG", MARGIN_L, 197, 6, 6);
   doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(31, 78, 121);
@@ -166,7 +166,7 @@ function drawPageFooter(doc: jsPDF, logo: string | null, pageNum: number, totalP
 function drawCoverPage(doc: jsPDF, logo: string | null, period: ReportPeriod, scope: string) {
   doc.setFillColor(31, 78, 121);
   doc.rect(0, 0, PAGE_W, 30, "F");
-  if (logo) doc.addImage(logo, "PNG", 14, 5, 0, 20);
+  if (logo) doc.addImage(logo, "PNG", 14, 5, 20, 20);
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
