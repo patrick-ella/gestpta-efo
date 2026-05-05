@@ -181,14 +181,52 @@ export function DepositOaciKpi() {
 
       {/* PROGRESS BAR */}
       {!isNotEntered && (
-        <div style={{ position: "relative" }}>
+        <div
+          style={{
+            position: "relative",
+            paddingTop: "20px",
+            paddingBottom: "20px",
+          }}
+        >
+          {/* LABEL ABOVE BAR */}
           <div
             style={{
-              height: "12px",
-              borderRadius: "6px",
+              position: "absolute",
+              top: 0,
+              left: `${alertMarkerPct}%`,
+              transform: "translateX(-50%)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              zIndex: 3,
+            }}
+          >
+            <span
+              style={{
+                fontSize: "10px",
+                fontWeight: 800,
+                color: "#B45309",
+                whiteSpace: "nowrap",
+                background: "#FEF3C7",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                border: "1px solid #FDE68A",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}
+            >
+              ⚠️ {formatUSD(alertThreshold)}
+            </span>
+            <div style={{ width: "1px", height: "4px", background: "#F59E0B" }} />
+          </div>
+
+          {/* PROGRESS BAR TRACK */}
+          <div
+            style={{
+              position: "relative",
+              height: "14px",
+              borderRadius: "7px",
               background: "#E5E7EB",
               overflow: "visible",
-              position: "relative",
             }}
           >
             <div
@@ -196,68 +234,81 @@ export function DepositOaciKpi() {
                 height: "100%",
                 width: `${tauxConsommation}%`,
                 background: barColor,
-                borderRadius: "6px",
+                borderRadius: "7px",
                 transition: "width 0.5s ease",
+                position: "relative",
+                zIndex: 1,
               }}
             />
             <div
               style={{
                 position: "absolute",
-                top: "-4px",
+                top: "-3px",
                 left: `${alertMarkerPct}%`,
-                width: "2px",
+                transform: "translateX(-50%)",
+                width: "3px",
                 height: "20px",
                 background: "#F59E0B",
-                borderRadius: "1px",
-                transform: "translateX(-50%)",
-                zIndex: 2,
+                borderRadius: "2px",
+                zIndex: 4,
+                boxShadow: "0 0 4px rgba(245,158,11,0.6)",
               }}
             />
+            {tauxConsommation > 15 &&
+              Math.abs(tauxConsommation - alertMarkerPct) > 15 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: `${tauxConsommation / 2}%`,
+                    top: "50%",
+                    transform: "translate(-50%, -50%)",
+                    fontSize: "9px",
+                    fontWeight: 800,
+                    color: "white",
+                    zIndex: 2,
+                    textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {tauxConsommation}%
+                </div>
+              )}
           </div>
-          <div style={{ position: "relative", height: "32px", marginTop: "2px" }}>
-            <div
+
+          {/* LABEL BELOW BAR */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: `${alertMarkerPct}%`,
+              transform: "translateX(-50%)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              zIndex: 3,
+            }}
+          >
+            <div style={{ width: "1px", height: "4px", background: "#F59E0B" }} />
+            <span
               style={{
-                position: "absolute",
-                left: `${alertMarkerPct}%`,
-                transform: "translateX(-50%)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "1px",
+                fontSize: "9px",
+                fontWeight: 600,
+                color: "#B45309",
+                whiteSpace: "nowrap",
               }}
             >
-              <div
-                style={{
-                  width: 0,
-                  height: 0,
-                  borderLeft: "5px solid transparent",
-                  borderRight: "5px solid transparent",
-                  borderBottom: "5px solid #F59E0B",
-                }}
-              />
-              <span
-                style={{
-                  fontSize: "9px",
-                  fontWeight: 700,
-                  color: "#B45309",
-                  whiteSpace: "nowrap",
-                  background: "#FEF3C7",
-                  padding: "1px 4px",
-                  borderRadius: "3px",
-                  border: "1px solid #FDE68A",
-                }}
-              >
-                ⚠️ Seuil {formatUSD(alertThreshold)}
-              </span>
-            </div>
+              Seuil d'alerte
+            </span>
           </div>
+
+          {/* SCALE LABELS */}
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
               fontSize: "9px",
               color: "#9CA3AF",
-              marginTop: "2px",
+              marginTop: "4px",
             }}
           >
             <span>$0</span>
