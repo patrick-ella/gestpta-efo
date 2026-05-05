@@ -1,112 +1,310 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Wallet } from "lucide-react";
 import { useKpiBadgeValue } from "@/hooks/useKpiBadgeValue";
 
-function formatUSD(value: number | null): string {
-  if (value === null || value === undefined) return "—";
+function formatUSD(val: number | null): string {
+  if (val === null || val === undefined) return "—";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(val);
 }
 
-const THRESHOLD_FALLBACK = 25000;
-
 export function DepositOaciKpi() {
-  const { data, isLoading } = useKpiBadgeValue("deposit_oaci");
+  const { data } = useKpiBadgeValue("deposit_oaci");
 
-  if (isLoading || !data) {
+  if (!data) {
     return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            💰 Déposit OACI
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-8 w-32" />
-        </CardContent>
-      </Card>
+      <div
+        style={{
+          padding: "20px",
+          borderRadius: "12px",
+          border: "1px solid hsl(var(--border))",
+          background: "hsl(var(--muted))",
+          minHeight: "180px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <span style={{ fontSize: "13px", color: "#9CA3AF" }}>⏳ Chargement...</span>
+      </div>
     );
   }
 
-  const depositValue = data.variableValues?.[0]?.value ?? null;
+  const montantRealise = data.variableValues?.[0]?.value ?? 0;
+  const montantCible = data.variableValues?.[0]?.seuilValeur ?? null;
+  const montantRestant = montantCible !== null ? montantCible - montantRealise : null;
+
+  const tauxConsommation =
+    montantCible && montantCible > 0
+      ? Math.min(Math.round((montantRealise / montantCible) * 100), 100)
+      : 0;
+
+  const alertSeuil = data.seuils?.find((s) =>
+    s.label_statut?.toLowerCase().includes("alerte")
+  );
+  const alertThreshold = (alertSeuil?.conditions?.[0]?.min_value as number) ?? 25000;
+
+  const alertMarkerPct =
+    montantCible && montantCible > 0
+      ? Math.round(((montantCible - alertThreshold) / montantCible) * 100)
+      : 80;
+
+  const isAlert = montantRestant !== null && montantRestant < alertThreshold;
+  const isNotEntered = montantRealise === 0 && montantCible === null;
+
+  const barColor = isNotEntered ? "#D1D5DB" : isAlert ? "#EF4444" : "#22C55E";
+  const restantColor = isNotEntered ? "#9CA3AF" : isAlert ? "#DC2626" : "#15803D";
+
   const activeSeuil = data.activeSeuil;
-  const isNotEntered = depositValue === null || depositValue === 0;
-  const isAlert =
-    !isNotEntered && !!activeSeuil?.label_statut?.toLowerCase().includes("alerte");
-  const isSufficient = !isNotEntered && !isAlert;
-
-  // Read threshold from "sufficient" seuil (ordre 0) — admin-configurable
-  const threshold = THRESHOLD_FALLBACK;
-
-  const colors = isNotEntered
-    ? { text: "#6B7280", border: "border-[#E5E7EB]", bar: "#9CA3AF" }
-    : isAlert
-      ? { text: "#DC2626", border: "border-[#FECACA]", bar: "#DC2626" }
-      : { text: "#15803D", border: "border-[#BBF7D0]", bar: "#15803D" };
-
-  const progressPct = isNotEntered
-    ? 0
-    : Math.min(100, Math.round(((depositValue ?? 0) / threshold) * 100));
 
   return (
-    <Card className={colors.border}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <div
+      style={{
+        borderRadius: "12px",
+        border: `2px solid ${
+          isAlert ? "#FECACA" : isNotEntered ? "#E5E7EB" : "#BBF7D0"
+        }`,
+        background: isAlert ? "#FEF2F2" : isNotEntered ? "#F9FAFB" : "#F0FDF4",
+        padding: "16px 20px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+        transition: "all 0.3s ease",
+      }}
+    >
+      {/* HEADER */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <CardTitle className="text-sm font-medium text-muted-foreground">
+          <p
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              color: "#6B7280",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              margin: 0,
+            }}
+          >
             💰 Déposit OACI
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">Compte No. EI0028</p>
-        </div>
-        <Wallet className="h-4 w-4" style={{ color: colors.text }} />
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="text-3xl font-bold" style={{ color: colors.text }}>
-          {isNotEntered ? "—" : formatUSD(depositValue)}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Financement formations TRAINAIR PLUS
-        </p>
-
-        <div
-          className="flex items-center gap-1 text-xs font-semibold"
-          style={{ color: colors.text }}
-        >
-          <span>{activeSeuil?.icon_statut ?? "ℹ️"}</span>
-          <span>{activeSeuil?.label_statut ?? "Solde non renseigné"}</span>
-        </div>
-
-        {isAlert && (
-          <p className="text-xs" style={{ color: colors.text }}>
-            📉 Seuil d'alerte : {formatUSD(threshold)} — solde en dessous du minimum requis
           </p>
-        )}
+          <p style={{ fontSize: "10px", color: "#9CA3AF", margin: "2px 0 0", fontStyle: "italic" }}>
+            Compte No. EI0028 — TRAINAIR PLUS
+          </p>
+        </div>
+      </div>
 
-        {!isNotEntered && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>$0</span>
-              <span>Seuil : {formatUSD(threshold)}</span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+      {/* THREE AMOUNTS */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "8px 4px",
+            borderRadius: "8px",
+            background: "rgba(255,255,255,0.7)",
+            border: "1px solid #E5E7EB",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "10px",
+              color: "#9CA3AF",
+              margin: "0 0 3px",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+            }}
+          >
+            Cible
+          </p>
+          <p style={{ fontSize: "14px", fontWeight: 800, color: "#1F4E79", margin: 0 }}>
+            {formatUSD(montantCible)}
+          </p>
+        </div>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "8px 4px",
+            borderRadius: "8px",
+            background: "rgba(255,255,255,0.7)",
+            border: "1px solid #E5E7EB",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "10px",
+              color: "#9CA3AF",
+              margin: "0 0 3px",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+            }}
+          >
+            Consommé
+          </p>
+          <p style={{ fontSize: "14px", fontWeight: 800, color: "#374151", margin: 0 }}>
+            {formatUSD(montantRealise || null)}
+          </p>
+        </div>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "8px 4px",
+            borderRadius: "8px",
+            background: "rgba(255,255,255,0.7)",
+            border: `1px solid ${isAlert ? "#FECACA" : "#BBF7D0"}`,
+          }}
+        >
+          <p
+            style={{
+              fontSize: "10px",
+              color: "#9CA3AF",
+              margin: "0 0 3px",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
+            }}
+          >
+            Restant
+          </p>
+          <p style={{ fontSize: "14px", fontWeight: 800, color: restantColor, margin: 0 }}>
+            {formatUSD(montantRestant)}
+          </p>
+        </div>
+      </div>
+
+      {/* CONSUMPTION % */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: "12px", color: "#6B7280", fontWeight: 600 }}>Consommation</span>
+        <span style={{ fontSize: "20px", fontWeight: 900, color: barColor }}>
+          {isNotEntered ? "—" : `${tauxConsommation}%`}
+        </span>
+      </div>
+
+      {/* PROGRESS BAR */}
+      {!isNotEntered && (
+        <div style={{ position: "relative" }}>
+          <div
+            style={{
+              height: "12px",
+              borderRadius: "6px",
+              background: "#E5E7EB",
+              overflow: "visible",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: `${tauxConsommation}%`,
+                background: barColor,
+                borderRadius: "6px",
+                transition: "width 0.5s ease",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                top: "-4px",
+                left: `${alertMarkerPct}%`,
+                width: "2px",
+                height: "20px",
+                background: "#F59E0B",
+                borderRadius: "1px",
+                transform: "translateX(-50%)",
+                zIndex: 2,
+              }}
+            />
+          </div>
+          <div style={{ position: "relative", height: "32px", marginTop: "2px" }}>
+            <div
+              style={{
+                position: "absolute",
+                left: `${alertMarkerPct}%`,
+                transform: "translateX(-50%)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "1px",
+              }}
+            >
               <div
-                className="h-full transition-all"
-                style={{ width: `${progressPct}%`, background: colors.bar }}
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderLeft: "5px solid transparent",
+                  borderRight: "5px solid transparent",
+                  borderBottom: "5px solid #F59E0B",
+                }}
               />
+              <span
+                style={{
+                  fontSize: "9px",
+                  fontWeight: 700,
+                  color: "#B45309",
+                  whiteSpace: "nowrap",
+                  background: "#FEF3C7",
+                  padding: "1px 4px",
+                  borderRadius: "3px",
+                  border: "1px solid #FDE68A",
+                }}
+              >
+                ⚠️ Seuil {formatUSD(alertThreshold)}
+              </span>
             </div>
           </div>
-        )}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "9px",
+              color: "#9CA3AF",
+              marginTop: "2px",
+            }}
+          >
+            <span>$0</span>
+            <span>{formatUSD(montantCible)}</span>
+          </div>
+        </div>
+      )}
 
-        <p className="text-[10px] text-muted-foreground italic pt-1">
-          Seuil configurable dans Administration
-        </p>
-      </CardContent>
-    </Card>
+      {/* STATUS */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "6px",
+          padding: "8px 12px",
+          borderRadius: "8px",
+          background: "rgba(255,255,255,0.6)",
+          border: `1px solid ${isAlert ? "#FECACA" : isNotEntered ? "#E5E7EB" : "#BBF7D0"}`,
+        }}
+      >
+        <span style={{ fontSize: "16px", flexShrink: 0 }}>
+          {activeSeuil?.icon_statut ?? "ℹ️"}
+        </span>
+        <span
+          style={{
+            fontSize: "12px",
+            fontWeight: 600,
+            color: isAlert ? "#DC2626" : isNotEntered ? "#6B7280" : "#15803D",
+            lineHeight: 1.4,
+          }}
+        >
+          {activeSeuil?.label_statut ?? "Solde non renseigné"}
+        </span>
+      </div>
+
+      <p
+        style={{
+          fontSize: "10px",
+          color: "#9CA3AF",
+          margin: 0,
+          fontStyle: "italic",
+          textAlign: "right",
+        }}
+      >
+        Seuil configurable dans Administration ›
+      </p>
+    </div>
   );
 }
 

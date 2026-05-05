@@ -20,6 +20,7 @@ export interface KpiVariableValue {
   index: number;
   label: string | null;
   value: number;
+  seuilValeur: number | null;
   critere_libelle: string | null;
 }
 
@@ -32,6 +33,7 @@ export interface KpiBadgeValue {
     type_calcul: string;
   };
   variableValues: KpiVariableValue[];
+  seuils: KpiSeuil[];
   activeSeuil: KpiSeuil | null;
   // For type_calcul = 'somme' / 'moyenne' / 'valeur'
   computed: number | null;
@@ -48,7 +50,7 @@ export function useKpiBadgeValue(badgeCode: string) {
           id, code, label, icon, type_calcul,
           kpi_variables (
             id, variable_index, label_variable, critere_id,
-            extrants_criteres ( id, libelle, valeur_realisee, type_critere )
+            extrants_criteres ( id, libelle, valeur_realisee, seuil_valeur, type_critere )
           ),
           kpi_seuils ( id, ordre, label_statut, icon_statut, couleur, bg_couleur, conditions )
         `
@@ -66,6 +68,10 @@ export function useKpiBadgeValue(badgeCode: string) {
           index: v.variable_index,
           label: v.label_variable,
           value: Number(v.extrants_criteres?.valeur_realisee ?? 0),
+          seuilValeur:
+            v.extrants_criteres?.seuil_valeur != null
+              ? Number(v.extrants_criteres.seuil_valeur)
+              : null,
           critere_libelle: v.extrants_criteres?.libelle ?? null,
         }));
 
@@ -110,6 +116,7 @@ export function useKpiBadgeValue(badgeCode: string) {
           type_calcul: b.type_calcul,
         },
         variableValues,
+        seuils,
         activeSeuil,
         computed,
       };
