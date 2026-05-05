@@ -202,35 +202,37 @@ export function DepositOaciKpi() {
           }}
         >
           {/* LABEL ABOVE BAR */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: `${alertMarkerPct}%`,
-              transform: "translateX(-50%)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              zIndex: 3,
-            }}
-          >
-            <span
+          {showMarker && (
+            <div
               style={{
-                fontSize: "10px",
-                fontWeight: 800,
-                color: "#B45309",
-                whiteSpace: "nowrap",
-                background: "#FEF3C7",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                border: "1px solid #FDE68A",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                position: "absolute",
+                top: 0,
+                left: `${alertMarkerPct}%`,
+                transform: "translateX(-50%)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                zIndex: 3,
               }}
             >
-              ⚠️ {formatUSD(alertThreshold)}
-            </span>
-            <div style={{ width: "1px", height: "4px", background: "#F59E0B" }} />
-          </div>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  color: "#B45309",
+                  whiteSpace: "nowrap",
+                  background: "#FEF3C7",
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                  border: "1px solid #FDE68A",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                ⚠️ {formatUSD(alertThreshold)}
+              </span>
+              <div style={{ width: "1px", height: "4px", background: "#F59E0B" }} />
+            </div>
+          )}
 
           {/* PROGRESS BAR TRACK */}
           <div
