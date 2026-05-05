@@ -255,22 +255,24 @@ export function DepositOaciKpi() {
                 zIndex: 1,
               }}
             />
-            <div
-              style={{
-                position: "absolute",
-                top: "-3px",
-                left: `${alertMarkerPct}%`,
-                transform: "translateX(-50%)",
-                width: "3px",
-                height: "20px",
-                background: "#F59E0B",
-                borderRadius: "2px",
-                zIndex: 4,
-                boxShadow: "0 0 4px rgba(245,158,11,0.6)",
-              }}
-            />
+            {showMarker && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "-3px",
+                  left: `${alertMarkerPct}%`,
+                  transform: "translateX(-50%)",
+                  width: "3px",
+                  height: "20px",
+                  background: "#F59E0B",
+                  borderRadius: "2px",
+                  zIndex: 4,
+                  boxShadow: "0 0 6px rgba(245,158,11,0.7)",
+                }}
+              />
+            )}
             {tauxConsommation > 15 &&
-              Math.abs(tauxConsommation - alertMarkerPct) > 15 && (
+              (!showMarker || Math.abs(tauxConsommation - alertMarkerPct) > 15) && (
                 <div
                   style={{
                     position: "absolute",
