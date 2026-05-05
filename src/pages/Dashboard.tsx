@@ -18,6 +18,7 @@ import AlertPanel, { type Alert } from "@/components/dashboard/AlertPanel";
 import { useExtrantStats } from "@/hooks/useExtrantsData";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useKpiBadgeValue } from "@/hooks/useKpiBadgeValue";
+import { DepositOaciKpi } from "@/components/dashboard/DepositOaciKpi";
 import RequirePermission from "@/components/auth/RequirePermission";
 import { MODULES } from "@/lib/constants/modules";
 import type { Database } from "@/integrations/supabase/types";
@@ -41,6 +42,7 @@ const Dashboard = () => {
     ["kpi_connexion", "avsec"],
     ["kpi_connexion", "iso"],
     ["kpi_connexion", "apprenants"],
+    ["kpi_connexion", "deposit_oaci"],
   ];
   useRealtimeSync({ table: "extrants_criteres", queryKeys: kpiQueryKeys });
   useRealtimeSync({ table: "kpi_seuils", queryKeys: kpiQueryKeys });
@@ -401,6 +403,10 @@ const Dashboard = () => {
         }}
         extrantStats={extrantStats ?? undefined}
       />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <DepositOaciKpi />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-3">
