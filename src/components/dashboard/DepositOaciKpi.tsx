@@ -73,7 +73,22 @@ export function DepositOaciKpi() {
   const barColor = isNotEntered ? "#D1D5DB" : isAlert ? "#EF4444" : "#22C55E";
   const restantColor = isNotEntered ? "#9CA3AF" : isAlert ? "#DC2626" : "#15803D";
 
-  const activeSeuil = data.activeSeuil;
+  // Override active seuil based on montantRestant vs alertThreshold (not generic logic)
+  const activeSeuil = (() => {
+    if (isNotEntered) {
+      return (
+        allSeuils.find((s) => s.label_statut?.toLowerCase().includes("non renseign")) ??
+        null
+      );
+    }
+    if (isAlert) {
+      return alertSeuilDef ?? null;
+    }
+    return (
+      allSeuils.find((s) => s.label_statut?.toLowerCase().includes("suffisant")) ??
+      null
+    );
+  })();
 
   return (
     <div
