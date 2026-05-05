@@ -48,14 +48,13 @@ export function DepositOaciKpi() {
   const alertThreshold =
     (alertSeuil?.conditions?.[0]?.min_value as number | undefined) ?? null;
 
-  // Dynamic marker position formula:
-  // markerPct = (1 - seuil / cible) × 100
-  const alertMarkerPct = useMemo(() => {
+  // Dynamic marker position formula: (1 - seuil / cible) × 100
+  const alertMarkerPct = (() => {
     if (!montantCible || montantCible <= 0 || !alertThreshold || alertThreshold <= 0) return 80;
     if (alertThreshold >= montantCible) return 0;
     const pct = (1 - alertThreshold / montantCible) * 100;
     return Math.round(pct * 100) / 100;
-  }, [montantCible, alertThreshold]);
+  })();
 
   const showMarker =
     montantCible !== null &&
