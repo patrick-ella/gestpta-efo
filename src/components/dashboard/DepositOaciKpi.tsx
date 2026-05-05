@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useKpiBadgeValue } from "@/hooks/useKpiBadgeValue";
 
 function formatUSD(val: number | null): string {
@@ -44,12 +45,24 @@ export function DepositOaciKpi() {
   const alertSeuil = data.seuils?.find((s) =>
     s.label_statut?.toLowerCase().includes("alerte")
   );
-  const alertThreshold = (alertSeuil?.conditions?.[0]?.min_value as number) ?? 25000;
+  const alertThreshold =
+    (alertSeuil?.conditions?.[0]?.min_value as number | undefined) ?? null;
 
-  const alertMarkerPct =
-    montantCible && montantCible > 0
-      ? Math.round(((montantCible - alertThreshold) / montantCible) * 100)
-      : 80;
+  // Dynamic marker position formula:
+  // markerPct = (1 - seuil / cible) × 100
+  const alertMarkerPct = useMemo(() => {
+    if (!montantCible || montantCible <= 0 || !alertThreshold || alertThreshold <= 0) return 80;
+    if (alertThreshold >= montantCible) return 0;
+    const pct = (1 - alertThreshold / montantCible) * 100;
+    return Math.round(pct * 100) / 100;
+  }, [montantCible, alertThreshold]);
+
+  const showMarker =
+    montantCible !== null &&
+    montantCible > 0 &&
+    alertThreshold !== null &&
+    alertThreshold > 0 &&
+    alertThreshold < montantCible;
 
   const isAlert = montantRestant !== null && montantRestant < alertThreshold;
   const isNotEntered = montantRealise === 0 && montantCible === null;
