@@ -18,6 +18,7 @@ import AlertPanel, { type Alert } from "@/components/dashboard/AlertPanel";
 import { useExtrantStats } from "@/hooks/useExtrantsData";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import { useKpiBadgeValue } from "@/hooks/useKpiBadgeValue";
+import { DepositOaciKpi } from "@/components/dashboard/DepositOaciKpi";
 import RequirePermission from "@/components/auth/RequirePermission";
 import { MODULES } from "@/lib/constants/modules";
 import type { Database } from "@/integrations/supabase/types";
