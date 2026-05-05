@@ -496,6 +496,13 @@ export default function KpiConfigPanel({ badge, open, onClose }: Props) {
                             );
                           })}
                         </div>
+                        {badge.code === "deposit_oaci" &&
+                          s.label_statut?.toLowerCase().includes("alerte") && (
+                            <p className="text-[11px] text-muted-foreground italic mt-1.5">
+                              ℹ️ Ce seuil définit le montant restant minimum ($) en
+                              dessous duquel l'alerte se déclenche sur le tableau de bord.
+                            </p>
+                          )}
                       </div>
                     </div>
                   ))}
