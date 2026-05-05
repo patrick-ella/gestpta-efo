@@ -116,6 +116,7 @@ export function useKpiBadgeValue(badgeCode: string) {
           type_calcul: b.type_calcul,
         },
         variableValues,
+        seuils,
         activeSeuil,
         computed,
       };
