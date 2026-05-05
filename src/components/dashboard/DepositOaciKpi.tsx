@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useKpiBadgeValue } from "@/hooks/useKpiBadgeValue";
 
 function formatUSD(val: number | null): string {
@@ -44,12 +45,24 @@ export function DepositOaciKpi() {
   const alertSeuil = data.seuils?.find((s) =>
     s.label_statut?.toLowerCase().includes("alerte")
   );
-  const alertThreshold = (alertSeuil?.conditions?.[0]?.min_value as number) ?? 25000;
+  const alertThreshold =
+    (alertSeuil?.conditions?.[0]?.min_value as number | undefined) ?? null;
 
-  const alertMarkerPct =
-    montantCible && montantCible > 0
-      ? Math.round(((montantCible - alertThreshold) / montantCible) * 100)
-      : 80;
+  // Dynamic marker position formula:
+  // markerPct = (1 - seuil / cible) × 100
+  const alertMarkerPct = useMemo(() => {
+    if (!montantCible || montantCible <= 0 || !alertThreshold || alertThreshold <= 0) return 80;
+    if (alertThreshold >= montantCible) return 0;
+    const pct = (1 - alertThreshold / montantCible) * 100;
+    return Math.round(pct * 100) / 100;
+  }, [montantCible, alertThreshold]);
+
+  const showMarker =
+    montantCible !== null &&
+    montantCible > 0 &&
+    alertThreshold !== null &&
+    alertThreshold > 0 &&
+    alertThreshold < montantCible;
 
   const isAlert = montantRestant !== null && montantRestant < alertThreshold;
   const isNotEntered = montantRealise === 0 && montantCible === null;
@@ -189,35 +202,37 @@ export function DepositOaciKpi() {
           }}
         >
           {/* LABEL ABOVE BAR */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: `${alertMarkerPct}%`,
-              transform: "translateX(-50%)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              zIndex: 3,
-            }}
-          >
-            <span
+          {showMarker && (
+            <div
               style={{
-                fontSize: "10px",
-                fontWeight: 800,
-                color: "#B45309",
-                whiteSpace: "nowrap",
-                background: "#FEF3C7",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                border: "1px solid #FDE68A",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                position: "absolute",
+                top: 0,
+                left: `${alertMarkerPct}%`,
+                transform: "translateX(-50%)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                zIndex: 3,
               }}
             >
-              ⚠️ {formatUSD(alertThreshold)}
-            </span>
-            <div style={{ width: "1px", height: "4px", background: "#F59E0B" }} />
-          </div>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 800,
+                  color: "#B45309",
+                  whiteSpace: "nowrap",
+                  background: "#FEF3C7",
+                  padding: "2px 6px",
+                  borderRadius: "4px",
+                  border: "1px solid #FDE68A",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                ⚠️ {formatUSD(alertThreshold)}
+              </span>
+              <div style={{ width: "1px", height: "4px", background: "#F59E0B" }} />
+            </div>
+          )}
 
           {/* PROGRESS BAR TRACK */}
           <div
@@ -240,22 +255,24 @@ export function DepositOaciKpi() {
                 zIndex: 1,
               }}
             />
-            <div
-              style={{
-                position: "absolute",
-                top: "-3px",
-                left: `${alertMarkerPct}%`,
-                transform: "translateX(-50%)",
-                width: "3px",
-                height: "20px",
-                background: "#F59E0B",
-                borderRadius: "2px",
-                zIndex: 4,
-                boxShadow: "0 0 4px rgba(245,158,11,0.6)",
-              }}
-            />
+            {showMarker && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "-3px",
+                  left: `${alertMarkerPct}%`,
+                  transform: "translateX(-50%)",
+                  width: "3px",
+                  height: "20px",
+                  background: "#F59E0B",
+                  borderRadius: "2px",
+                  zIndex: 4,
+                  boxShadow: "0 0 6px rgba(245,158,11,0.7)",
+                }}
+              />
+            )}
             {tauxConsommation > 15 &&
-              Math.abs(tauxConsommation - alertMarkerPct) > 15 && (
+              (!showMarker || Math.abs(tauxConsommation - alertMarkerPct) > 15) && (
                 <div
                   style={{
                     position: "absolute",
@@ -276,30 +293,32 @@ export function DepositOaciKpi() {
           </div>
 
           {/* LABEL BELOW BAR */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: `${alertMarkerPct}%`,
-              transform: "translateX(-50%)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              zIndex: 3,
-            }}
-          >
-            <div style={{ width: "1px", height: "4px", background: "#F59E0B" }} />
-            <span
+          {showMarker && (
+            <div
               style={{
-                fontSize: "9px",
-                fontWeight: 600,
-                color: "#B45309",
-                whiteSpace: "nowrap",
+                position: "absolute",
+                bottom: 0,
+                left: `${alertMarkerPct}%`,
+                transform: "translateX(-50%)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                zIndex: 3,
               }}
             >
-              Seuil d'alerte
-            </span>
-          </div>
+              <div style={{ width: "1px", height: "4px", background: "#F59E0B" }} />
+              <span
+                style={{
+                  fontSize: "9px",
+                  fontWeight: 600,
+                  color: "#B45309",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Seuil d'alerte
+              </span>
+            </div>
+          )}
 
           {/* SCALE LABELS */}
           <div
