@@ -33,6 +33,7 @@ export interface KpiBadgeValue {
     type_calcul: string;
   };
   variableValues: KpiVariableValue[];
+  seuils: KpiSeuil[];
   activeSeuil: KpiSeuil | null;
   // For type_calcul = 'somme' / 'moyenne' / 'valeur'
   computed: number | null;
