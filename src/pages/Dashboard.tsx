@@ -42,6 +42,7 @@ const Dashboard = () => {
     ["kpi_connexion", "avsec"],
     ["kpi_connexion", "iso"],
     ["kpi_connexion", "apprenants"],
+    ["kpi_connexion", "deposit_oaci"],
   ];
   useRealtimeSync({ table: "extrants_criteres", queryKeys: kpiQueryKeys });
   useRealtimeSync({ table: "kpi_seuils", queryKeys: kpiQueryKeys });
