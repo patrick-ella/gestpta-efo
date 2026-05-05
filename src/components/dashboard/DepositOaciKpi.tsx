@@ -42,34 +42,53 @@ export function DepositOaciKpi() {
       ? Math.min(Math.round((montantRealise / montantCible) * 100), 100)
       : 0;
 
-  const alertSeuil = data.seuils?.find((s) =>
+  // alertThreshold comes ONLY from kpi_seuils (set by super_admin in Administration)
+  const allSeuils = data.seuils ?? [];
+  const alertSeuilDef = allSeuils.find((s) =>
     s.label_statut?.toLowerCase().includes("alerte")
   );
   const alertThreshold =
-    (alertSeuil?.conditions?.[0]?.min_value as number | undefined) ?? null;
+    (alertSeuilDef?.conditions?.[0]?.min_value as number | undefined) ?? null;
 
   // Dynamic marker position formula: (1 - seuil / cible) × 100
   const alertMarkerPct = (() => {
-    if (!montantCible || montantCible <= 0 || !alertThreshold || alertThreshold <= 0) return 80;
-    if (alertThreshold >= montantCible) return 0;
-    const pct = (1 - alertThreshold / montantCible) * 100;
-    return Math.round(pct * 100) / 100;
+    if (
+      !montantCible || montantCible <= 0 ||
+      !alertThreshold || alertThreshold <= 0 ||
+      alertThreshold >= montantCible
+    ) return null;
+    return Math.round((1 - alertThreshold / montantCible) * 100 * 100) / 100;
   })();
 
-  const showMarker =
-    montantCible !== null &&
-    montantCible > 0 &&
-    alertThreshold !== null &&
-    alertThreshold > 0 &&
-    alertThreshold < montantCible;
+  const showMarker = alertMarkerPct !== null;
+  const markerPctSafe = alertMarkerPct ?? 0;
 
-  const isAlert = montantRestant !== null && montantRestant < alertThreshold;
   const isNotEntered = montantRealise === 0 && montantCible === null;
+  const isAlert =
+    !isNotEntered &&
+    montantRestant !== null &&
+    alertThreshold !== null &&
+    montantRestant < alertThreshold;
 
   const barColor = isNotEntered ? "#D1D5DB" : isAlert ? "#EF4444" : "#22C55E";
   const restantColor = isNotEntered ? "#9CA3AF" : isAlert ? "#DC2626" : "#15803D";
 
-  const activeSeuil = data.activeSeuil;
+  // Override active seuil based on montantRestant vs alertThreshold (not generic logic)
+  const activeSeuil = (() => {
+    if (isNotEntered) {
+      return (
+        allSeuils.find((s) => s.label_statut?.toLowerCase().includes("non renseign")) ??
+        null
+      );
+    }
+    if (isAlert) {
+      return alertSeuilDef ?? null;
+    }
+    return (
+      allSeuils.find((s) => s.label_statut?.toLowerCase().includes("suffisant")) ??
+      null
+    );
+  })();
 
   return (
     <div
@@ -206,7 +225,7 @@ export function DepositOaciKpi() {
               style={{
                 position: "absolute",
                 top: 0,
-                left: `${alertMarkerPct}%`,
+                left: `${markerPctSafe}%`,
                 transform: "translateX(-50%)",
                 display: "flex",
                 flexDirection: "column",
@@ -259,7 +278,7 @@ export function DepositOaciKpi() {
                 style={{
                   position: "absolute",
                   top: "-3px",
-                  left: `${alertMarkerPct}%`,
+                  left: `${markerPctSafe}%`,
                   transform: "translateX(-50%)",
                   width: "3px",
                   height: "20px",
@@ -271,7 +290,7 @@ export function DepositOaciKpi() {
               />
             )}
             {tauxConsommation > 15 &&
-              (!showMarker || Math.abs(tauxConsommation - alertMarkerPct) > 15) && (
+              (!showMarker || Math.abs(tauxConsommation - markerPctSafe) > 15) && (
                 <div
                   style={{
                     position: "absolute",
@@ -297,7 +316,7 @@ export function DepositOaciKpi() {
               style={{
                 position: "absolute",
                 bottom: 0,
-                left: `${alertMarkerPct}%`,
+                left: `${markerPctSafe}%`,
                 transform: "translateX(-50%)",
                 display: "flex",
                 flexDirection: "column",
