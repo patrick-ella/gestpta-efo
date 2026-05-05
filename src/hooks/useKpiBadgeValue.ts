@@ -20,6 +20,7 @@ export interface KpiVariableValue {
   index: number;
   label: string | null;
   value: number;
+  seuilValeur: number | null;
   critere_libelle: string | null;
 }
 
