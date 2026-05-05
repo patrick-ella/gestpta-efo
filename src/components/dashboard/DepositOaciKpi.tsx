@@ -293,30 +293,32 @@ export function DepositOaciKpi() {
           </div>
 
           {/* LABEL BELOW BAR */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: `${alertMarkerPct}%`,
-              transform: "translateX(-50%)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              zIndex: 3,
-            }}
-          >
-            <div style={{ width: "1px", height: "4px", background: "#F59E0B" }} />
-            <span
+          {showMarker && (
+            <div
               style={{
-                fontSize: "9px",
-                fontWeight: 600,
-                color: "#B45309",
-                whiteSpace: "nowrap",
+                position: "absolute",
+                bottom: 0,
+                left: `${alertMarkerPct}%`,
+                transform: "translateX(-50%)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                zIndex: 3,
               }}
             >
-              Seuil d'alerte
-            </span>
-          </div>
+              <div style={{ width: "1px", height: "4px", background: "#F59E0B" }} />
+              <span
+                style={{
+                  fontSize: "9px",
+                  fontWeight: 600,
+                  color: "#B45309",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Seuil d'alerte
+              </span>
+            </div>
+          )}
 
           {/* SCALE LABELS */}
           <div
