@@ -67,6 +67,10 @@ export function useKpiBadgeValue(badgeCode: string) {
           index: v.variable_index,
           label: v.label_variable,
           value: Number(v.extrants_criteres?.valeur_realisee ?? 0),
+          seuilValeur:
+            v.extrants_criteres?.seuil_valeur != null
+              ? Number(v.extrants_criteres.seuil_valeur)
+              : null,
           critere_libelle: v.extrants_criteres?.libelle ?? null,
         }));
 
