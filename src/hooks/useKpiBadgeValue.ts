@@ -49,7 +49,7 @@ export function useKpiBadgeValue(badgeCode: string) {
           id, code, label, icon, type_calcul,
           kpi_variables (
             id, variable_index, label_variable, critere_id,
-            extrants_criteres ( id, libelle, valeur_realisee, type_critere )
+            extrants_criteres ( id, libelle, valeur_realisee, seuil_valeur, type_critere )
           ),
           kpi_seuils ( id, ordre, label_statut, icon_statut, couleur, bg_couleur, conditions )
         `
