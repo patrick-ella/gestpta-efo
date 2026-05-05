@@ -225,7 +225,7 @@ export function DepositOaciKpi() {
               style={{
                 position: "absolute",
                 top: 0,
-                left: `${alertMarkerPct}%`,
+                left: `${markerPctSafe}%`,
                 transform: "translateX(-50%)",
                 display: "flex",
                 flexDirection: "column",
@@ -278,7 +278,7 @@ export function DepositOaciKpi() {
                 style={{
                   position: "absolute",
                   top: "-3px",
-                  left: `${alertMarkerPct}%`,
+                  left: `${markerPctSafe}%`,
                   transform: "translateX(-50%)",
                   width: "3px",
                   height: "20px",
@@ -290,7 +290,7 @@ export function DepositOaciKpi() {
               />
             )}
             {tauxConsommation > 15 &&
-              (!showMarker || Math.abs(tauxConsommation - alertMarkerPct) > 15) && (
+              (!showMarker || Math.abs(tauxConsommation - markerPctSafe) > 15) && (
                 <div
                   style={{
                     position: "absolute",
@@ -316,7 +316,7 @@ export function DepositOaciKpi() {
               style={{
                 position: "absolute",
                 bottom: 0,
-                left: `${alertMarkerPct}%`,
+                left: `${markerPctSafe}%`,
                 transform: "translateX(-50%)",
                 display: "flex",
                 flexDirection: "column",
