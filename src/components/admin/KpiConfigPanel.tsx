@@ -391,7 +391,7 @@ export default function KpiConfigPanel({ badge, open, onClose }: Props) {
             </section>
 
             {/* SEUILS */}
-            {badge.type_calcul === "seuils" && (
+            {(
               <section>
                 <h3 className="text-sm font-bold mb-2 text-foreground">
                   Niveaux de statut (du plus élevé au plus bas)
